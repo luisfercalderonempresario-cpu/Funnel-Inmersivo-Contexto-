@@ -1,7 +1,7 @@
 import { ExperienceDefinition } from './types';
 import { ExperienceId, ExperienceStatus, FunnelState } from '../engine/state/types';
 import { EXP01 } from './exp01/EXP01';
-import { EXP02Placeholder } from './exp02/EXP02Placeholder';
+import { EXP02 } from './exp02/EXP02';
 import { EXP03Placeholder } from './exp03/EXP03Placeholder';
 import { EXP04Placeholder } from './exp04/EXP04Placeholder';
 import { EXP05Placeholder } from './exp05/EXP05Placeholder';
@@ -28,8 +28,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'El Espejo',
     number: 2,
     description: 'Reflejo de patrones, hábitos y fricciones iniciales.',
-    presentationMode: 'standard',
-    component: EXP02Placeholder,
+    presentationMode: 'immersive',
+    component: EXP02,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp02'),
     nextExperience: 'exp03',
