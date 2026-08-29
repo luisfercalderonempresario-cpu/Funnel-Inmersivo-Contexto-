@@ -1,0 +1,61 @@
+import { ExperienceId } from '../state/types';
+
+export type FunnelEventName =
+  | 'FUNNEL_STARTED'
+  | 'SESSION_CREATED'
+  | 'SESSION_RESUMED'
+  | 'EXP01_STARTED'
+  | 'EXP01_COMPLETED'
+  | 'EXP02_STARTED'
+  | 'EXP02_COMPLETED'
+  | 'EXP03_STARTED'
+  | 'EXP03_COMPLETED'
+  | 'EXP04_STARTED'
+  | 'EXP04_COMPLETED'
+  | 'EXP05_STARTED'
+  | 'EXP05_COMPLETED'
+  | 'EXP06_STARTED'
+  | 'EXP06_COMPLETED'
+  | 'EXP07_STARTED'
+  | 'EXP07_COMPLETED'
+  | 'EXP08_STARTED'
+  | 'EXP08_COMPLETED'
+  | 'CTA_CLICKED'
+  | 'QUESTION_SHOWN'
+  | 'QUESTION_ANSWERED'
+  | 'CHOICE_SHOWN'
+  | 'CHOICE_SELECTED'
+  | 'CASE_ID_REVEALED'
+  | 'INVESTIGATION_ACCEPTED'
+  | 'INVESTIGATION_DECLINED'
+  | 'SCREEN_VIEWED'
+  | 'SCREEN_COMPLETED'
+  | 'MEMORY_UPDATED'
+  | 'INSIGHT_DISCOVERED'
+  | 'CONDITION_EVALUATED'
+  | 'BRANCH_SELECTED'
+  | 'EXPERIENCE_STARTED'
+  | 'EXPERIENCE_PAUSED'
+  | 'EXPERIENCE_RESUMED'
+  | 'EXPERIENCE_COMPLETED'
+  | 'AUDIO_ENABLED'
+  | 'AUDIO_DISABLED'
+  | 'VIDEO_STARTED'
+  | 'VIDEO_COMPLETED'
+  | 'SALES_PAGE_VIEWED'
+  | 'CHECKOUT_STARTED'
+  | 'PURCHASE_COMPLETED'
+  | 'EXPERIENCE_BLOCKED_ACCESSED'
+  | 'SESSION_RESET';
+
+export interface FunnelEventLogEntry {
+  id: string;
+  eventName: FunnelEventName;
+  timestamp: string;
+  sessionId: string;
+  caseId: string;
+  experience: ExperienceId | 'none';
+  payload?: Record<string, unknown>;
+}
+
+export type EventListener = (entry: FunnelEventLogEntry) => void;

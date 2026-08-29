@@ -1,0 +1,6 @@
+{
+  "name": "Contexto™ — Experiencia Inmersiva",
+  "description": "Infraestructura y Foundation del Funnel Inmersivo e Interactivo de Contexto™.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
