@@ -41,6 +41,8 @@ export const AppShell: React.FC = () => {
     status === 'LOCKED' &&
     !state.progress.completedExperiences.includes(currentExperienceId);
 
+  const isImmersive = !isTestMode && currentExp?.presentationMode === 'immersive';
+
   const handleCompleteCurrent = (data?: Record<string, unknown>) => {
     completeExperience(currentExperienceId, data);
   };
@@ -66,40 +68,35 @@ export const AppShell: React.FC = () => {
 
         {isLoading && <LoadingScreen />}
 
-        {/* Discreet Narrative Header */}
-        <header
-          id="funnel-top-bar"
-          className="w-full border-b border-[#141414] bg-[#050505]/90 backdrop-blur-md sticky top-0 z-40 safe-area-top"
-        >
-          <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
-            {/* Left: Minimalist Brand Identifier */}
-            <div className="flex items-center gap-2.5">
-              <span
-                className="w-2 h-2 rounded-full bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.6)]"
-                aria-hidden="true"
-              />
-              <span className="text-xs tracking-[0.25em] font-mono uppercase text-neutral-300">
-                Contexto
-              </span>
-            </div>
+        {/* Global Top Bar (Hidden in Immersive Mode) */}
+        {!isImmersive && (
+          <header
+            id="funnel-top-bar"
+            className="w-full border-b border-[#141414] bg-[#050505]/90 backdrop-blur-md sticky top-0 z-40 safe-area-top"
+          >
+            <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="w-2 h-2 rounded-full bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.6)]"
+                  aria-hidden="true"
+                />
+                <span className="text-xs tracking-[0.25em] font-mono uppercase text-neutral-300">
+                  Contexto
+                </span>
+              </div>
 
-            {/* Right: Audio control and (only outside EXP01) Case ID */}
-            <div className="flex items-center gap-4">
-              {currentExperienceId !== 'exp01' && (
+              <div className="flex items-center gap-4">
                 <div className="hidden sm:block">
                   <CaseId code={state.session.caseId} />
                 </div>
-              )}
 
-              <AudioController
-                preferences={state.preferences}
-                onUpdatePreferences={updatePreferences}
-              />
+                <AudioController
+                  preferences={state.preferences}
+                  onUpdatePreferences={updatePreferences}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Progress bar: Hidden in EXP_01 to avoid SaaS checklist feeling */}
-          {currentExperienceId !== 'exp01' && (
             <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-1">
               <ProgressIndicator
                 currentExperience={state.progress.currentExperience}
@@ -108,11 +105,11 @@ export const AppShell: React.FC = () => {
                 onSelectExperience={(id) => goToExperience(id)}
               />
             </div>
-          )}
-        </header>
+          </header>
+        )}
 
         {/* Experience Content Viewport with Transition */}
-        <ExperienceContainer isLoading={isLoading}>
+        <ExperienceContainer isLoading={isLoading} isImmersive={isImmersive}>
           <Transition transitionKey={isTestMode ? 'exp_test' : currentExperienceId} mode="fade">
             {isTestMode ? (
               <div className="w-full flex flex-col items-center">
@@ -163,19 +160,21 @@ export const AppShell: React.FC = () => {
           </Transition>
         </ExperienceContainer>
 
-        {/* Discreet Silent Footer */}
-        <footer className="w-full h-12 border-t border-[#121212] flex items-center justify-between px-4 sm:px-8 bg-[#040404] z-20 safe-area-bottom">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-            <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-500">
-              EXPEDIENTE CONFIDENCIAL
-            </span>
-          </div>
+        {/* Global Footer (Hidden in Immersive Mode) */}
+        {!isImmersive && (
+          <footer className="w-full h-12 border-t border-[#121212] flex items-center justify-between px-4 sm:px-8 bg-[#040404] z-20 safe-area-bottom">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+              <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-500">
+                EXPEDIENTE CONFIDENCIAL
+              </span>
+            </div>
 
-          <p className="font-mono text-[9px] text-neutral-600 uppercase tracking-widest">
-            Contexto™
-          </p>
-        </footer>
+            <p className="font-mono text-[9px] text-neutral-600 uppercase tracking-widest">
+              Contexto™
+            </p>
+          </footer>
+        )}
 
         {/* Development Debug HUD */}
         <DebugPanel

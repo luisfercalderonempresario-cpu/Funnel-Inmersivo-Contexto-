@@ -16,6 +16,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Puerta',
     number: 1,
     description: 'Entrada al expediente de investigación para Andrés.',
+    presentationMode: 'immersive',
     component: EXP01,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp01'),
@@ -27,6 +28,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'El Espejo',
     number: 2,
     description: 'Reflejo de patrones, hábitos y fricciones iniciales.',
+    presentationMode: 'standard',
     component: EXP02Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp02'),
@@ -38,6 +40,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'El Error Invisible',
     number: 3,
     description: 'Identificación de la falla recurrente en el modelo operativo.',
+    presentationMode: 'standard',
     component: EXP03Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp03'),
@@ -49,6 +52,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Investigación',
     number: 4,
     description: 'Recopilación de variables críticas y evidencia contextual.',
+    presentationMode: 'standard',
     component: EXP04Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp04'),
@@ -60,6 +64,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Pieza Faltante',
     number: 5,
     description: 'El eslabón ausente en la toma de decisiones estratégicas.',
+    presentationMode: 'standard',
     component: EXP05Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp05'),
@@ -71,6 +76,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'Contexto™',
     number: 6,
     description: 'Presentación de la arquitectura conceptual de Contexto™.',
+    presentationMode: 'standard',
     component: EXP06Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp06'),
@@ -82,6 +88,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'El Futuro',
     number: 7,
     description: 'Proyección del impacto operativo con el marco de Contexto™.',
+    presentationMode: 'standard',
     component: EXP07Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp07'),
@@ -93,6 +100,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Revelación',
     number: 8,
     description: 'Cierre del expediente y transición a la propuesta integral.',
+    presentationMode: 'standard',
     component: EXP08Placeholder,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp08'),

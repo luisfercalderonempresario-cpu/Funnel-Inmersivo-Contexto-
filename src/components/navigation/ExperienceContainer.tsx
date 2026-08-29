@@ -4,17 +4,21 @@ interface ExperienceContainerProps {
   children: React.ReactNode;
   className?: string;
   isLoading?: boolean;
+  isImmersive?: boolean;
 }
 
 export const ExperienceContainer: React.FC<ExperienceContainerProps> = ({
   children,
   className = '',
   isLoading = false,
+  isImmersive = false,
 }) => {
   return (
     <main
       id="funnel-experience-container"
-      className={`relative w-full max-w-2xl mx-auto flex-1 flex flex-col justify-center items-center px-4 sm:px-6 py-6 min-h-[calc(100dvh-130px)] safe-area-bottom ${className}`}
+      className={`relative w-full max-w-2xl mx-auto flex-1 flex flex-col justify-center items-center px-4 sm:px-6 py-6 ${
+        isImmersive ? 'min-h-[100dvh]' : 'min-h-[calc(100dvh-130px)] safe-area-bottom'
+      } ${className}`}
     >
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-12 space-y-4">

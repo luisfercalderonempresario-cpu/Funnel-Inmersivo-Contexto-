@@ -5,6 +5,7 @@ interface ChoiceButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
   selected?: boolean;
   code?: string;
   subtext?: string;
+  evidenceLabel?: string;
   isAnySelected?: boolean;
 }
 
@@ -14,6 +15,7 @@ export const ChoiceButton: React.FC<ChoiceButtonProps> = ({
   selected = false,
   code,
   subtext,
+  evidenceLabel,
   disabled,
   isAnySelected = false,
   className = '',
@@ -28,9 +30,9 @@ export const ChoiceButton: React.FC<ChoiceButtonProps> = ({
       type="button"
       className={`group w-full text-left p-4 sm:p-5 rounded-xl border transition-all duration-300 cursor-pointer flex items-center gap-4 sm:gap-5 focus:outline-none focus:ring-1 focus:ring-orange-500/50 ${
         selected
-          ? 'bg-[#0E0E0E] border-orange-500 text-white shadow-[0_0_24px_rgba(234,88,12,0.12)] scale-[1.01]'
+          ? 'bg-[#0E0E0E] border-orange-500 text-white shadow-[0_0_24px_rgba(234,88,12,0.15)] scale-[1.01]'
           : isDimmed
-          ? 'bg-[#050505] border-[#121212] text-neutral-600 opacity-25 scale-[0.99] pointer-events-none'
+          ? 'bg-[#050505] border-[#121212] text-neutral-600 opacity-20 scale-[0.99] pointer-events-none'
           : 'bg-[#080808] border-[#181818] text-neutral-300 hover:bg-[#0D0D0D] hover:border-[#282828] hover:text-white'
       } ${disabled && !isDimmed ? 'opacity-40 cursor-not-allowed' : ''} ${className}`}
       {...props}
@@ -55,9 +57,9 @@ export const ChoiceButton: React.FC<ChoiceButtonProps> = ({
       </div>
 
       {selected && (
-        <span className="shrink-0 flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-orange-400 uppercase bg-orange-950/40 px-2 py-0.5 rounded border border-orange-500/30 animate-fade-in">
-          <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
-          REGISTRADO
+        <span className="shrink-0 flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-orange-400 uppercase bg-orange-950/50 px-2.5 py-1 rounded border border-orange-500/40 animate-fade-in shadow-[0_0_12px_rgba(234,88,12,0.2)]">
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+          {evidenceLabel ? `${evidenceLabel} REGISTRADO` : 'REGISTRADO'}
         </span>
       )}
     </button>

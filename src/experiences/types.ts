@@ -1,6 +1,8 @@
 import React from 'react';
 import { ExperienceId, ExperienceStatus, FunnelState } from '../engine/state/types';
 
+export type PresentationMode = 'standard' | 'immersive';
+
 export interface ExperienceComponentProps {
   experienceId: ExperienceId;
   name: string;
@@ -17,6 +19,7 @@ export interface ExperienceDefinition {
   name: string;
   number: number;
   description: string;
+  presentationMode?: PresentationMode;
   component: React.ComponentType<ExperienceComponentProps>;
   completionCondition: (state: FunnelState) => boolean;
   nextExperience: ExperienceId | null;

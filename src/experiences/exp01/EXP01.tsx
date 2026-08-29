@@ -69,25 +69,87 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
-  // Scene 01 staged reveal timers
-  const [scene01Stage, setScene01Stage] = useState<number>(1);
+  // Scene staged reveal timers
+  const [screenStage, setScreenStage] = useState<number>(1);
 
   // Synchronize runtime persistence
   useEffect(() => {
     persistExperienceRuntimeState(runtimeState);
   }, [runtimeState]);
 
-  // Handle Scene 01 progressive reveal
+  // Handle progressive reveals per screen
   useEffect(() => {
-    if (runtimeState.currentScreen === 'screen_01_black_entry') {
-      const t1 = setTimeout(() => setScene01Stage(2), 700);
-      const t2 = setTimeout(() => setScene01Stage(3), 1500);
+    setScreenStage(1);
+    const screen = runtimeState.currentScreen;
+
+    if (screen === 'screen_01_black_entry') {
+      const t1 = setTimeout(() => setScreenStage(2), 650);
+      const t2 = setTimeout(() => setScreenStage(3), 1400);
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
       };
-    } else {
-      setScene01Stage(1);
+    } else if (screen === 'screen_02_first_question') {
+      const t1 = setTimeout(() => setScreenStage(2), 450);
+      const t2 = setTimeout(() => setScreenStage(3), 950);
+      const t3 = setTimeout(() => setScreenStage(4), 1400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_03_case_id') {
+      const t1 = setTimeout(() => setScreenStage(2), 500);
+      const t2 = setTimeout(() => setScreenStage(3), 1050);
+      const t3 = setTimeout(() => setScreenStage(4), 1550);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_04_second_question') {
+      const t1 = setTimeout(() => setScreenStage(2), 450);
+      const t2 = setTimeout(() => setScreenStage(3), 950);
+      const t3 = setTimeout(() => setScreenStage(4), 1400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_05_mirror_moment') {
+      const t1 = setTimeout(() => setScreenStage(2), 550);
+      const t2 = setTimeout(() => setScreenStage(3), 1250);
+      const t3 = setTimeout(() => setScreenStage(4), 1850);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_06_investigation_activation') {
+      const t1 = setTimeout(() => setScreenStage(2), 500);
+      const t2 = setTimeout(() => setScreenStage(3), 1100);
+      const t3 = setTimeout(() => setScreenStage(4), 1600);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_08_confirmation') {
+      const t1 = setTimeout(() => setScreenStage(2), 500);
+      const t2 = setTimeout(() => setScreenStage(3), 1000);
+      const t3 = setTimeout(() => setScreenStage(4), 1500);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else if (screen === 'screen_09_final') {
+      const t1 = setTimeout(() => setScreenStage(2), 600);
+      const t2 = setTimeout(() => setScreenStage(3), 1300);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [runtimeState.currentScreen]);
 
@@ -344,16 +406,16 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_01_black_entry' && (
         <div
           id="screen-01-black-entry"
-          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in py-6"
         >
-          <div className="space-y-8 max-w-lg mx-auto pt-8 sm:pt-14">
+          <div className="space-y-8 max-w-lg mx-auto pt-6 sm:pt-12">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-normal transition-opacity duration-700">
               {EXP01_CONTENT.screen01.leadText1}
             </h1>
 
             <p
               className={`text-sm sm:text-base text-neutral-400 font-body tracking-wider transition-all duration-700 ${
-                scene01Stage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
               {EXP01_CONTENT.screen01.leadText2}
@@ -362,7 +424,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
           <div
             className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              scene01Stage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+              screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
             }`}
           >
             <PrimaryCTA
@@ -383,21 +445,37 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_02_first_question' && (
         <div
           id="screen-02-first-question"
-          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto"
+          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto py-4"
         >
-          <div className="space-y-3">
-            <p className="text-xs font-mono uppercase tracking-[0.2em] text-neutral-500">
+          <div className="space-y-2">
+            <p
+              className={`text-xs font-mono uppercase tracking-[0.25em] text-neutral-500 transition-all duration-700 ${
+                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen02.intro1}
             </p>
-            <p className="text-sm text-neutral-400 font-body">
+            <p
+              className={`text-sm text-neutral-400 font-body transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen02.intro2}
             </p>
-            <h2 className="text-xl sm:text-2xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2 whitespace-pre-line">
+            <h2
+              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-3 whitespace-pre-line transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen02.question}
             </h2>
           </div>
 
-          <div className="space-y-3 pt-2">
+          <div
+            className={`space-y-3 pt-3 transition-all duration-700 ${
+              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             {EXP01_CONTENT.screen02.options.map((opt) => {
               const isSelected = selectedOption === opt.code;
               const isAnySelected = selectedOption !== null;
@@ -407,6 +485,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                   key={opt.id}
                   id={`opt-q1-${opt.code.toLowerCase()}`}
                   code={opt.code}
+                  evidenceLabel="DATO 01"
                   selected={isSelected}
                   isAnySelected={isAnySelected}
                   disabled={isAnySelected}
@@ -421,40 +500,57 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* ESCENA 03 — REVELACIÓN DEL CASO (EVIDENCIA SOBRIA)                         */}
+      {/* ESCENA 03 — REVELACIÓN DEL CASO (EVIDENCIA EDITORIAL SOBRIA)              */}
       {/* ========================================================================= */}
       {currentScreenId === 'screen_03_case_id' && (
         <div
           id="screen-03-case-id"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-lg mx-auto py-8"
         >
-          {/* Piece of Evidence Layout */}
-          <div className="w-full p-8 sm:p-10 rounded-2xl bg-[#080808] border border-[#1C1C1C] shadow-[0_0_50px_rgba(0,0,0,0.8)] space-y-6">
-            <div className="flex items-center justify-between border-b border-[#161616] pb-4">
-              <span className="text-[10px] font-mono tracking-[0.25em] text-neutral-500 uppercase">
+          <div className="space-y-6">
+            <div className={`transition-all duration-700 ${screenStage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+              <span className="text-xs font-mono tracking-[0.3em] text-neutral-500 uppercase">
                 {EXP01_CONTENT.screen03.label}
               </span>
-              <span className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-orange-400 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            </div>
+
+            <div
+              className={`transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              }`}
+            >
+              <h2 className="font-mono text-3xl sm:text-4xl tracking-[0.2em] font-semibold text-white">
+                #{caseId}
+              </h2>
+            </div>
+
+            <div
+              className={`flex items-center justify-center gap-2 pt-2 transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(234,88,12,0.8)]" />
+              <span className="text-[11px] font-mono tracking-[0.25em] text-orange-400/90 uppercase">
                 {EXP01_CONTENT.screen03.status}
               </span>
             </div>
 
-            <div className="py-4 space-y-2">
-              <span className="font-mono text-2xl sm:text-3xl tracking-[0.2em] font-semibold text-white">
-                #{caseId}
-              </span>
-            </div>
-
-            <div className="border-t border-[#161616] pt-4 flex items-center justify-between">
-              <span className="text-xs font-mono text-neutral-400">
+            <div
+              className={`pt-4 transition-all duration-700 ${
+                screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
+              <p className="text-sm font-body text-neutral-400 tracking-wide">
                 {EXP01_CONTENT.screen03.footnote}
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+              </p>
             </div>
           </div>
 
-          <div className="w-full max-w-xs pt-2">
+          <div
+            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
+              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-caseid-continue"
               onClick={() => navigateToScreen('screen_04_second_question')}
@@ -473,21 +569,37 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_04_second_question' && (
         <div
           id="screen-04-second-question"
-          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto"
+          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto py-4"
         >
-          <div className="space-y-3">
-            <p className="text-xs font-mono uppercase tracking-[0.2em] text-neutral-500">
+          <div className="space-y-2">
+            <p
+              className={`text-xs font-mono uppercase tracking-[0.25em] text-neutral-500 transition-all duration-700 ${
+                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen04.intro1}
             </p>
-            <p className="text-sm text-neutral-400 font-body">
+            <p
+              className={`text-sm text-neutral-400 font-body transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen04.intro2}
             </p>
-            <h2 className="text-xl sm:text-2xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2">
+            <h2
+              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-3 transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen04.question}
             </h2>
           </div>
 
-          <div className="space-y-3 pt-2">
+          <div
+            className={`space-y-3 pt-3 transition-all duration-700 ${
+              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             {EXP01_CONTENT.screen04.options.map((opt) => {
               const isSelected = selectedOption === opt.code;
               const isAnySelected = selectedOption !== null;
@@ -497,6 +609,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                   key={opt.id}
                   id={`opt-q2-${opt.code.toLowerCase()}`}
                   code={opt.code}
+                  evidenceLabel="DATO 02"
                   selected={isSelected}
                   isAnySelected={isAnySelected}
                   disabled={isAnySelected}
@@ -516,23 +629,39 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_05_mirror_moment' && (
         <div
           id="screen-05-mirror-moment"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-6"
         >
-          <div className="space-y-6 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
-            <h2 className="text-2xl sm:text-3xl font-serif italic font-normal text-white tracking-wide">
+          <div className="space-y-8 text-left w-full">
+            <h2
+              className={`text-2xl sm:text-3xl font-serif italic font-normal text-white tracking-wide transition-all duration-700 ${
+                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen05.title}
             </h2>
 
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed">
+            <p
+              className={`text-base sm:text-lg text-neutral-300 font-body leading-relaxed transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen05.paragraph1}
             </p>
 
-            <p className="text-base sm:text-lg text-white font-serif italic leading-relaxed border-l-2 border-orange-500/60 pl-4 py-1">
+            <p
+              className={`text-lg sm:text-xl md:text-2xl text-white font-serif italic leading-relaxed border-l-2 border-orange-500 pl-5 py-2 transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen05.paragraph2}
             </p>
           </div>
 
-          <div className="w-full max-w-xs">
+          <div
+            className={`w-full max-w-xs transition-all duration-700 ${
+              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-mirror-continue"
               onClick={() => navigateToScreen('screen_06_investigation_activation')}
@@ -551,21 +680,37 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_06_investigation_activation' && (
         <div
           id="screen-06-investigation-activation"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-6"
         >
-          <div className="space-y-5 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
-            <p className="text-sm sm:text-base text-neutral-300 font-body leading-relaxed">
+          <div className="space-y-6 text-left w-full">
+            <p
+              className={`text-base sm:text-lg text-neutral-200 font-body leading-relaxed transition-all duration-700 ${
+                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen06.paragraph1}
             </p>
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed">
+            <p
+              className={`text-sm sm:text-base text-neutral-400 font-body leading-relaxed transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen06.paragraph2}
             </p>
-            <p className="text-base sm:text-lg text-white font-serif italic leading-relaxed pt-2 border-t border-[#181818]">
+            <p
+              className={`text-lg sm:text-xl text-white font-serif italic leading-relaxed pt-3 border-t border-[#1a1a1a] transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen06.paragraph3}
             </p>
           </div>
 
-          <div className="w-full max-w-xs">
+          <div
+            className={`w-full max-w-xs transition-all duration-700 ${
+              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-activation-ready"
               onClick={() => {
@@ -592,7 +737,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_07_microcommitment' && (
         <div
           id="screen-07-microcommitment"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-4 max-w-lg mx-auto">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug">
@@ -630,19 +775,19 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_07_declined' && (
         <div
           id="screen-07-declined"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-lg mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto py-8"
         >
-          <div className="space-y-4 max-w-lg mx-auto">
-            <h2 className="text-2xl font-serif italic font-normal text-white">
+          <div className="space-y-6 max-w-lg mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-serif italic font-normal text-white">
               {EXP01_CONTENT.screen07Declined.title}
             </h2>
 
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed p-6 rounded-2xl bg-[#080808] border border-[#161616]">
+            <p className="text-base text-neutral-400 font-body leading-relaxed">
               {EXP01_CONTENT.screen07Declined.message}
             </p>
           </div>
 
-          <div className="w-full max-w-xs space-y-3">
+          <div className="w-full max-w-xs space-y-4 pt-4">
             <PrimaryCTA
               id="cta-declined-resume"
               onClick={() => handleMicrocommitment(true)}
@@ -661,7 +806,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                 window.location.reload();
               }}
             >
-              <span className="text-xs font-mono tracking-widest text-neutral-500 uppercase">
+              <span className="text-xs font-mono tracking-widest text-neutral-500 uppercase hover:text-neutral-400">
                 {EXP01_CONTENT.screen07Declined.exitLabel}
               </span>
             </SecondaryCTA>
@@ -675,31 +820,42 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_08_confirmation' && (
         <div
           id="screen-08-confirmation"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-lg mx-auto py-8"
         >
-          <div className="w-full p-8 rounded-2xl bg-[#080808] border border-orange-500/30 shadow-[0_0_40px_rgba(234,88,12,0.08)] space-y-5">
-            <div className="flex items-center justify-between border-b border-[#161616] pb-4">
-              <span className="text-[10px] font-mono tracking-[0.25em] text-neutral-500 uppercase">
-                {EXP01_CONTENT.screen08.label}
+          <div className="space-y-6">
+            <div className={`transition-all duration-700 ${screenStage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+              <span className="font-mono text-2xl sm:text-3xl tracking-[0.2em] font-semibold text-white">
+                {EXP01_CONTENT.screen08.label} #{caseId}
               </span>
-              <span className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-orange-400 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            </div>
+
+            <div
+              className={`flex items-center justify-center gap-2 transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(234,88,12,0.8)]" />
+              <span className="text-[11px] font-mono tracking-[0.25em] text-orange-400 uppercase">
                 {EXP01_CONTENT.screen08.status}
               </span>
             </div>
 
-            <div className="py-2">
-              <span className="font-mono text-2xl sm:text-3xl tracking-[0.2em] font-semibold text-white">
-                #{caseId}
-              </span>
+            <div
+              className={`pt-2 transition-all duration-700 ${
+                screenStage >= 3 ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <p className="text-base sm:text-lg font-serif italic text-neutral-300">
+                {EXP01_CONTENT.screen08.body}
+              </p>
             </div>
-
-            <p className="text-sm font-body text-neutral-400 border-t border-[#161616] pt-4">
-              {EXP01_CONTENT.screen08.body}
-            </p>
           </div>
 
-          <div className="w-full max-w-xs">
+          <div
+            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
+              screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-confirm-continue"
               onClick={() => navigateToScreen('screen_09_final')}
@@ -718,18 +874,30 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_09_final' && (
         <div
           id="screen-09-final"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
-          <div className="space-y-6 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
-            <p className="text-base sm:text-lg font-serif italic text-white leading-relaxed">
+          <div className="space-y-6 text-left w-full">
+            <p
+              className={`text-lg sm:text-xl font-serif italic text-white leading-relaxed transition-all duration-700 ${
+                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen09.paragraph1}
             </p>
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed border-t border-[#161616] pt-4">
+            <p
+              className={`text-base sm:text-lg text-neutral-300 font-body leading-relaxed pt-4 border-t border-[#181818] transition-all duration-700 ${
+                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
               {EXP01_CONTENT.screen09.paragraph2}
             </p>
           </div>
 
-          <div className="w-full max-w-md pt-2">
+          <div
+            className={`w-full max-w-md pt-4 transition-all duration-700 ${
+              screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-complete-exp01"
               onClick={handleFinalStep}
