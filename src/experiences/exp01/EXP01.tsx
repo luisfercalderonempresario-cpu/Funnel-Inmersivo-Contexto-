@@ -14,16 +14,7 @@ import { eventTracker } from '../../engine/events/eventTracker';
 import { ChoiceButton } from '../../components/ui/ChoiceButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { SecondaryCTA } from '../../components/ui/SecondaryCTA';
-import { CaseId } from '../../components/ui/CaseId';
-import {
-  Shield,
-  FileCheck2,
-  Lock,
-  ArrowRight,
-  Eye,
-  Check,
-  RotateCcw,
-} from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 export const EXP01: React.FC<ExperienceComponentProps> = ({
   caseId,
@@ -78,12 +69,29 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
+  // Scene 01 staged reveal timers
+  const [scene01Stage, setScene01Stage] = useState<number>(1);
+
   // Synchronize runtime persistence
   useEffect(() => {
     persistExperienceRuntimeState(runtimeState);
   }, [runtimeState]);
 
-  // Track initial events and screen entries
+  // Handle Scene 01 progressive reveal
+  useEffect(() => {
+    if (runtimeState.currentScreen === 'screen_01_black_entry') {
+      const t1 = setTimeout(() => setScene01Stage(2), 700);
+      const t2 = setTimeout(() => setScene01Stage(3), 1500);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    } else {
+      setScene01Stage(1);
+    }
+  }, [runtimeState.currentScreen]);
+
+  // Track analytics events on screen transition
   useEffect(() => {
     const currentScreen = runtimeState.currentScreen;
 
@@ -122,7 +130,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
     });
   }, [runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
 
-  // Helper to transition to a new screen safely
+  // Screen transition handler
   const navigateToScreen = (nextScreenId: string) => {
     startTransition(() => {
       setSelectedOption(null);
@@ -139,7 +147,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
   const handleAction = async (action: ExperienceAction) => {
     if (isProcessing) return;
 
-    // Track CTA click
     eventTracker.trackEvent('CTA_CLICKED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
@@ -204,10 +211,10 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       { key: 'exp01.question01Answered', value: true, scope: 'global' },
     ]);
 
-    // 3. Smooth cinematic delay
+    // 3. Smooth cinematic pause before revealing the Case
     setTimeout(() => {
       navigateToScreen('screen_03_case_id');
-    }, 450);
+    }, 550);
   };
 
   // SCREEN 04: Pregunta 2
@@ -237,7 +244,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
     setTimeout(() => {
       navigateToScreen('screen_05_mirror_moment');
-    }, 450);
+    }, 550);
   };
 
   // SCREEN 07: Microcommitment
@@ -259,7 +266,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
       setTimeout(() => {
         navigateToScreen('screen_08_confirmation');
-      }, 400);
+      }, 350);
     } else {
       eventTracker.trackEvent('INVESTIGATION_DECLINED', {
         sessionId: state.session.sessionId,
@@ -274,19 +281,17 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
       setTimeout(() => {
         navigateToScreen('screen_07_declined');
-      }, 400);
+      }, 350);
     }
   };
 
   // SCREEN 09: Final de La Puerta (Completion)
   const handleFinalStep = () => {
-    // Guard against double clicks
     if (completingRef.current || isCompletedGuard) return;
     completingRef.current = true;
     setIsCompletedGuard(true);
     setIsProcessing(true);
 
-    // 1. Emit CTA Clicked
     eventTracker.trackEvent('CTA_CLICKED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
@@ -294,7 +299,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       payload: { action: 'complete_door' },
     });
 
-    // 2. Mark EXP01 as completed in memory
     const finalMemory = {
       ...memoryManagerRef.current.getExperienceMemory(),
       completed: true,
@@ -306,7 +310,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       { key: 'exp01.completedAt', value: new Date().toISOString(), scope: 'global' },
     ]);
 
-    // 3. Mark runtime state as COMPLETED
     setRuntimeState((prev) => {
       const next: ExperienceRuntimeState = {
         ...prev,
@@ -318,7 +321,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       return next;
     });
 
-    // 4. Emit EXP01_COMPLETED
     eventTracker.trackEvent('EXP01_COMPLETED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
@@ -326,7 +328,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       payload: { memory: finalMemory },
     });
 
-    // 5. Complete experience in Funnel Engine and advance to EXP_02
     onComplete(finalMemory);
   };
 
@@ -335,56 +336,63 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
   return (
     <div
       id="exp01-container"
-      className="w-full max-w-xl mx-auto flex flex-col items-center justify-center min-h-[68vh] px-4 py-8 relative text-neutral-200"
+      className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[72vh] px-4 sm:px-6 py-10 relative text-neutral-200"
     >
-      {/* SCREEN 01 — BLACK ENTRY */}
+      {/* ========================================================================= */}
+      {/* ESCENA 01 — ENTRADA (CÁMARA OSCURA & REVELACIÓN)                          */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_01_black_entry' && (
         <div
           id="screen-01-black-entry"
-          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in"
         >
-          <div className="space-y-6 max-w-lg mx-auto pt-6">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-bold animate-fade-in">
-              {EXP01_CONTENT.screen01.leadText}
+          <div className="space-y-8 max-w-lg mx-auto pt-8 sm:pt-14">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-normal transition-opacity duration-700">
+              {EXP01_CONTENT.screen01.leadText1}
             </h1>
 
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed opacity-90 transition-opacity duration-1000">
-              {EXP01_CONTENT.screen01.subText}
+            <p
+              className={`text-sm sm:text-base text-neutral-400 font-body tracking-wider transition-all duration-700 ${
+                scene01Stage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
+              {EXP01_CONTENT.screen01.leadText2}
             </p>
           </div>
 
-          <div className="w-full max-w-xs pt-4">
+          <div
+            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
+              scene01Stage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
+          >
             <PrimaryCTA
               id="cta-enter-exp01"
               onClick={handleEnterExperience}
               variant="accent"
+              showIcon={true}
             >
-              <span className="flex items-center justify-center gap-2 tracking-widest uppercase text-sm font-semibold">
-                {EXP01_CONTENT.screen01.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen01.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>
       )}
 
-      {/* SCREEN 02 — FIRST QUESTION */}
+      {/* ========================================================================= */}
+      {/* ESCENA 02 — PRIMERA PREGUNTA (DECLARACIÓN & REGISTRO)                      */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_02_first_question' && (
         <div
           id="screen-02-first-question"
-          className="w-full flex flex-col space-y-7 animate-fade-in text-left"
+          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto"
         >
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-mono tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-              PRIMERA PREGUNTA
-            </div>
-
-            <p className="text-xs sm:text-sm text-neutral-400 font-body">
-              {EXP01_CONTENT.screen02.leadText}
+            <p className="text-xs font-mono uppercase tracking-[0.2em] text-neutral-500">
+              {EXP01_CONTENT.screen02.intro1}
             </p>
-
-            <h2 className="text-xl sm:text-2xl font-serif italic font-bold text-white tracking-wide leading-snug">
+            <p className="text-sm text-neutral-400 font-body">
+              {EXP01_CONTENT.screen02.intro2}
+            </p>
+            <h2 className="text-xl sm:text-2xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2 whitespace-pre-line">
               {EXP01_CONTENT.screen02.question}
             </h2>
           </div>
@@ -400,6 +408,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                   id={`opt-q1-${opt.code.toLowerCase()}`}
                   code={opt.code}
                   selected={isSelected}
+                  isAnySelected={isAnySelected}
                   disabled={isAnySelected}
                   onClick={() => handleSelectQuestion1(opt.code)}
                 >
@@ -411,50 +420,37 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
         </div>
       )}
 
-      {/* SCREEN 03 — CASE ID REVEAL */}
+      {/* ========================================================================= */}
+      {/* ESCENA 03 — REVELACIÓN DEL CASO (EVIDENCIA SOBRIA)                         */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_03_case_id' && (
         <div
           id="screen-03-case-id"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto"
         >
-          <div className="space-y-4 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0A0A0A] text-neutral-400 text-xs font-mono tracking-widest uppercase">
-              <Shield className="w-3.5 h-3.5 text-orange-500" />
-              EXPEDIENTE INICIAL
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-serif italic font-bold text-white tracking-wide">
-              {EXP01_CONTENT.screen03.leadText}
-            </h2>
-
-            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed">
-              {EXP01_CONTENT.screen03.bodyText}
-            </p>
-          </div>
-
-          {/* Investigation Case Card */}
-          <div className="w-full p-6 rounded-2xl bg-[#0A0A0A] border border-[#1F1F1F] shadow-2xl space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-[#1A1A1A] pb-3">
-              <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 flex items-center gap-1.5">
-                <FileCheck2 className="w-3.5 h-3.5 text-orange-400" />
-                EXPEDIENTE ASIGNADO
+          {/* Piece of Evidence Layout */}
+          <div className="w-full p-8 sm:p-10 rounded-2xl bg-[#080808] border border-[#1C1C1C] shadow-[0_0_50px_rgba(0,0,0,0.8)] space-y-6">
+            <div className="flex items-center justify-between border-b border-[#161616] pb-4">
+              <span className="text-[10px] font-mono tracking-[0.25em] text-neutral-500 uppercase">
+                {EXP01_CONTENT.screen03.label}
               </span>
-              <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                ACTIVO
+              <span className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-orange-400 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                {EXP01_CONTENT.screen03.status}
               </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1">
-              <div>
-                <p className="text-xs text-neutral-500 uppercase font-mono">Identificador de Caso</p>
-                <div className="pt-1">
-                  <CaseId code={caseId} />
-                </div>
-              </div>
-              <div className="text-right sm:text-right">
-                <p className="text-xs text-neutral-500 uppercase font-mono">Registro</p>
-                <p className="text-xs font-mono text-neutral-300">DATO 01 REGISTRADO</p>
-              </div>
+            <div className="py-4 space-y-2">
+              <span className="font-mono text-2xl sm:text-3xl tracking-[0.2em] font-semibold text-white">
+                #{caseId}
+              </span>
+            </div>
+
+            <div className="border-t border-[#161616] pt-4 flex items-center justify-between">
+              <span className="text-xs font-mono text-neutral-400">
+                {EXP01_CONTENT.screen03.footnote}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
             </div>
           </div>
 
@@ -463,33 +459,30 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               id="cta-caseid-continue"
               onClick={() => navigateToScreen('screen_04_second_question')}
               variant="accent"
+              showIcon={true}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-sm font-semibold">
-                {EXP01_CONTENT.screen03.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen03.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>
       )}
 
-      {/* SCREEN 04 — SECOND QUESTION */}
+      {/* ========================================================================= */}
+      {/* ESCENA 04 — SEGUNDA PREGUNTA (SEGUNDO DATO)                               */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_04_second_question' && (
         <div
           id="screen-04-second-question"
-          className="w-full flex flex-col space-y-7 animate-fade-in text-left"
+          className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto"
         >
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-mono tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-              SEGUNDA PREGUNTA
-            </div>
-
-            <p className="text-xs sm:text-sm text-neutral-400 font-body">
-              {EXP01_CONTENT.screen04.leadText}
+            <p className="text-xs font-mono uppercase tracking-[0.2em] text-neutral-500">
+              {EXP01_CONTENT.screen04.intro1}
             </p>
-
-            <h2 className="text-xl sm:text-2xl font-serif italic font-bold text-white tracking-wide leading-snug">
+            <p className="text-sm text-neutral-400 font-body">
+              {EXP01_CONTENT.screen04.intro2}
+            </p>
+            <h2 className="text-xl sm:text-2xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2">
               {EXP01_CONTENT.screen04.question}
             </h2>
           </div>
@@ -505,6 +498,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                   id={`opt-q2-${opt.code.toLowerCase()}`}
                   code={opt.code}
                   selected={isSelected}
+                  isAnySelected={isAnySelected}
                   disabled={isAnySelected}
                   onClick={() => handleSelectQuestion2(opt.code)}
                 >
@@ -516,29 +510,25 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
         </div>
       )}
 
-      {/* SCREEN 05 — MIRROR MOMENT */}
+      {/* ========================================================================= */}
+      {/* ESCENA 05 — EL ESPEJO (MOMENTO ÍNTIMO & QUIEBRE)                          */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_05_mirror_moment' && (
         <div
           id="screen-05-mirror-moment"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
         >
-          <div className="space-y-5 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0A0A0A] text-neutral-400 text-xs font-mono tracking-widest uppercase">
-              <Eye className="w-3.5 h-3.5 text-orange-400" />
-              OBSERVACIÓN
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-serif italic font-bold text-white tracking-wide">
+          <div className="space-y-6 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
+            <h2 className="text-2xl sm:text-3xl font-serif italic font-normal text-white tracking-wide">
               {EXP01_CONTENT.screen05.title}
             </h2>
 
-            <div className="space-y-4 text-sm sm:text-base text-neutral-300 font-body leading-relaxed text-left p-5 rounded-2xl bg-[#0A0A0A] border border-[#1A1A1A]">
-              <p>{EXP01_CONTENT.screen05.paragraph1}</p>
-              <p className="text-white font-medium">{EXP01_CONTENT.screen05.paragraph2}</p>
-            </div>
+            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed">
+              {EXP01_CONTENT.screen05.paragraph1}
+            </p>
 
-            <p className="text-xs uppercase font-mono tracking-widest text-orange-400 font-semibold pt-2">
-              {EXP01_CONTENT.screen05.cliffhanger}
+            <p className="text-base sm:text-lg text-white font-serif italic leading-relaxed border-l-2 border-orange-500/60 pl-4 py-1">
+              {EXP01_CONTENT.screen05.paragraph2}
             </p>
           </div>
 
@@ -547,35 +537,32 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               id="cta-mirror-continue"
               onClick={() => navigateToScreen('screen_06_investigation_activation')}
               variant="accent"
+              showIcon={true}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-sm font-semibold">
-                {EXP01_CONTENT.screen05.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen05.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>
       )}
 
-      {/* SCREEN 06 — INVESTIGATION ACTIVATION */}
+      {/* ========================================================================= */}
+      {/* ESCENA 06 — ACTIVACIÓN (PREPARACIÓN PARA LA VERDAD)                        */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_06_investigation_activation' && (
         <div
           id="screen-06-investigation-activation"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
         >
-          <div className="space-y-5 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-mono tracking-widest uppercase">
-              <Lock className="w-3.5 h-3.5" />
-              ANÁLISIS DE PATRÓN
-            </div>
-
-            <div className="space-y-4 text-sm sm:text-base text-neutral-300 font-body leading-relaxed text-left p-6 rounded-2xl bg-[#0A0A0A] border border-[#1A1A1A]">
-              <p>{EXP01_CONTENT.screen06.paragraph1}</p>
-              <p className="text-neutral-400">{EXP01_CONTENT.screen06.paragraph2}</p>
-              <p className="text-white font-medium border-t border-[#1A1A1A] pt-3">
-                {EXP01_CONTENT.screen06.paragraph3}
-              </p>
-            </div>
+          <div className="space-y-5 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
+            <p className="text-sm sm:text-base text-neutral-300 font-body leading-relaxed">
+              {EXP01_CONTENT.screen06.paragraph1}
+            </p>
+            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed">
+              {EXP01_CONTENT.screen06.paragraph2}
+            </p>
+            <p className="text-base sm:text-lg text-white font-serif italic leading-relaxed pt-2 border-t border-[#181818]">
+              {EXP01_CONTENT.screen06.paragraph3}
+            </p>
           </div>
 
           <div className="w-full max-w-xs">
@@ -591,44 +578,37 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
                 navigateToScreen('screen_07_microcommitment');
               }}
               variant="accent"
+              showIcon={true}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-sm font-semibold">
-                {EXP01_CONTENT.screen06.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen06.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>
       )}
 
-      {/* SCREEN 07 — MICROCOMMITMENT */}
+      {/* ========================================================================= */}
+      {/* ESCENA 07 — MICROCOMPROMISO (LA DECISIÓN CRUCIAL)                          */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_07_microcommitment' && (
         <div
           id="screen-07-microcommitment"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
         >
           <div className="space-y-4 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-mono tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-              COMPROMISO
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-serif italic font-bold text-white tracking-wide leading-snug">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug">
               {EXP01_CONTENT.screen07.question}
             </h2>
           </div>
 
-          <div className="w-full max-w-md space-y-3.5">
+          <div className="w-full max-w-md space-y-4">
             <PrimaryCTA
               id="cta-microcommitment-yes"
               onClick={() => handleMicrocommitment(true)}
               variant="accent"
+              showIcon={true}
               disabled={isProcessing}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-sm font-semibold">
-                <Check className="w-4 h-4" />
-                {EXP01_CONTENT.screen07.options[0].label}
-              </span>
+              {EXP01_CONTENT.screen07.options[0].label}
             </PrimaryCTA>
 
             <SecondaryCTA
@@ -636,7 +616,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               onClick={() => handleMicrocommitment(false)}
               disabled={isProcessing}
             >
-              <span className="text-xs uppercase font-mono tracking-wider text-neutral-400">
+              <span className="text-xs font-mono tracking-widest text-neutral-500 uppercase hover:text-neutral-300 transition-colors">
                 {EXP01_CONTENT.screen07.options[1].label}
               </span>
             </SecondaryCTA>
@@ -644,22 +624,20 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
         </div>
       )}
 
-      {/* SCREEN 07 DECLINED — SAFE PAUSE STATE */}
+      {/* ========================================================================= */}
+      {/* ESCENA 07 DECLINED — RAMA DE PAUSA SEGURA                                 */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_07_declined' && (
         <div
           id="screen-07-declined"
-          className="w-full flex flex-col items-center text-center space-y-7 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-lg mx-auto"
         >
           <div className="space-y-4 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0A0A0A] text-neutral-400 text-xs font-mono tracking-widest uppercase">
-              SESIÓN PAUSADA
-            </div>
-
-            <h2 className="text-2xl font-serif italic font-bold text-white">
+            <h2 className="text-2xl font-serif italic font-normal text-white">
               {EXP01_CONTENT.screen07Declined.title}
             </h2>
 
-            <p className="text-sm sm:text-base text-neutral-300 font-body leading-relaxed p-5 rounded-2xl bg-[#0A0A0A] border border-[#1A1A1A]">
+            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed p-6 rounded-2xl bg-[#080808] border border-[#161616]">
               {EXP01_CONTENT.screen07Declined.message}
             </p>
           </div>
@@ -669,8 +647,9 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               id="cta-declined-resume"
               onClick={() => handleMicrocommitment(true)}
               variant="accent"
+              showIcon={false}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-xs font-semibold">
+              <span className="flex items-center justify-center gap-2">
                 <RotateCcw className="w-3.5 h-3.5" />
                 {EXP01_CONTENT.screen07Declined.resumeLabel}
               </span>
@@ -679,11 +658,10 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
             <SecondaryCTA
               id="cta-declined-exit"
               onClick={() => {
-                // Preserves session cleanly without erasing
                 window.location.reload();
               }}
             >
-              <span className="text-xs uppercase font-mono tracking-wider text-neutral-500">
+              <span className="text-xs font-mono tracking-widest text-neutral-500 uppercase">
                 {EXP01_CONTENT.screen07Declined.exitLabel}
               </span>
             </SecondaryCTA>
@@ -691,92 +669,76 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
         </div>
       )}
 
-      {/* SCREEN 08 — CONFIRMATION & CASE ID */}
+      {/* ========================================================================= */}
+      {/* ESCENA 08 — CONFIRMACIÓN (INVESTIGACIÓN EN CURSO)                         */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_08_confirmation' && (
         <div
           id="screen-08-confirmation"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto"
         >
-          <div className="space-y-3 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-widest uppercase">
-              <Check className="w-3.5 h-3.5" />
-              CONFIRMADO
+          <div className="w-full p-8 rounded-2xl bg-[#080808] border border-orange-500/30 shadow-[0_0_40px_rgba(234,88,12,0.08)] space-y-5">
+            <div className="flex items-center justify-between border-b border-[#161616] pb-4">
+              <span className="text-[10px] font-mono tracking-[0.25em] text-neutral-500 uppercase">
+                {EXP01_CONTENT.screen08.label}
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-orange-400 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                {EXP01_CONTENT.screen08.status}
+              </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-serif italic font-bold text-white tracking-wide">
-              {EXP01_CONTENT.screen08.leadText}
-            </h2>
+            <div className="py-2">
+              <span className="font-mono text-2xl sm:text-3xl tracking-[0.2em] font-semibold text-white">
+                #{caseId}
+              </span>
+            </div>
 
-            <p className="text-sm sm:text-base text-neutral-400 font-body">
-              {EXP01_CONTENT.screen08.subText}
+            <p className="text-sm font-body text-neutral-400 border-t border-[#161616] pt-4">
+              {EXP01_CONTENT.screen08.body}
             </p>
           </div>
 
-          <div className="w-full p-6 rounded-2xl bg-[#0A0A0A] border border-orange-500/30 shadow-[0_0_30px_rgba(234,88,12,0.08)] space-y-3 text-left">
-            <div className="flex items-center justify-between border-b border-[#1A1A1A] pb-3">
-              <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500">
-                EXPEDIENTE ACTIVO
-              </span>
-              <span className="text-[10px] font-mono text-orange-400 uppercase tracking-widest font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                {EXP01_CONTENT.screen08.statusText}
-              </span>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between">
-              <CaseId code={caseId} />
-              <span className="text-xs font-mono text-neutral-400">FASE 01 LISTA</span>
-            </div>
-          </div>
-
-          <div className="w-full max-w-xs pt-2">
+          <div className="w-full max-w-xs">
             <PrimaryCTA
               id="cta-confirm-continue"
               onClick={() => navigateToScreen('screen_09_final')}
               variant="accent"
+              showIcon={true}
             >
-              <span className="flex items-center justify-center gap-2 uppercase tracking-wider text-sm font-semibold">
-                {EXP01_CONTENT.screen08.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen08.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>
       )}
 
-      {/* SCREEN 09 — FINAL DE LA PUERTA (COMPLETION) */}
+      {/* ========================================================================= */}
+      {/* ESCENA 09 — FINAL DE LA PUERTA (UMBRAL A LA EXPERIENCIA 02)              */}
+      {/* ========================================================================= */}
       {currentScreenId === 'screen_09_final' && (
         <div
           id="screen-09-final"
-          className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto"
         >
-          <div className="space-y-4 max-w-lg mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-mono tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-              EXPEDIENTE PREPARADO
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-serif italic font-bold text-white tracking-wide leading-snug">
-              {EXP01_CONTENT.screen09.leadText}
-            </h2>
-
-            <p className="text-sm sm:text-base text-neutral-300 font-body leading-relaxed p-5 rounded-2xl bg-[#0A0A0A] border border-[#1A1A1A]">
-              {EXP01_CONTENT.screen09.subText}
+          <div className="space-y-6 text-left p-6 sm:p-8 rounded-2xl bg-[#080808] border border-[#161616] w-full">
+            <p className="text-base sm:text-lg font-serif italic text-white leading-relaxed">
+              {EXP01_CONTENT.screen09.paragraph1}
+            </p>
+            <p className="text-sm sm:text-base text-neutral-400 font-body leading-relaxed border-t border-[#161616] pt-4">
+              {EXP01_CONTENT.screen09.paragraph2}
             </p>
           </div>
 
-          <div className="w-full max-w-md pt-4">
+          <div className="w-full max-w-md pt-2">
             <PrimaryCTA
               id="cta-complete-exp01"
               onClick={handleFinalStep}
               variant="accent"
+              showIcon={true}
               isLoading={isProcessing}
               disabled={isCompletedGuard}
             >
-              <span className="flex items-center justify-center gap-2 tracking-widest uppercase text-sm font-bold">
-                {EXP01_CONTENT.screen09.ctaLabel}
-                <ArrowRight className="w-4 h-4" />
-              </span>
+              {EXP01_CONTENT.screen09.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>

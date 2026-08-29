@@ -7,14 +7,14 @@ export interface EXP01Option {
 
 export const EXP01_CONTENT = {
   screen01: {
-    leadText: 'HAY ALGO QUE QUIERO MOSTRARTE.',
-    subText: 'PERO ANTES NECESITO QUE HAGAS ALGO.',
+    leadText1: 'HAY ALGO QUE QUIERO MOSTRARTE.',
+    leadText2: 'PERO ANTES NECESITO QUE HAGAS ALGO.',
     ctaLabel: 'ENTRAR',
   },
   screen02: {
-    eyebrow: 'EXPEDIENTE &bull; PASO 01',
-    leadText: 'Antes de seguir, quiero hacerte una pregunta.',
-    question: 'Cuando tu pareja cambia de ánimo contigo, ¿qué haces normalmente?',
+    intro1: 'Antes de seguir...',
+    intro2: 'Necesito preguntarte algo.',
+    question: 'Cuando tu pareja cambia de ánimo contigo,\n¿qué haces normalmente?',
     options: [
       {
         id: 'opt_a',
@@ -37,17 +37,17 @@ export const EXP01_CONTENT = {
         label: 'A veces no sé qué hacer.',
       },
     ] as EXP01Option[],
+    evidenceTag: 'DATO 01 REGISTRADO',
   },
   screen03: {
-    eyebrow: 'REGISTRO DE CASO',
-    leadText: 'Bien. Ya tenemos el primer dato.',
-    bodyText: 'Voy a guardar tus respuestas porque las vamos a necesitar más adelante.',
-    badgeLabel: 'EXPEDIENTE ASIGNADO',
+    label: 'CASO',
+    status: 'INVESTIGACIÓN ABIERTA',
+    footnote: 'Primer dato registrado.',
     ctaLabel: 'CONTINUAR',
   },
   screen04: {
-    eyebrow: 'EXPEDIENTE &bull; PASO 02',
-    leadText: 'Ahora piensa en la última vez que sentiste que algo estaba mal entre ustedes.',
+    intro1: 'Ahora necesito otro dato.',
+    intro2: 'Piensa en la última vez que sentiste que algo estaba mal entre ustedes.',
     question: '¿Qué fue lo primero que pensaste?',
     options: [
       {
@@ -71,56 +71,51 @@ export const EXP01_CONTENT = {
         label: '“No entiendo qué está pasando.”',
       },
     ] as EXP01Option[],
+    evidenceTag: 'DATO 02 REGISTRADO',
   },
   screen05: {
-    eyebrow: 'OBSERVACIÓN',
     title: 'Interesante.',
     paragraph1: 'Porque probablemente has intentado resolver muchas de estas situaciones mirando lo que pasó.',
     paragraph2: 'Pero quizá hay algo que no has estado mirando.',
-    cliffhanger: '¿QUIERES SEGUIR?',
     ctaLabel: 'CONTINUAR',
   },
   screen06: {
-    eyebrow: 'ANÁLISIS PREVIO',
     paragraph1: 'Tus respuestas ya forman un pequeño patrón.',
     paragraph2: 'Pero necesito una cosa más.',
     paragraph3: 'Quiero que seas completamente honesto en la siguiente respuesta.',
     ctaLabel: 'ESTOY LISTO',
   },
   screen07: {
-    eyebrow: 'COMPROMISO',
     question: '¿Estás dispuesto a descubrir algo sobre tu relación que quizá nunca habías considerado?',
     options: [
       {
         id: 'opt_yes',
         code: 'YES',
-        label: 'SÍ, QUIERO SABERLO',
+        label: 'Sí, quiero saberlo',
       },
       {
         id: 'opt_no',
         code: 'NO',
-        label: 'PREFIERO NO SEGUIR',
+        label: 'Prefiero no seguir',
       },
     ] as EXP01Option[],
   },
   screen07Declined: {
-    eyebrow: 'SESIÓN PAUSADA',
     title: 'Está bien.',
     message: 'Esta investigación seguirá aquí si algún día quieres continuarla.',
     resumeLabel: 'ESTOY LISTO PARA CONTINUAR',
     exitLabel: 'SALIR',
   },
   screen08: {
-    eyebrow: 'CONFIRMACIÓN',
-    leadText: 'Entonces continuemos.',
-    subText: 'Tu caso acaba de empezar.',
-    statusText: 'INVESTIGACIÓN EN CURSO',
+    label: 'CASO',
+    status: 'INVESTIGACIÓN EN CURSO',
+    body: 'Ya tenemos suficiente para continuar.',
     ctaLabel: 'CONTINUAR',
   },
   screen09: {
-    eyebrow: 'EXPEDIENTE INICIAL COMPLETADO',
-    leadText: 'En la siguiente parte vamos a mirar algo que probablemente has pasado por alto.',
-    subText: 'Y cuando lo veas, algunas situaciones de tu relación podrían empezar a tener mucho más sentido.',
+    paragraph1: 'En la siguiente parte vamos a mirar algo que probablemente has pasado por alto.',
+    paragraph2: 'Y cuando lo veas, algunas situaciones de tu relación podrían empezar a tener mucho más sentido.',
     ctaLabel: 'VER EL SIGUIENTE PASO',
   },
 };
+

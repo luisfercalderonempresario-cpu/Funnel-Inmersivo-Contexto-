@@ -66,37 +66,30 @@ export const AppShell: React.FC = () => {
 
         {isLoading && <LoadingScreen />}
 
-        {/* Global Sophisticated Dark Top Bar */}
+        {/* Discreet Narrative Header */}
         <header
           id="funnel-top-bar"
-          className="w-full border-b border-[#1A1A1A] bg-[#0A0A0A]/95 backdrop-blur-md sticky top-0 z-40 safe-area-top"
+          className="w-full border-b border-[#141414] bg-[#050505]/90 backdrop-blur-md sticky top-0 z-40 safe-area-top"
         >
-          <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
-            {/* Left: Brand Identity with Orange Glow */}
-            <div className="flex items-center gap-3">
-              <div
-                className="w-2.5 h-2.5 rounded-full bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.6)]"
+          <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
+            {/* Left: Minimalist Brand Identifier */}
+            <div className="flex items-center gap-2.5">
+              <span
+                className="w-2 h-2 rounded-full bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.6)]"
                 aria-hidden="true"
               />
-              <h1 className="text-xs uppercase tracking-[0.3em] font-medium text-white">
-                Contexto™ Foundation <span className="text-orange-600/80 font-mono text-[11px]">V1.0</span>
-              </h1>
+              <span className="text-xs tracking-[0.25em] font-mono uppercase text-neutral-300">
+                Contexto
+              </span>
             </div>
 
-            {/* Right: Case ID, Session & Audio HUD */}
-            <div className="flex items-center gap-3 sm:gap-6">
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-mono">
-                    Session
-                  </span>
-                  <span className="font-mono text-[11px] text-neutral-300">
-                    {state.session.sessionId.slice(0, 8)}...
-                  </span>
+            {/* Right: Audio control and (only outside EXP01) Case ID */}
+            <div className="flex items-center gap-4">
+              {currentExperienceId !== 'exp01' && (
+                <div className="hidden sm:block">
+                  <CaseId code={state.session.caseId} />
                 </div>
-                <div className="hidden sm:block h-6 w-px bg-neutral-800" />
-                <CaseId code={state.session.caseId} />
-              </div>
+              )}
 
               <AudioController
                 preferences={state.preferences}
@@ -105,15 +98,17 @@ export const AppShell: React.FC = () => {
             </div>
           </div>
 
-          {/* Progress bar below header */}
-          <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-1">
-            <ProgressIndicator
-              currentExperience={state.progress.currentExperience}
-              completedExperiences={state.progress.completedExperiences}
-              percentage={state.progress.completionPercentage}
-              onSelectExperience={(id) => goToExperience(id)}
-            />
-          </div>
+          {/* Progress bar: Hidden in EXP_01 to avoid SaaS checklist feeling */}
+          {currentExperienceId !== 'exp01' && (
+            <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-1">
+              <ProgressIndicator
+                currentExperience={state.progress.currentExperience}
+                completedExperiences={state.progress.completedExperiences}
+                percentage={state.progress.completionPercentage}
+                onSelectExperience={(id) => goToExperience(id)}
+              />
+            </div>
+          )}
         </header>
 
         {/* Experience Content Viewport with Transition */}
@@ -168,25 +163,17 @@ export const AppShell: React.FC = () => {
           </Transition>
         </ExperienceContainer>
 
-        {/* Sophisticated Dark Footer */}
-        <footer className="w-full h-14 border-t border-[#1A1A1A] flex items-center justify-between px-4 sm:px-8 bg-[#080808] z-20 safe-area-bottom">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                Engine: Ready
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                State: Sync
-              </span>
-            </div>
+        {/* Discreet Silent Footer */}
+        <footer className="w-full h-12 border-t border-[#121212] flex items-center justify-between px-4 sm:px-8 bg-[#040404] z-20 safe-area-bottom">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+            <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-500">
+              EXPEDIENTE CONFIDENCIAL
+            </span>
           </div>
 
-          <p className="font-mono text-[9px] text-neutral-500 uppercase tracking-widest">
-            Contexto™ Foundation
+          <p className="font-mono text-[9px] text-neutral-600 uppercase tracking-widest">
+            Contexto™
           </p>
         </footer>
 
