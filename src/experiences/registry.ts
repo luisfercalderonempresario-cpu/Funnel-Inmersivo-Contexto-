@@ -5,7 +5,7 @@ import { EXP02 } from './exp02/EXP02';
 import { EXP03 } from './exp03/EXP03';
 import { EXP04 } from './exp04/EXP04';
 import { EXP05 } from './exp05/EXP05';
-import { EXP06Placeholder } from './exp06/EXP06Placeholder';
+import { EXP06 } from './exp06/EXP06';
 import { EXP07Placeholder } from './exp07/EXP07Placeholder';
 import { EXP08Placeholder } from './exp08/EXP08Placeholder';
 
@@ -76,8 +76,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'Contexto™',
     number: 6,
     description: 'Presentación de la arquitectura conceptual de Contexto™.',
-    presentationMode: 'standard',
-    component: EXP06Placeholder,
+    presentationMode: 'immersive',
+    component: EXP06,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp06'),
     nextExperience: 'exp07',
