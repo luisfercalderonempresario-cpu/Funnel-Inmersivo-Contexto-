@@ -11,6 +11,8 @@ import {
   Cpu,
   Database,
   Layers,
+  Clock,
+  Zap,
 } from 'lucide-react';
 import { FunnelState, ExperienceId } from '../../engine/state/types';
 import { FunnelEventLogEntry } from '../../engine/events/types';
@@ -22,6 +24,8 @@ import {
 } from '../../engine/experience/experienceState';
 import { evaluateCondition } from '../../engine/experience/conditionEvaluator';
 import { ConditionOperator } from '../../engine/experience/types';
+import { narrativePacingManager } from '../../engine/pacing/pacingManager';
+import { NarrativePacingDebugState } from '../../engine/pacing/types';
 
 interface DebugPanelProps {
   state: FunnelState;
@@ -43,8 +47,11 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
   onCorruptSession,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'engine' | 'state' | 'memory' | 'events' | 'tools'>('engine');
+  const [activeTab, setActiveTab] = useState<'engine' | 'pacing' | 'state' | 'memory' | 'events' | 'tools'>('engine');
   const [logs, setLogs] = useState<FunnelEventLogEntry[]>([]);
+  const [pacingDebug, setPacingDebug] = useState<NarrativePacingDebugState>(() =>
+    narrativePacingManager.getDebugState()
+  );
 
   // Condition Evaluator Playground state
   const [testField, setTestField] = useState('testAnswer');
@@ -60,6 +67,14 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
     setLogs(eventTracker.getLogs());
     const unsubscribe = eventTracker.subscribe(() => {
       setLogs(eventTracker.getLogs());
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    setPacingDebug(narrativePacingManager.getDebugState());
+    const unsubscribe = narrativePacingManager.subscribe(() => {
+      setPacingDebug({ ...narrativePacingManager.getDebugState() });
     });
     return unsubscribe;
   }, []);
@@ -105,6 +120,10 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
     window.location.reload();
   };
 
+  const handleToggleFastPacing = () => {
+    narrativePacingManager.toggleFastMode();
+  };
+
   return (
     <div id="funnel-debug-hud" className="fixed bottom-3 right-3 z-50 font-mono text-xs">
       {/* Toggle button */}
@@ -118,6 +137,11 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
         <span className="font-semibold uppercase tracking-wider text-[10px]">
           Engine HUD {activeTestMode ? '(EXP_TEST)' : ''}
         </span>
+        {pacingDebug.isFastMode && (
+          <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[9px] font-bold">
+            FAST
+          </span>
+        )}
         {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
       </button>
 
@@ -125,15 +149,15 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
       {isOpen && (
         <div
           id="debug-hud-panel"
-          className="absolute bottom-12 right-0 w-80 sm:w-[420px] max-h-[85vh] flex flex-col rounded-xl bg-[#0A0A0A] border border-[#1A1A1A] shadow-2xl backdrop-blur-xl text-neutral-300 overflow-hidden"
+          className="absolute bottom-12 right-0 w-80 sm:w-[440px] max-h-[85vh] flex flex-col rounded-xl bg-[#0A0A0A] border border-[#1A1A1A] shadow-2xl backdrop-blur-xl text-neutral-300 overflow-hidden"
         >
           {/* Header */}
           <div className="p-2.5 border-b border-[#1A1A1A] flex items-center justify-between bg-[#080808]">
             <span className="font-bold text-orange-500 uppercase tracking-widest text-[10px] flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5" /> Experience Engine V1.0
+              <Cpu className="w-3.5 h-3.5" /> Contexto Engine
             </span>
             <div className="flex gap-1 overflow-x-auto">
-              {(['engine', 'memory', 'state', 'events', 'tools'] as const).map((tab) => (
+              {(['engine', 'pacing', 'memory', 'state', 'events', 'tools'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -152,6 +176,95 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
 
           {/* Body */}
           <div className="p-3 overflow-y-auto max-h-[70vh] space-y-3">
+            {/* PACING TAB */}
+            {activeTab === 'pacing' && (
+              <div className="space-y-3">
+                <div className="p-2.5 rounded-lg border border-orange-500/30 bg-orange-950/20 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] font-bold text-orange-400 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-orange-400" /> Fast Pacing Mode (Debug Only)
+                    </p>
+                    <p className="text-[9px] text-neutral-400">
+                      {pacingDebug.isFastMode
+                        ? 'Aceleración activa: tiempos reducidos para pruebas'
+                        : 'Pacing normal activo: tiempos cinematográficos'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleFastPacing}
+                    className={`px-2.5 py-1 rounded font-bold text-[10px] uppercase transition-colors ${
+                      pacingDebug.isFastMode
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-[#0D0D0D] border border-orange-500 text-orange-400 hover:bg-orange-500/20'
+                    }`}
+                  >
+                    {pacingDebug.isFastMode ? 'Desactivar' : 'Activar'}
+                  </button>
+                </div>
+
+                <div className="p-2.5 rounded bg-[#0D0D0D] border border-[#1A1A1A] space-y-2 text-[11px]">
+                  <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Estado de Pacing Narrativo
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Experiencia</span>
+                      <span className="text-orange-400 font-bold">{pacingDebug.experienceId}</span>
+                    </div>
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Pantalla</span>
+                      <span className="text-amber-400 font-mono font-bold truncate block">{pacingDebug.screenId}</span>
+                    </div>
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Beat / Stage</span>
+                      <span className="text-emerald-400 font-bold">
+                        Etapa {pacingDebug.currentStage} de {pacingDebug.totalStages}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Ritmo (PacingMode)</span>
+                      <span className="text-cyan-400 font-bold">{pacingDebug.currentPacing}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1 text-[10px]">
+                    <div className="flex items-center justify-between border-t border-[#181818] pt-1.5">
+                      <span className="text-neutral-400">Pausa Narrativa Activa</span>
+                      <span className={`font-bold ${pacingDebug.isPaused ? 'text-amber-400' : 'text-neutral-500'}`}>
+                        {pacingDebug.isPaused ? 'SÍ (Procesamiento)' : 'NO'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">CTA Bloqueado</span>
+                      <span className={`font-bold ${pacingDebug.isCTABlocked ? 'text-rose-400' : 'text-emerald-400'}`}>
+                        {pacingDebug.isCTABlocked ? 'SÍ (Esperando procesar)' : 'NO (Disponible)'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">Opciones Reveladas</span>
+                      <span className={`font-bold ${pacingDebug.isOptionsAvailable ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                        {pacingDebug.isOptionsAvailable ? 'SÍ' : 'NO'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">Tiempo en Beat Actual</span>
+                      <span className="text-neutral-300 font-mono">
+                        {(pacingDebug.elapsedTimeMs / 1000).toFixed(1)}s
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">Modo Reducción Movimiento</span>
+                      <span className={`font-bold ${pacingDebug.reducedMotion ? 'text-amber-400' : 'text-neutral-500'}`}>
+                        {pacingDebug.reducedMotion ? 'ACTIVO' : 'INACTIVO'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ENGINE TAB */}
             {activeTab === 'engine' && (
               <div className="space-y-3">

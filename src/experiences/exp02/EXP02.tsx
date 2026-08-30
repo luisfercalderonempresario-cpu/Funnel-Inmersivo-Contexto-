@@ -1,3 +1,4 @@
+// EXP_02 — EL ESPEJO (Narrative Pacing System V1.0 Integration)
 import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
@@ -14,6 +15,7 @@ import { eventTracker } from '../../engine/events/eventTracker';
 import { ChoiceButton } from '../../components/ui/ChoiceButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { Volume2, VolumeX } from 'lucide-react';
+import { useNarrativePacing, CTAReveal, NarrativeBeat, narrativePacingManager } from '../../engine/pacing';
 
 export const EXP02: React.FC<ExperienceComponentProps> = ({
   caseId,
@@ -92,155 +94,123 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
-  // Screen progressive stage reveal
-  const [screenStage, setScreenStage] = useState<number>(1);
-  const [chatMessageCount, setChatMessageCount] = useState<number>(1);
+  const currentScreenId = runtimeState.currentScreen;
+
+  // Narrative Beats Map for EXP_02
+  const currentBeats: NarrativeBeat[] = useMemo(() => {
+    switch (currentScreenId) {
+      case 'screen_01_transition':
+        return [
+          { id: 'leadCase', stage: 1, pacing: 'SHORT', label: 'Caso ID Eyebrow' },
+          { id: 'leadPause', stage: 2, pacing: 'MEDIUM', label: 'Sigamos' },
+          { id: 'leadTexts', stage: 3, pacing: 'LONG', label: 'Texto narrativo' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_02_situation':
+        return [
+          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Es de noche' },
+          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'Estás hablando con tu pareja' },
+          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Pero de repente' },
+          { id: 'quote', stage: 4, pacing: 'REVELATION', label: 'Frase dominante flotante' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_03_immediate_response':
+        return [
+          { id: 'question', stage: 1, pacing: 'MEDIUM', label: 'Pregunta 1' },
+          { id: 'options', stage: 2, pacing: 'MANUAL', label: 'Opciones Pregunta 1', isOptions: true },
+        ];
+      case 'screen_04_conversation':
+        return [
+          { id: 'msg1', stage: 1, pacing: 'MEDIUM', label: 'Mensaje 1 (TÚ)' },
+          { id: 'msg2', stage: 2, pacing: 'MEDIUM', label: 'Mensaje 2 (ELLA)' },
+          { id: 'msg3', stage: 3, pacing: 'MEDIUM', label: 'Mensaje 3 (TÚ)' },
+          { id: 'msg4', stage: 4, pacing: 'MEDIUM', label: 'Mensaje 4 (ELLA)' },
+          { id: 'msg5', stage: 5, pacing: 'MEDIUM', label: 'Mensaje 5 (TÚ)' },
+          { id: 'msg6', stage: 6, pacing: 'LONG', label: 'Mensaje 6 (ELLA)' },
+          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_05_pattern':
+        return [
+          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Observación 1' },
+          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'Observación 2' },
+          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Observación 3' },
+          { id: 'dominant', stage: 4, pacing: 'REVELATION', label: 'Texto dominante quiebre' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_06_mirror':
+        return [
+          { id: 'question', stage: 1, pacing: 'MEDIUM', label: 'Pregunta 2' },
+          { id: 'options', stage: 2, pacing: 'MANUAL', label: 'Opciones Pregunta 2', isOptions: true },
+        ];
+      case 'screen_07a_record':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow Tu Registro' },
+          { id: 'quote', stage: 2, pacing: 'LONG', label: 'Cita personalizada Andrés' },
+          { id: 'followUp', stage: 3, pacing: 'MEDIUM', label: 'Follow up narrativo' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_07b_searching':
+        return [
+          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Reflexión 1' },
+          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Reflexión 2' },
+          { id: 'q1', stage: 3, pacing: 'SHORT', label: '¿Qué pasó?' },
+          { id: 'q2', stage: 4, pacing: 'SHORT', label: '¿Qué hice?' },
+          { id: 'q3', stage: 5, pacing: 'SHORT', label: '¿Qué necesita?' },
+          { id: 'q4', stage: 6, pacing: 'MEDIUM', label: '¿Cómo lo arreglo?' },
+          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_07c_unseen':
+        return [
+          { id: 'beat1', stage: 1, pacing: 'LONG', label: 'Lo que no puedes revisar' },
+          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Lo que pasaba con ella' },
+          { id: 'beat3', stage: 3, pacing: 'REVELATION', label: 'Antes de llegar a la conversación' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_07d_new_question':
+        return [
+          { id: 'lead', stage: 1, pacing: 'MEDIUM', label: 'La nueva perspectiva' },
+          { id: 'before', stage: 2, pacing: 'MEDIUM', label: 'Pregunta anterior' },
+          { id: 'after', stage: 3, pacing: 'REVELATION', label: 'La nueva pregunta dominante' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_07e_participation':
+        return [
+          { id: 'question', stage: 1, pacing: 'MEDIUM', label: 'Pregunta 3' },
+          { id: 'options', stage: 2, pacing: 'MANUAL', label: 'Opciones Pregunta 3', isOptions: true },
+        ];
+      case 'screen_08_microrevelation':
+        return [
+          { id: 'branch', stage: 1, pacing: 'MEDIUM', label: 'Rama personalizada' },
+          { id: 'pivot', stage: 2, pacing: 'LONG', label: 'El problema real' },
+          { id: 'pause1', stage: 3, pacing: 'MEDIUM', label: 'No falta de intención' },
+          { id: 'pause2', stage: 4, pacing: 'LONG', label: 'La historia completa' },
+          { id: 'pause3', stage: 5, pacing: 'MEDIUM', label: 'Intención vs información' },
+          { id: 'punch', stage: 6, pacing: 'REVELATION', label: 'Falta información quiebre' },
+          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_09_closing':
+        return [
+          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Cierre beat 1' },
+          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'La pieza que falta' },
+          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'Transición hacia EXP_03' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      default:
+        return [{ id: 'default', stage: 1, pacing: 'MANUAL', isCTA: true, isOptions: true }];
+    }
+  }, [currentScreenId]);
+
+  // Integrated Narrative Pacing Hook
+  const { stage: screenStage, isCTARevealed, isOptionsRevealed } = useNarrativePacing({
+    experienceId: 'exp02',
+    screenId: currentScreenId,
+    beats: currentBeats,
+  });
 
   // Synchronize runtime persistence
   useEffect(() => {
     persistExperienceRuntimeState(runtimeState);
   }, [runtimeState]);
-
-  // Handle progressive staged reveals per screen
-  useEffect(() => {
-    setScreenStage(1);
-    const screen = runtimeState.currentScreen;
-
-    if (screen === 'screen_01_transition') {
-      const t1 = setTimeout(() => setScreenStage(2), 600);
-      const t2 = setTimeout(() => setScreenStage(3), 1200);
-      const t3 = setTimeout(() => setScreenStage(4), 1800);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else if (screen === 'screen_02_situation') {
-      const t1 = setTimeout(() => setScreenStage(2), 700);
-      const t2 = setTimeout(() => setScreenStage(3), 1400);
-      const t3 = setTimeout(() => setScreenStage(4), 2100);
-      const t4 = setTimeout(() => setScreenStage(5), 2900);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        clearTimeout(t4);
-      };
-    } else if (screen === 'screen_03_immediate_response') {
-      const t1 = setTimeout(() => setScreenStage(2), 500);
-      const t2 = setTimeout(() => setScreenStage(3), 1000);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    } else if (screen === 'screen_04_conversation') {
-      setChatMessageCount(1);
-      const timers = [
-        setTimeout(() => setChatMessageCount(2), 1000),
-        setTimeout(() => setChatMessageCount(3), 2000),
-        setTimeout(() => setChatMessageCount(4), 3000),
-        setTimeout(() => setChatMessageCount(5), 4000),
-        setTimeout(() => setChatMessageCount(6), 5000),
-        setTimeout(() => setScreenStage(2), 5600),
-      ];
-      return () => {
-        timers.forEach((t) => clearTimeout(t));
-      };
-    } else if (screen === 'screen_05_pattern') {
-      const t1 = setTimeout(() => setScreenStage(2), 600);
-      const t2 = setTimeout(() => setScreenStage(3), 1200);
-      const t3 = setTimeout(() => setScreenStage(4), 1900);
-      const t4 = setTimeout(() => setScreenStage(5), 2600);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        clearTimeout(t4);
-      };
-    } else if (screen === 'screen_06_mirror') {
-      const t1 = setTimeout(() => setScreenStage(2), 500);
-      const t2 = setTimeout(() => setScreenStage(3), 1000);
-      const t3 = setTimeout(() => setScreenStage(4), 1500);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else if (screen === 'screen_07a_record') {
-      const t1 = setTimeout(() => setScreenStage(2), 700);
-      const t2 = setTimeout(() => setScreenStage(3), 1600);
-      const t3 = setTimeout(() => setScreenStage(4), 2400);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else if (screen === 'screen_07b_searching') {
-      const t1 = setTimeout(() => setScreenStage(2), 700);
-      const t2 = setTimeout(() => setScreenStage(3), 1400);
-      const t3 = setTimeout(() => setScreenStage(4), 2100);
-      const t4 = setTimeout(() => setScreenStage(5), 2800);
-      const t5 = setTimeout(() => setScreenStage(6), 3500);
-      const t6 = setTimeout(() => setScreenStage(7), 4200);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        clearTimeout(t4);
-        clearTimeout(t5);
-        clearTimeout(t6);
-      };
-    } else if (screen === 'screen_07c_unseen') {
-      const t1 = setTimeout(() => setScreenStage(2), 800);
-      const t2 = setTimeout(() => setScreenStage(3), 2000);
-      const t3 = setTimeout(() => setScreenStage(4), 3000);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else if (screen === 'screen_07d_new_question') {
-      const t1 = setTimeout(() => setScreenStage(2), 700);
-      const t2 = setTimeout(() => setScreenStage(3), 1600);
-      const t3 = setTimeout(() => setScreenStage(4), 2600);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else if (screen === 'screen_07e_participation') {
-      const t1 = setTimeout(() => setScreenStage(2), 600);
-      const t2 = setTimeout(() => setScreenStage(3), 1200);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    } else if (screen === 'screen_08_microrevelation') {
-      const t1 = setTimeout(() => setScreenStage(2), 800);
-      const t2 = setTimeout(() => setScreenStage(3), 1600);
-      const t3 = setTimeout(() => setScreenStage(4), 2500);
-      const t4 = setTimeout(() => setScreenStage(5), 3400);
-      const t5 = setTimeout(() => setScreenStage(6), 4300);
-      const t6 = setTimeout(() => setScreenStage(7), 5200);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        clearTimeout(t4);
-        clearTimeout(t5);
-        clearTimeout(t6);
-      };
-    } else if (screen === 'screen_09_closing') {
-      const t1 = setTimeout(() => setScreenStage(2), 700);
-      const t2 = setTimeout(() => setScreenStage(3), 1600);
-      const t3 = setTimeout(() => setScreenStage(4), 2500);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    }
-  }, [runtimeState.currentScreen]);
 
   // Track analytics events on screen transitions
   useEffect(() => {
@@ -300,24 +270,25 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
     });
   }, [runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
 
-  // Track chat messages reveal
+  // Track chat messages reveal based on screenStage
   useEffect(() => {
     if (runtimeState.currentScreen === 'screen_04_conversation') {
-      const currentMsg = EXP02_CONTENT.screen04.messages[chatMessageCount - 1];
+      const msgIndex = screenStage;
+      const currentMsg = EXP02_CONTENT.screen04.messages[msgIndex - 1];
       if (currentMsg) {
         eventTracker.trackEvent('CHAT_MESSAGE_SHOWN', {
           sessionId: state.session.sessionId,
           caseId: state.session.caseId,
           experience: 'exp02',
           payload: {
-            messageIndex: chatMessageCount,
+            messageIndex: msgIndex,
             speaker: currentMsg.speaker,
             text: currentMsg.text,
           },
         });
       }
     }
-  }, [chatMessageCount, runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
+  }, [screenStage, runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
 
   // Navigate screen handler
   const navigateToScreen = (nextScreenId: string) => {
@@ -393,9 +364,10 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
       payload: { key: 'exp02.firstInterpretation', value: label },
     });
 
+    const pauseDuration = narrativePacingManager.calculateDuration('SHORT');
     setTimeout(() => {
       navigateToScreen('screen_04_conversation');
-    }, 600);
+    }, pauseDuration);
   };
 
   // SCREEN 04: Continuar después de la conversación
@@ -455,9 +427,10 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
       payload: { key: 'exp02.reactionPattern', value: label },
     });
 
+    const pauseDuration = narrativePacingManager.calculateDuration('SHORT');
     setTimeout(() => {
       navigateToScreen('screen_07a_record');
-    }, 600);
+    }, pauseDuration);
   };
 
   // SCREEN A: Record continue
@@ -541,9 +514,10 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
       payload: { key: 'exp02.whatHeTriedToDiscover', value: label },
     });
 
+    const pauseDuration = narrativePacingManager.calculateDuration('SHORT');
     setTimeout(() => {
       navigateToScreen('screen_08_microrevelation');
-    }, 600);
+    }, pauseDuration);
   };
 
   // SCREEN F: Microrevelación continue
@@ -609,8 +583,6 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
     onComplete(finalMemory);
   };
-
-  const currentScreenId = runtimeState.currentScreen;
 
   // Retrieve saved responses for empathetic reflections
   const savedResponses = (state.responses.exp02 || {}) as Record<string, unknown>;
@@ -688,14 +660,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-lg mx-auto py-8"
         >
           <div className="space-y-6">
-            <div className={`transition-all duration-700 ${screenStage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="transition-all duration-1000 opacity-100">
               <span className="font-mono text-xs tracking-[0.3em] text-neutral-500 uppercase">
                 {EXP02_CONTENT.screen01.leadCaseLabel} #{caseId}
               </span>
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -705,7 +677,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`space-y-3 pt-2 transition-all duration-700 ${
+              className={`space-y-3 pt-2 transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -718,18 +690,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-transition-continue"
               onClick={handleTransitionContinue}
             >
               {EXP02_CONTENT.screen01.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -742,18 +710,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-6 w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <p className="text-sm sm:text-base text-neutral-400 font-body">
                 {EXP02_CONTENT.screen02.beat1}
               </p>
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -763,7 +727,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -787,18 +751,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs transition-all duration-700 ${
-              screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed}>
             <PrimaryCTA
               id="cta-situation-continue"
               onClick={handleSituationContinue}
             >
               {EXP02_CONTENT.screen02.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -811,25 +771,17 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto py-4"
         >
           <div className="space-y-2">
-            <p
-              className={`text-xs font-mono uppercase tracking-[0.25em] text-neutral-500 transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <p className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
               SITUACIÓN
             </p>
-            <h2
-              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2 transition-all duration-700 ${
-                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2">
               {EXP02_CONTENT.screen03.question}
             </h2>
           </div>
 
           <div
             className={`space-y-3 pt-3 transition-all duration-700 ${
-              screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+              isOptionsRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
             }`}
           >
             {EXP02_CONTENT.screen03.options.map((opt) => {
@@ -874,12 +826,12 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           {/* Dialogue sequence */}
           <div className="space-y-6 py-2">
             {EXP02_CONTENT.screen04.messages.map((msg, index) => {
-              const isRevealed = index < chatMessageCount;
+              const isRevealed = screenStage >= index + 1;
               const isYou = msg.speaker === 'YOU';
               return (
                 <div
                   key={index}
-                  className={`flex flex-col space-y-1 transition-all duration-700 ${
+                  className={`flex flex-col space-y-1 transition-all duration-1000 ${
                     isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
                   } ${isYou ? 'items-start' : 'items-end'}`}
                 >
@@ -900,18 +852,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             })}
           </div>
 
-          <div
-            className={`w-full max-w-xs mx-auto pt-4 transition-all duration-700 ${
-              screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-conversation-continue"
               onClick={handleConversationContinue}
             >
               {EXP02_CONTENT.screen04.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -924,11 +872,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-6 text-left w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 OBSERVACIÓN
               </span>
@@ -938,7 +882,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -948,7 +892,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -959,7 +903,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* Dominant weight */}
             <div
-              className={`pt-6 border-t border-[#181818] transition-all duration-700 ${
+              className={`pt-6 border-t border-[#181818] transition-all duration-1000 ${
                 screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
               }`}
             >
@@ -969,18 +913,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-pattern-continue"
               onClick={handlePatternContinue}
             >
               {EXP02_CONTENT.screen05.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -993,32 +933,20 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto py-4"
         >
           <div className="space-y-2">
-            <p
-              className={`text-xs font-mono uppercase tracking-[0.25em] text-neutral-500 transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <p className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
               {EXP02_CONTENT.screen06.lead1}
             </p>
-            <p
-              className={`text-sm text-neutral-400 font-body transition-all duration-700 ${
-                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <p className="text-sm text-neutral-400 font-body">
               {EXP02_CONTENT.screen06.lead2}
             </p>
-            <h2
-              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2 transition-all duration-700 ${
-                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2">
               {EXP02_CONTENT.screen06.question}
             </h2>
           </div>
 
           <div
             className={`space-y-3 pt-3 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+              isOptionsRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
             }`}
           >
             {EXP02_CONTENT.screen06.options.map((opt) => {
@@ -1052,18 +980,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-8 text-left w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 {EXP02_CONTENT.screen07a.eyebrow}
               </span>
             </div>
 
             <div
-              className={`p-5 sm:p-6 rounded-xl bg-[#080808] border border-[#1C1C1C] transition-all duration-700 ${
+              className={`p-5 sm:p-6 rounded-xl bg-[#080808] border border-[#1C1C1C] transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1073,7 +997,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`pt-2 transition-all duration-700 ${
+              className={`pt-2 transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1083,18 +1007,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-record-continue"
               onClick={handleRecordContinue}
             >
               {EXP02_CONTENT.screen07a.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -1107,11 +1027,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-6 text-left w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 REFLEXIÓN
               </span>
@@ -1121,7 +1037,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1138,7 +1054,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
                 return (
                   <div
                     key={idx}
-                    className={`p-3 rounded-lg bg-[#0A0A0A] border border-[#1C1C1C] transition-all duration-700 ${
+                    className={`p-3 rounded-lg bg-[#0A0A0A] border border-[#1C1C1C] transition-all duration-1000 ${
                       isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                     }`}
                   >
@@ -1151,18 +1067,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-searching-continue"
               onClick={handleSearchingContinue}
             >
               {EXP02_CONTENT.screen07b.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -1175,11 +1087,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-8 text-left w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 DESCUBRIMIENTO
               </span>
@@ -1189,7 +1097,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`p-5 sm:p-6 rounded-xl bg-[#090909] border-l-2 border-orange-500 transition-all duration-700 ${
+              className={`p-5 sm:p-6 rounded-xl bg-[#090909] border-l-2 border-orange-500 transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1197,7 +1105,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
                 {EXP02_CONTENT.screen07c.beat2}
               </p>
               <div
-                className={`pt-3 transition-all duration-700 ${
+                className={`pt-3 transition-all duration-1000 ${
                   screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
@@ -1208,18 +1116,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-unseen-continue"
               onClick={handleUnseenContinue}
             >
               {EXP02_CONTENT.screen07c.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -1232,11 +1136,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-8 text-left w-full">
-            <div
-              className={`transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 PERSPECTIVA
               </span>
@@ -1247,7 +1147,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* Before */}
             <div
-              className={`space-y-1 pl-4 border-l border-neutral-800 transition-all duration-700 ${
+              className={`space-y-1 pl-4 border-l border-neutral-800 transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1261,7 +1161,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* After - Maximum visual hierarchy with generous negative space */}
             <div
-              className={`pt-6 border-t border-[#181818] space-y-2 transition-all duration-700 ${
+              className={`pt-6 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1274,18 +1174,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-new-question-continue"
               onClick={handleNewQuestionContinue}
             >
               {EXP02_CONTENT.screen07d.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -1298,25 +1194,17 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col space-y-8 animate-fade-in text-left max-w-xl mx-auto py-4"
         >
           <div className="space-y-2">
-            <p
-              className={`text-xs font-mono uppercase tracking-[0.25em] text-neutral-500 transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <p className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
               {EXP02_CONTENT.screen07e.lead}
             </p>
-            <h2
-              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2 transition-all duration-700 ${
-                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic font-normal text-white tracking-wide leading-snug pt-2">
               {EXP02_CONTENT.screen07e.question}
             </h2>
           </div>
 
           <div
             className={`space-y-3 pt-3 transition-all duration-700 ${
-              screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+              isOptionsRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
             }`}
           >
             {EXP02_CONTENT.screen07e.options.map((opt) => {
@@ -1351,11 +1239,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
         >
           <div className="space-y-8 text-left w-full">
             {/* Adapted reflection based on Q3 */}
-            <div
-              className={`p-4 sm:p-5 rounded-xl bg-[#080808] border border-[#1C1C1C] transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="p-4 sm:p-5 rounded-xl bg-[#080808] border border-[#1C1C1C] transition-all duration-1000 opacity-100">
               <span className="text-[10px] font-mono tracking-[0.25em] text-neutral-500 uppercase">
                 TU REGISTRO
               </span>
@@ -1366,7 +1250,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* Pivot */}
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1377,7 +1261,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* Nuances */}
             <div
-              className={`space-y-3 transition-all duration-700 ${
+              className={`space-y-3 transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1385,14 +1269,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
                 {EXP02_CONTENT.screen08.pause1}
               </p>
               <p
-                className={`text-base sm:text-lg text-neutral-300 font-body leading-relaxed transition-all duration-700 ${
+                className={`text-base sm:text-lg text-neutral-300 font-body leading-relaxed transition-all duration-1000 ${
                   screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
                 {EXP02_CONTENT.screen08.pause2}
               </p>
               <p
-                className={`text-base sm:text-lg text-neutral-200 font-serif italic transition-all duration-700 ${
+                className={`text-base sm:text-lg text-neutral-200 font-serif italic transition-all duration-1000 ${
                   screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
@@ -1402,7 +1286,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
 
             {/* Final insight phrase - Clean, human, intriguing */}
             <div
-              className={`pt-6 border-t border-[#181818] space-y-2 transition-all duration-700 ${
+              className={`pt-6 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
                 screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1415,18 +1299,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-microrevelation-continue"
               onClick={handleMicrorevelationContinue}
             >
               {EXP02_CONTENT.screen08.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
 
@@ -1439,18 +1319,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
           className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
         >
           <div className="space-y-6 text-left w-full">
-            <div
-              className={`space-y-3 transition-all duration-700 ${
-                screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
+            <div className="space-y-3 transition-all duration-1000 opacity-100">
               <p className="text-lg sm:text-xl font-serif italic text-neutral-300 leading-relaxed">
                 {EXP02_CONTENT.screen09.beat1}
               </p>
             </div>
 
             <div
-              className={`transition-all duration-700 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1460,7 +1336,7 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
 
             <div
-              className={`pt-4 border-t border-[#181818] transition-all duration-700 ${
+              className={`pt-4 border-t border-[#181818] transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -1470,18 +1346,14 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-xs pt-4 transition-all duration-700 ${
-              screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
-            }`}
-          >
+          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
             <PrimaryCTA
               id="cta-complete-exp02"
               onClick={handleFinalStep}
             >
               {EXP02_CONTENT.screen09.ctaLabel}
             </PrimaryCTA>
-          </div>
+          </CTAReveal>
         </div>
       )}
     </div>
