@@ -2,7 +2,7 @@ import { ExperienceDefinition } from './types';
 import { ExperienceId, ExperienceStatus, FunnelState } from '../engine/state/types';
 import { EXP01 } from './exp01/EXP01';
 import { EXP02 } from './exp02/EXP02';
-import { EXP03Placeholder } from './exp03/EXP03Placeholder';
+import { EXP03 } from './exp03/EXP03';
 import { EXP04Placeholder } from './exp04/EXP04Placeholder';
 import { EXP05Placeholder } from './exp05/EXP05Placeholder';
 import { EXP06Placeholder } from './exp06/EXP06Placeholder';
@@ -40,8 +40,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'El Error Invisible',
     number: 3,
     description: 'Identificación de la falla recurrente en el modelo operativo.',
-    presentationMode: 'standard',
-    component: EXP03Placeholder,
+    presentationMode: 'immersive',
+    component: EXP03,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp03'),
     nextExperience: 'exp04',
