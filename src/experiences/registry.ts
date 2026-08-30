@@ -3,7 +3,7 @@ import { ExperienceId, ExperienceStatus, FunnelState } from '../engine/state/typ
 import { EXP01 } from './exp01/EXP01';
 import { EXP02 } from './exp02/EXP02';
 import { EXP03 } from './exp03/EXP03';
-import { EXP04Placeholder } from './exp04/EXP04Placeholder';
+import { EXP04 } from './exp04/EXP04';
 import { EXP05Placeholder } from './exp05/EXP05Placeholder';
 import { EXP06Placeholder } from './exp06/EXP06Placeholder';
 import { EXP07Placeholder } from './exp07/EXP07Placeholder';
@@ -52,8 +52,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Investigación',
     number: 4,
     description: 'Recopilación de variables críticas y evidencia contextual.',
-    presentationMode: 'standard',
-    component: EXP04Placeholder,
+    presentationMode: 'immersive',
+    component: EXP04,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp04'),
     nextExperience: 'exp05',
