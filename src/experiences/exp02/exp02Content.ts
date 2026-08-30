@@ -1,4 +1,4 @@
-// Narrative and UI Content for EXP_02 (El Espejo)
+// Narrative and UI Content for EXP_02 (El Espejo) - V1.1 Refinement
 
 export const EXP02_CONTENT = {
   screen01: {
@@ -101,54 +101,104 @@ export const EXP02_CONTENT = {
     ],
   },
 
-  screen07: {
-    // Empathetic Branching Interpretations for Q1
-    interpretationReflections: {
-      A: 'Cuando no encuentras una explicación, es fácil buscar una.',
-      B: 'Cuando no encuentras una explicación, es fácil asumir que fuiste tú.',
-      C: 'A veces la primera reacción es tomar una distancia práctica.',
-      D: 'Reconocer la confusión es el primer paso para no inventar explicaciones.',
+  // SCREEN A — TU REGISTRO
+  screen07a: {
+    eyebrow: 'TU REGISTRO',
+    firstResponseQuotes: {
+      A: 'Dijiste que lo primero que piensas es:\n“¿Qué le pasa?”',
+      B: 'Dijiste que lo primero que piensas es:\n“Seguro hice algo.”',
+      C: 'Dijiste que tu primera reacción es dejar que se quede en casa.',
+      D: 'Dijiste que no sabes qué está pasando.',
     },
-    // Empathetic Branching Interpretations for Q2
-    reactionReflections: {
-      A: 'Tu impulso inmediato es actuar y buscar una solución activa.',
-      B: 'Revisas mentalmente cada interacción para entender si hubo un error.',
-      C: 'Prefieres no presionar y dar espacio para evitar empeorar la situación.',
-      D: 'La falta de claridad te deja sin un mapa de acción inmediato.',
-    },
-    coreQuestion1: '¿Y si el problema no fuera tu intención?',
-    coreQuestion2:
-      '¿Y si estuvieras intentando responder a una situación que no puedes ver completa?',
-    contrastLead: 'Porque hay una diferencia entre...',
-    contrastA: 'NO SABER QUÉ HACER',
-    contrastAnd: 'y',
-    contrastB: 'NO TENER EL CONTEXTO PARA SABER QUÉ HACER.',
+    followUp: 'Y eso nos dice algo.',
     ctaLabel: 'CONTINUAR',
   },
 
+  // SCREEN B — LO QUE BUSCAS
+  screen07b: {
+    beat1: 'Cuando algo cambia...',
+    beat2: '...tu mente intenta encontrar una explicación.',
+    questions: [
+      '¿Qué pasó?',
+      '¿Qué hice?',
+      '¿Qué necesita?',
+      '¿Cómo lo arreglo?',
+    ],
+    ctaLabel: 'CONTINUAR',
+  },
+
+  // SCREEN C — LO QUE NO PUEDES VER
+  screen07c: {
+    beat1: 'Pero hay algo que no puedes revisar.',
+    beat2: 'Lo que estaba pasando con ella...',
+    beat3: '...antes de que tú llegaras a esa conversación.',
+    ctaLabel: 'CONTINUAR',
+  },
+
+  // SCREEN D — LA NUEVA PREGUNTA
+  screen07d: {
+    lead: 'Y eso cambia la pregunta.',
+    beforeLabel: 'Antes:',
+    beforeQuestion: '¿Qué hice mal?',
+    afterLabel: 'Después:',
+    afterQuestion: '¿Qué estaba pasando que yo no podía ver?',
+    ctaLabel: 'CONTINUAR',
+  },
+
+  // SCREEN E — PARTICIPACIÓN (TERCERA PREGUNTA)
+  screen07e: {
+    lead: 'Piensa en la última vez que no entendiste a tu pareja.',
+    question: '¿Qué intentaste descubrir primero?',
+    options: [
+      {
+        id: 'opt_q3_a',
+        code: 'A',
+        label: 'Qué hice mal.',
+        subtext: 'Búsqueda de responsabilidad propia.',
+      },
+      {
+        id: 'opt_q3_b',
+        code: 'B',
+        label: 'Qué le pasaba.',
+        subtext: 'Búsqueda del detonante en su estado.',
+      },
+      {
+        id: 'opt_q3_c',
+        code: 'C',
+        label: 'Cómo arreglarlo.',
+        subtext: 'Búsqueda inmediata de resolución práctica.',
+      },
+      {
+        id: 'opt_q3_d',
+        code: 'D',
+        label: 'Por qué estaba actuando así.',
+        subtext: 'Búsqueda de lógica detrás de su comportamiento.',
+      },
+    ],
+  },
+
+  // SCREEN F — MICROREVELACIÓN
   screen08: {
-    lead1: 'Tal vez no estás fallando por no saber amar.',
-    lead2: 'Tal vez estás reaccionando con información incompleta.',
-    lead3: 'Y si eso es cierto...',
-    lead4: '...entonces aprender a reaccionar mejor no empieza por reaccionar.',
-    conclusion: 'Empieza por comprender.',
+    branches: {
+      A: 'Buscaste la explicación en ti.',
+      B: 'Buscaste la explicación en ella.',
+      C: 'Buscaste una solución antes de tener toda la explicación.',
+      D: 'Buscaste una explicación para algo que todavía no podías ver completo.',
+    },
+    pivot: 'Y quizá ahí está el problema.',
+    pause1: 'No que no quieras entenderla.',
+    pause2: 'Sino que quizá estás intentando entender una parte de la historia...',
+    pause3: '...sin conocer toda la historia.',
+    finalLead: 'Tal vez no te falta intención.',
+    finalPunch: 'Tal vez te falta información.',
     ctaLabel: 'CONTINUAR',
   },
 
+  // SCREEN G — CIERRE
   screen09: {
-    lead1: 'Acabas de hacer algo importante.',
-    lead2: 'No intentaste resolverla.',
-    lead3: 'Intentaste observar cómo reaccionas tú.',
-    lead4: 'Y eso nos da una pista.',
-    lead5: 'Pero todavía falta una pieza.',
-    lead6:
-      'Una que puede cambiar completamente la forma en que interpretas estos momentos.',
-    ctaLabel: 'CONTINUAR',
-  },
-
-  screen10: {
-    lead1: 'SIGAMOS.',
-    lead2: 'Porque ahora vamos a buscar esa pieza.',
+    beat1: 'Y si eso es cierto...',
+    beat2: '...hay una pieza que todavía no tenemos.',
+    beat3: 'Una pieza que podría cambiar la forma en que interpretas estos momentos.',
     ctaLabel: 'CONTINUAR',
   },
 };
