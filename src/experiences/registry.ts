@@ -4,7 +4,7 @@ import { EXP01 } from './exp01/EXP01';
 import { EXP02 } from './exp02/EXP02';
 import { EXP03 } from './exp03/EXP03';
 import { EXP04 } from './exp04/EXP04';
-import { EXP05Placeholder } from './exp05/EXP05Placeholder';
+import { EXP05 } from './exp05/EXP05';
 import { EXP06Placeholder } from './exp06/EXP06Placeholder';
 import { EXP07Placeholder } from './exp07/EXP07Placeholder';
 import { EXP08Placeholder } from './exp08/EXP08Placeholder';
@@ -64,8 +64,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     name: 'La Pieza Faltante',
     number: 5,
     description: 'El eslabón ausente en la toma de decisiones estratégicas.',
-    presentationMode: 'standard',
-    component: EXP05Placeholder,
+    presentationMode: 'immersive',
+    component: EXP05,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp05'),
     nextExperience: 'exp06',
