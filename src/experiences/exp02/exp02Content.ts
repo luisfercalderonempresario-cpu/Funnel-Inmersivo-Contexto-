@@ -104,11 +104,13 @@ export const EXP02_CONTENT = {
   // SCREEN A — TU REGISTRO
   screen07a: {
     eyebrow: 'TU REGISTRO',
+    leadBefore: 'ANTES DE SEGUIR...',
+    leadMomentos: 'HACE UNOS MOMENTOS, EN ESTE CASO, RESPONDISTE:',
     firstResponseQuotes: {
-      A: 'Dijiste que lo primero que piensas es:\n“¿Qué le pasa?”',
-      B: 'Dijiste que lo primero que piensas es:\n“Seguro hice algo.”',
-      C: 'Dijiste que tu primera reacción es dejar que se quede en casa.',
-      D: 'Dijiste que no sabes qué está pasando.',
+      A: '“Intento hablarlo inmediatamente.”',
+      B: '“Le doy espacio y espero que se le pase.”',
+      C: '“Intento entender qué hice mal.”',
+      D: '“A veces no sé qué hacer.”',
     },
     followUp: 'Y eso nos dice algo.',
     ctaLabel: 'CONTINUAR',

@@ -144,10 +144,11 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
         ];
       case 'screen_07a_record':
         return [
-          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow Tu Registro' },
-          { id: 'quote', stage: 2, pacing: 'LONG', label: 'Cita personalizada Andrés' },
-          { id: 'followUp', stage: 3, pacing: 'MEDIUM', label: 'Follow up narrativo' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+          { id: 'leadBefore', stage: 1, pacing: 'SHORT', label: 'Antes de seguir...' },
+          { id: 'leadMomentos', stage: 2, pacing: 'MEDIUM', label: 'Hace unos momentos respondiste' },
+          { id: 'quote', stage: 3, pacing: 'LONG', label: 'Cita personalizada respuesta EXP_01' },
+          { id: 'followUp', stage: 4, pacing: 'REVELATION', label: 'Y eso nos dice algo' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
       case 'screen_07b_searching':
         return [
@@ -585,33 +586,47 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
   };
 
   // Retrieve saved responses for empathetic reflections
-  const savedResponses = (state.responses.exp02 || {}) as Record<string, unknown>;
-  const firstInterpretation = (savedResponses['exp02.firstInterpretation'] ||
-    savedResponses['firstInterpretation']) as string | undefined;
-  const firstInterpretationCode = (savedResponses['exp02.firstInterpretationCode'] ||
-    savedResponses['firstInterpretationCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
+  const exp01Responses = (state.responses.exp01 || {}) as Record<string, unknown>;
+  const exp02Responses = (state.responses.exp02 || {}) as Record<string, unknown>;
 
-  const whatHeTriedToDiscoverCode = (savedResponses['exp02.whatHeTriedToDiscoverCode'] ||
-    savedResponses['whatHeTriedToDiscoverCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-  const whatHeTriedToDiscover = (savedResponses['exp02.whatHeTriedToDiscover'] ||
-    savedResponses['whatHeTriedToDiscover']) as string | undefined;
+  const exp01ResponseCode = (
+    exp01Responses['exp01.relationshipResponse'] ||
+    exp01Responses['relationshipResponse'] ||
+    exp02Responses['exp02.firstInterpretationCode'] ||
+    exp02Responses['firstInterpretationCode']
+  ) as 'A' | 'B' | 'C' | 'D' | string | undefined;
 
-  // Screen A quote based on firstInterpretationCode
+  const exp01ResponseText = (
+    exp01Responses['exp01.relationshipResponse'] ||
+    exp01Responses['relationshipResponse'] ||
+    exp02Responses['exp02.firstInterpretation'] ||
+    exp02Responses['firstInterpretation']
+  ) as string | undefined;
+
+  const whatHeTriedToDiscoverCode = (exp02Responses['exp02.whatHeTriedToDiscoverCode'] ||
+    exp02Responses['whatHeTriedToDiscoverCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
+  const whatHeTriedToDiscover = (exp02Responses['exp02.whatHeTriedToDiscover'] ||
+    exp02Responses['whatHeTriedToDiscover']) as string | undefined;
+
+  // Screen A quote based on EXP_01 memory
   const recordQuote = useMemo(() => {
-    if (firstInterpretationCode && EXP02_CONTENT.screen07a.firstResponseQuotes[firstInterpretationCode]) {
-      return EXP02_CONTENT.screen07a.firstResponseQuotes[firstInterpretationCode];
+    if (exp01ResponseCode && EXP02_CONTENT.screen07a.firstResponseQuotes[exp01ResponseCode as 'A' | 'B' | 'C' | 'D']) {
+      return EXP02_CONTENT.screen07a.firstResponseQuotes[exp01ResponseCode as 'A' | 'B' | 'C' | 'D'];
     }
-    if (firstInterpretation?.includes('hice algo')) {
-      return EXP02_CONTENT.screen07a.firstResponseQuotes.B;
-    }
-    if (firstInterpretation?.includes('pasa')) {
+    if (exp01ResponseText?.includes('hablarlo')) {
       return EXP02_CONTENT.screen07a.firstResponseQuotes.A;
     }
-    if (firstInterpretation?.includes('quede')) {
+    if (exp01ResponseText?.includes('espacio')) {
+      return EXP02_CONTENT.screen07a.firstResponseQuotes.B;
+    }
+    if (exp01ResponseText?.includes('mal') || exp01ResponseText?.includes('hice')) {
       return EXP02_CONTENT.screen07a.firstResponseQuotes.C;
     }
-    return EXP02_CONTENT.screen07a.firstResponseQuotes.D;
-  }, [firstInterpretationCode, firstInterpretation]);
+    if (exp01ResponseText?.includes('sé qué') || exp01ResponseText?.includes('se que')) {
+      return EXP02_CONTENT.screen07a.firstResponseQuotes.D;
+    }
+    return EXP02_CONTENT.screen07a.firstResponseQuotes.A;
+  }, [exp01ResponseCode, exp01ResponseText]);
 
   // Screen F microrevelation branching based on whatHeTriedToDiscoverCode
   const microrevelationBranch = useMemo(() => {
@@ -977,31 +992,44 @@ export const EXP02: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_07a_record' && (
         <div
           id="screen-07a-record"
-          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
         >
-          <div className="space-y-8 text-left w-full">
-            <div className="transition-all duration-1000 opacity-100">
+          <div className="space-y-6 text-left w-full">
+            <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                {EXP02_CONTENT.screen07a.eyebrow}
+                {EXP02_CONTENT.screen07a.leadBefore}
+              </span>
+              <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                CASO #{caseId}
               </span>
             </div>
 
             <div
-              className={`p-5 sm:p-6 rounded-xl bg-[#080808] border border-[#1C1C1C] transition-all duration-1000 ${
+              className={`transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
-              <p className="text-base sm:text-lg text-neutral-200 font-serif italic whitespace-pre-line leading-relaxed">
+              <p className="text-xs sm:text-sm font-mono tracking-[0.2em] text-neutral-400 uppercase leading-relaxed">
+                {EXP02_CONTENT.screen07a.leadMomentos}
+              </p>
+            </div>
+
+            <div
+              className={`p-5 sm:p-6 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
+                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
+              <p className="text-lg sm:text-xl md:text-2xl text-white font-serif italic whitespace-pre-line leading-relaxed">
                 {recordQuote}
               </p>
             </div>
 
             <div
               className={`pt-2 transition-all duration-1000 ${
-                screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
-              <p className="text-lg sm:text-xl font-serif italic text-white leading-relaxed">
+              <p className="text-base sm:text-lg font-serif italic text-neutral-300 leading-relaxed">
                 {EXP02_CONTENT.screen07a.followUp}
               </p>
             </div>

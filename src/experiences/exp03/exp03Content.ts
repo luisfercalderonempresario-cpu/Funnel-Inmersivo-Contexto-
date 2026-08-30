@@ -152,6 +152,7 @@ export const EXP03_CONTENT = {
   screen11: {
     lead: 'Entonces la pregunta ya no es...',
     oldQuestion: '¿Qué debería hacer?',
+    bridge: 'Deberías preguntarte primero:',
     mainQuestion: '¿Qué información me falta?',
     because: 'Porque quizá...',
     before: '...antes de aprender a reaccionar mejor...',
@@ -162,6 +163,6 @@ export const EXP03_CONTENT = {
   screen12: {
     beat1: 'Tenemos una pregunta.',
     beat2: 'Ahora vamos a investigar la respuesta.',
-    ctaLabel: 'CONTINUAR',
+    ctaLabel: 'COMENZAR LA INVESTIGACIÓN',
   },
 };

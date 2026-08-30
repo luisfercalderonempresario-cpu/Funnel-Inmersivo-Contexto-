@@ -190,13 +190,14 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
         ];
       case 'screen_11_the_question':
         return [
-          { id: 'lead', stage: 1, pacing: 'MEDIUM', label: 'La pregunta ya no es...' },
+          { id: 'lead', stage: 1, pacing: 'MEDIUM', label: 'Entonces la pregunta ya no es...' },
           { id: 'oldQ', stage: 2, pacing: 'MEDIUM', label: '¿Qué debería hacer?' },
-          { id: 'mainQ', stage: 3, pacing: 'REVELATION', label: '¿Qué información me falta?' },
-          { id: 'because', stage: 4, pacing: 'MEDIUM', label: 'Porque quizá...' },
-          { id: 'before', stage: 5, pacing: 'MEDIUM', label: 'Aprender a reaccionar mejor' },
-          { id: 'punchline', stage: 6, pacing: 'REVELATION', label: 'Aprender a mirar mejor' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+          { id: 'bridge', stage: 3, pacing: 'MEDIUM', label: 'Deberías preguntarte primero:' },
+          { id: 'mainQ', stage: 4, pacing: 'LONG', label: '¿Qué información me falta?' },
+          { id: 'because', stage: 5, pacing: 'MEDIUM', label: 'Porque quizá...' },
+          { id: 'before', stage: 6, pacing: 'LONG', label: '...antes de aprender a reaccionar mejor...' },
+          { id: 'punchline', stage: 7, pacing: 'REVELATION', label: '...necesitas aprender a mirar mejor.' },
+          { id: 'cta', stage: 8, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
       case 'screen_12_transition':
         return [
@@ -1299,9 +1300,9 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_11_the_question' && (
         <div
           id="screen-11-the-question"
-          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
+          className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
         >
-          <div className="space-y-8 text-left w-full">
+          <div className="space-y-6 text-left w-full">
             <div className="transition-all duration-1000 opacity-100">
               <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                 PREGUNTA CLAVE
@@ -1311,21 +1312,32 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
               </p>
             </div>
 
-            {/* Old question */}
+            {/* Old question: Primera pregunta */}
             <div
               className={`space-y-1 pl-4 border-l border-neutral-800 transition-all duration-1000 ${
                 screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
-              <p className="text-base text-neutral-500 font-serif italic">
+              <p className="text-base sm:text-lg text-neutral-500 font-serif italic">
                 “{EXP03_CONTENT.screen11.oldQuestion}”
               </p>
             </div>
 
-            {/* Pitch black contrast highlight - Main Question */}
+            {/* Bridge: Deberías preguntarte primero: (Puente narrativo) */}
             <div
-              className={`pt-6 border-t border-[#181818] space-y-4 transition-all duration-1000 ${
+              className={`pt-2 transition-all duration-1000 ${
                 screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-mono uppercase tracking-[0.15em] text-neutral-400">
+                {EXP03_CONTENT.screen11.bridge}
+              </p>
+            </div>
+
+            {/* Dominant Question: ¿Qué información me falta? (Pregunta dominante) */}
+            <div
+              className={`pt-4 border-t border-[#181818] transition-all duration-1000 ${
+                screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed border-l-2 border-orange-500 pl-4 py-2">
@@ -1333,26 +1345,31 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
               </h2>
             </div>
 
-            <div
-              className={`space-y-2 pt-2 transition-all duration-1000 ${
-                screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
-              <p className="text-sm sm:text-base text-neutral-400 font-body">
-                {EXP03_CONTENT.screen11.because}
-              </p>
+            {/* Reflective Closure */}
+            <div className="space-y-3 pt-3">
               <div
                 className={`transition-all duration-1000 ${
                   screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
                 <p className="text-sm sm:text-base text-neutral-400 font-body">
+                  {EXP03_CONTENT.screen11.because}
+                </p>
+              </div>
+
+              <div
+                className={`transition-all duration-1000 ${
+                  screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-sm sm:text-base text-neutral-300 font-body">
                   {EXP03_CONTENT.screen11.before}
                 </p>
               </div>
+
               <div
                 className={`pt-2 transition-all duration-1000 ${
-                  screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                  screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
                 <p className="text-xl sm:text-2xl font-serif italic text-orange-400 leading-relaxed">
