@@ -7,7 +7,7 @@ import { EXP04 } from './exp04/EXP04';
 import { EXP05 } from './exp05/EXP05';
 import { EXP06 } from './exp06/EXP06';
 import { EXP07 } from './exp07/EXP07';
-import { EXP08Placeholder } from './exp08/EXP08Placeholder';
+import { EXP08 } from './exp08/EXP08';
 
 export const EXPERIENCES: ExperienceDefinition[] = [
   {
@@ -99,9 +99,9 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     slug: 'la-revelacion',
     name: 'La Revelación',
     number: 8,
-    description: 'Cierre del expediente y transición a la propuesta integral.',
-    presentationMode: 'standard',
-    component: EXP08Placeholder,
+    description: 'Cierre del expediente y transición a la propuesta integral de Contexto™.',
+    presentationMode: 'immersive',
+    component: EXP08,
     completionCondition: (state: FunnelState) =>
       state.progress.completedExperiences.includes('exp08'),
     nextExperience: 'sales_page',

@@ -89,6 +89,8 @@ export interface ConversionState {
   vslCompleted: boolean;
   checkoutStarted: boolean;
   purchaseCompleted: boolean;
+  purchaseIntent?: 'low' | 'medium' | 'high';
+  revelationCompleted?: boolean;
 }
 
 export interface FunnelState {
