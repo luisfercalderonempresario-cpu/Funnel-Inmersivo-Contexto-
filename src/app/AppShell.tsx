@@ -8,7 +8,7 @@ import { CaseId } from '../components/ui/CaseId';
 import { ProgressIndicator } from '../components/ui/ProgressIndicator';
 import { AudioController } from '../components/media/AudioController';
 import { LockedExperienceScreen } from '../components/navigation/LockedExperienceScreen';
-import { SalesPagePlaceholder } from '../components/navigation/SalesPagePlaceholder';
+import { SalesPage } from '../sales/SalesPage';
 import { DebugPanel } from '../components/debug/DebugPanel';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
@@ -41,7 +41,9 @@ export const AppShell: React.FC = () => {
     status === 'LOCKED' &&
     !state.progress.completedExperiences.includes(currentExperienceId);
 
-  const isImmersive = !isTestMode && currentExp?.presentationMode === 'immersive';
+  const isImmersive =
+    !isTestMode &&
+    (currentExperienceId === 'sales_page' || currentExp?.presentationMode === 'immersive');
 
   const handleCompleteCurrent = (data?: Record<string, unknown>) => {
     completeExperience(currentExperienceId, data);
@@ -136,12 +138,8 @@ export const AppShell: React.FC = () => {
                 onReturnToCurrent={handleReturnToCurrent}
               />
             ) : currentExperienceId === 'sales_page' ? (
-              <SalesPagePlaceholder
-                caseId={state.session.caseId}
-                onReturnToFunnel={() => goToExperience('exp01')}
-                onCheckout={() => {
-                  completeExperience('exp08', { simulatedCheckout: true });
-                }}
+              <SalesPage
+                onReturnToFunnel={() => goToExperience('exp08')}
               />
             ) : currentExp ? (
               <currentExp.component

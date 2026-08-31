@@ -13,11 +13,14 @@ import {
   Layers,
   Clock,
   Zap,
+  ShoppingBag,
 } from 'lucide-react';
 import { FunnelState, ExperienceId } from '../../engine/state/types';
 import { FunnelEventLogEntry } from '../../engine/events/types';
 import { eventTracker } from '../../engine/events/eventTracker';
 import { EXPERIENCES } from '../../experiences/registry';
+import { PRODUCT_CONFIG } from '../../config/productConfig';
+import { purchaseService } from '../../services/purchaseService';
 import {
   loadExperienceRuntimeState,
   clearExperienceRuntimeState,
@@ -47,7 +50,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
   onCorruptSession,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'engine' | 'pacing' | 'state' | 'memory' | 'events' | 'tools'>('engine');
+  const [activeTab, setActiveTab] = useState<'engine' | 'pacing' | 'memory' | 'sales' | 'state' | 'events' | 'tools'>('engine');
   const [logs, setLogs] = useState<FunnelEventLogEntry[]>([]);
   const [pacingDebug, setPacingDebug] = useState<NarrativePacingDebugState>(() =>
     narrativePacingManager.getDebugState()
@@ -157,7 +160,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
               <Cpu className="w-3.5 h-3.5" /> Contexto Engine
             </span>
             <div className="flex gap-1 overflow-x-auto">
-              {(['engine', 'pacing', 'memory', 'state', 'events', 'tools'] as const).map((tab) => (
+              {(['engine', 'pacing', 'memory', 'sales', 'state', 'events', 'tools'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -415,6 +418,98 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
                   </p>
                   <pre className="text-[9px] text-neutral-300 overflow-x-auto p-2 bg-[#050505] rounded border border-[#1A1A1A]">
                     {JSON.stringify(state.insights, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* SALES TAB */}
+            {activeTab === 'sales' && (
+              <div className="space-y-2 text-[11px]">
+                <div className="p-2.5 rounded bg-[#0D0D0D] border border-[#1A1A1A] space-y-2">
+                  <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1">
+                    <ShoppingBag className="w-3 h-3" /> Estado de Sales Page & Conversión
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Sales Page Vista</span>
+                      <span className={`font-bold ${state.conversion.salesPageViewed ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                        {state.conversion.salesPageViewed ? 'SÍ' : 'NO'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Purchase Intent</span>
+                      <span className={`font-bold uppercase ${
+                        state.conversion.purchaseIntent === 'high'
+                          ? 'text-orange-400'
+                          : state.conversion.purchaseIntent === 'medium'
+                          ? 'text-amber-400'
+                          : 'text-neutral-400'
+                      }`}>
+                        {state.conversion.purchaseIntent || 'none'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Checkout Started</span>
+                      <span className={`font-bold ${state.conversion.checkoutStarted ? 'text-amber-400' : 'text-neutral-500'}`}>
+                        {state.conversion.checkoutStarted ? 'SÍ' : 'NO'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded bg-[#080808] border border-[#181818] space-y-0.5">
+                      <span className="text-neutral-500 uppercase text-[8px] block">Purchase Completed</span>
+                      <span className={`font-bold ${state.conversion.purchaseCompleted ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                        {state.conversion.purchaseCompleted ? 'SÍ (CONFIRMADA)' : 'NO'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1 text-[10px]">
+                    <div className="flex items-center justify-between border-t border-[#181818] pt-1.5">
+                      <span className="text-neutral-400">Clicks en CTA Principal</span>
+                      <span className="font-bold text-white font-mono">
+                        {state.conversion.ctaClicks || 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">Interacciones FAQ</span>
+                      <span className="font-bold text-neutral-300 font-mono">
+                        {logs.filter((l) => l.eventName === 'FAQ_OPENED').length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400">Checkout URL Status</span>
+                      <span className={`font-bold text-[9px] ${
+                        purchaseService.isCheckoutConfigured()
+                          ? 'text-emerald-400'
+                          : 'text-amber-400'
+                      }`}>
+                        {purchaseService.isCheckoutConfigured() ? 'CONFIGURADO' : 'PENDIENTE (Fallback Seguro)'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded bg-[#0D0D0D] border border-[#1A1A1A] space-y-1">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Configuración de Producto
+                  </p>
+                  <pre className="text-[9px] text-neutral-400 overflow-x-auto p-2 bg-[#050505] rounded border border-[#181818]">
+                    {JSON.stringify(
+                      {
+                        name: PRODUCT_CONFIG.name,
+                        price: PRODUCT_CONFIG.price,
+                        currency: PRODUCT_CONFIG.currency,
+                        checkoutUrl: PRODUCT_CONFIG.checkoutUrl || '(empty)',
+                        guarantee: PRODUCT_CONFIG.guarantee || 'none',
+                        featuresCount: PRODUCT_CONFIG.features.length,
+                      },
+                      null,
+                      2
+                    )}
                   </pre>
                 </div>
               </div>

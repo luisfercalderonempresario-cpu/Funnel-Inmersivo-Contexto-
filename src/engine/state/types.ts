@@ -91,6 +91,9 @@ export interface ConversionState {
   purchaseCompleted: boolean;
   purchaseIntent?: 'low' | 'medium' | 'high';
   revelationCompleted?: boolean;
+  ctaClicks?: number;
+  faqOpenedCount?: number;
+  lastViewedSection?: string;
 }
 
 export interface FunnelState {
