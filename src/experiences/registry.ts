@@ -84,10 +84,10 @@ export const EXPERIENCES: ExperienceDefinition[] = [
   },
   {
     id: 'exp07',
-    slug: 'el-futuro',
-    name: 'El Futuro',
+    slug: 'la-prueba',
+    name: 'La Prueba',
     number: 7,
-    description: 'Proyección del impacto operativo con el marco de Contexto™.',
+    description: 'Demostración interactiva y primera experiencia práctica de Contexto™.',
     presentationMode: 'immersive',
     component: EXP07,
     completionCondition: (state: FunnelState) =>

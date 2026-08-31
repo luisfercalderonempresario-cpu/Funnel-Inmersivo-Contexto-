@@ -1,211 +1,168 @@
-// EXP_07 — EL FUTURO
-// Narrative Experience Content Definition V1.0 — Contexto™
+// EXP_07 — LA PRUEBA (Content & Copy Definitions V1.0)
+import { CyclePhase } from './cycleEngine';
 
-export interface ChoiceOption {
+export interface UtilityOption {
   id: string;
-  code: 'A' | 'B' | 'C' | 'D';
+  code: 'YES' | 'UNSURE';
   label: string;
   feedback: string;
 }
 
-export interface MomentExample {
-  number: string;
-  trigger: string;
-  insteadOf: string;
-  newAction: string;
-}
-
 export const EXP07_CONTENT = {
-  // SCREEN 01 — EL UMBRAL
+  // SCREEN 01 — EL CAMBIO
   screen01: {
-    eyebrow: 'PROYECCIÓN // EXP_07',
-    beat1: 'Ya sabes qué es Contexto™.',
-    beat2: 'Ahora quiero que imagines algo.',
-    beat3: 'Una situación que probablemente ya has vivido.',
-    ctaLabel: 'IMAGINAR',
+    eyebrow: 'EXP_07 / LA PRUEBA',
+    beat1: 'LA INVESTIGACIÓN TE MOSTRÓ ALGO.',
+    beat2: 'A veces no necesitas una mejor reacción.',
+    beat3: 'Necesitas más información antes de reaccionar.',
+    beat4: 'Ahora vamos a probarlo.',
+    ctaLabel: 'PROBAR CONTEXTO™',
   },
 
-  // SCREEN 02 — UNA NOCHE CUALQUIERA
+  // SCREEN 02 — VAMOS A PROBARLO
   screen02: {
-    eyebrow: 'ESCENARIO COTIDIANO',
-    beat1: 'Es una noche cualquiera.',
-    beat2: 'Llegas a casa.',
-    beat3: 'Hablas con ella.',
-    beat4: 'Notas que algo está diferente.',
-    beat5: 'Está más callada.',
-    beat6: 'Y no sabes por qué.',
-    ctaLabel: 'CONTINUAR',
+    eyebrow: 'EXPERIENCIA PRÁCTICA',
+    beat1: 'Por un momento, olvida la investigación.',
+    beat2: 'Imagina que hoy es un día cualquiera.',
+    beat3: 'Ella está frente a ti.',
+    beat4: 'Y tú quieres saber algo antes de reaccionar.',
+    beat5: '¿Qué contexto tienes hoy?',
+    beat6: 'Vamos a descubrirlo.',
+    ctaLabel: 'EMPEZAR',
   },
 
-  // SCREEN 03 — EL MISMO MOMENTO
+  // SCREEN 03 — EL DATO
   screen03: {
-    eyebrow: 'LA NUEVA VARIABLE',
-    beat1: 'El momento es el mismo.',
-    beat2: 'Pero ahora...',
-    beat3: '...tienes una pieza de contexto que antes no tenías.',
-    nuance1: 'No es una respuesta.',
-    nuance2: 'No es una explicación definitiva.',
-    nuance3: 'Es información adicional.',
-    ctaLabel: 'CONTINUAR',
+    eyebrow: 'EL PUNTO DE PARTIDA',
+    title: 'CONTEXTO™ NECESITA UN PUNTO DE PARTIDA.',
+    beat1: 'Una fecha.',
+    beat2: 'El primer día de su última menstruación.',
+    beat3: 'No necesitas recordarla con exactitud.',
+    beat4: 'Una fecha aproximada también puede servir como referencia.',
+    ctaLabel: 'INTRODUCIR FECHA',
   },
 
-  // SCREEN 04 — PRIMER CAMINO (ANTES)
+  // SCREEN 04 — LA FECHA
   screen04: {
-    eyebrow: 'PRIMER CAMINO',
-    title: 'ANTES',
-    flow: [
-      'Ella está diferente.',
-      '¿Qué hice?',
-      '¿Está molesta?',
-      '¿Hice algo mal?',
-      '¿Qué debería hacer?',
+    eyebrow: 'ENTRADA DE INFORMACIÓN',
+    title: '¿CUÁNDO COMENZÓ SU ÚLTIMA MENSTRUACIÓN?',
+    subtitle: 'Si no recuerdas el día exacto, introduce una fecha aproximada.',
+    approximateToggleLabel: 'No recuerdo la fecha exacta (usar aproximación)',
+    approximateHelper: 'Usaremos esta información solo como referencia orientativa.',
+    quickPresets: [
+      { label: 'Hace ~1 semana', daysAgo: 7 },
+      { label: 'Hace ~2 semanas', daysAgo: 14 },
+      { label: 'Hace ~3 semanas', daysAgo: 21 },
+      { label: 'Hace ~4 semanas', daysAgo: 28 },
     ],
-    closure: 'Y empiezas a reaccionar antes de comprender.',
-    ctaLabel: 'CONTINUAR',
+    ctaLabel: 'ANALIZAR MI CONTEXTO',
   },
 
-  // SCREEN 05 — SEGUNDO CAMINO (AHORA)
+  // SCREEN 05 — ANALIZANDO EL CASO
   screen05: {
-    eyebrow: 'SEGUNDO CAMINO',
-    title: 'AHORA',
-    flow: [
-      'Ella está diferente.',
-      'Primero observas.',
-      'Recuerdas el contexto disponible.',
-      'Consideras que el momento puede influir.',
-      'Y después...',
-      '...hablas con ella.',
+    eyebrow: 'MOTOR CONTEXTUAL',
+    steps: [
+      { id: 'step1', text: 'RECIBIENDO DATO...' },
+      { id: 'step2', text: 'CALCULANDO REFERENCIA...' },
+      { id: 'step3', text: 'IDENTIFICANDO MOMENTO DEL CICLO...' },
+      { id: 'step4', text: 'PREPARANDO CONTEXTO...' },
+      { id: 'step5', text: 'LISTO.' },
     ],
-    ctaLabel: 'CONTINUAR',
+    ctaLabel: 'VER RESULTADO',
   },
 
-  // SCREEN 06 — EL CAMBIO (REVELACIÓN EMOCIONAL)
+  // SCREEN 06 — TU CONTEXTO DE HOY
   screen06: {
-    eyebrow: 'REVELACIÓN',
-    question: '¿Ves la diferencia?',
-    beat1: 'No cambió ella.',
-    beat2: 'No cambió la situación.',
-    lead: 'Lo que cambió...',
-    dominantReveal: '...fue la información con la que tú entraste en ese momento.',
-    ctaLabel: 'CONTINUAR',
+    eyebrow: 'CONTEXTO DE HOY',
+    lead: 'Según la fecha que introdujiste...',
+    sublabel: 'PODRÍA ESTAR EN',
+    disclaimerBadge: 'Estimación orientativa',
+    clarification1: 'El ciclo menstrual varía entre mujeres y entre ciclos.',
+    clarification2: 'Esta información no determina cómo se sentirá o comportará tu pareja.',
+    ctaLabel: 'VER MI CONTEXTO DE HOY',
   },
 
-  // SCREEN 07 — UNA NUEVA FORMA DE MIRAR
+  // SCREEN 07 — NO ES UNA RESPUESTA
   screen07: {
-    eyebrow: 'EL GIRO DE PERSPECTIVA',
-    beat1: 'Contexto™ no te dice qué pensar de ella.',
-    beat2: 'Te ayuda a considerar qué más podrías estar pasando por alto.',
-    shiftLead: 'Y eso cambia la pregunta.',
-    beforeQuestion: '¿Qué está mal?',
-    afterQuestion: '¿Qué necesito comprender?',
-    ctaLabel: 'CONTINUAR',
+    eyebrow: 'INTERPRETACIÓN CORRECTA',
+    beat1: 'PERO HAY ALGO IMPORTANTE.',
+    beat2: 'Esto no te dice cómo está ella.',
+    beat3: 'Te da algo diferente.',
+    dominantWord: 'CONTEXTO',
+    beat4: 'Una pieza de información que puedes considerar junto con lo que ves, escuchas y conversas con ella.',
+    beat5: 'No reemplaza lo que ella te dice.',
+    beat6: 'Te ayuda a interpretar con más información.',
+    ctaLabel: 'VER MI CONTEXTO',
   },
 
-  // SCREEN 08 — TRES MOMENTOS
+  // SCREEN 08 — LO QUE PUEDES CONSIDERAR
   screen08: {
-    eyebrow: 'APLICACIÓN COTIDIANA // 3 MOMENTOS',
-    lead: 'Tres situaciones comunes donde el contexto transforma la respuesta:',
-    moments: [
-      {
-        number: '01',
-        trigger: 'Está más sensible.',
-        insteadOf: 'En lugar de asumir...',
-        newAction: 'observas y consideras el contexto.',
-      },
-      {
-        number: '02',
-        trigger: 'Quiere estar sola.',
-        insteadOf: 'En lugar de tomarlo personalmente...',
-        newAction: 'consideras que quizá necesitas más información.',
-      },
-      {
-        number: '03',
-        trigger: 'Está más receptiva.',
-        insteadOf: 'En lugar de dejar pasar el momento...',
-        newAction: 'aprovechas para conectar.',
-      },
-    ] as MomentExample[],
+    eyebrow: 'CONSIDERACIONES PRÁCTICAS',
+    title: 'HOY PODRÍAS CONSIDERAR',
+    generalLead: 'Alrededor de esta etapa algunas personas pueden experimentar cambios físicos o emocionales.',
+    principlesLead: 'Pero no asumas.',
+    verbs: ['Observa.', 'Pregunta.', 'Escucha.'],
+    closure: 'EL CONTEXTO ORIENTA. LA CONVERSACIÓN CONFIRMA.',
     ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 09 — LO QUE CAMBIA
+  // SCREEN 09 — ÍNDICE DE CONEXIÓN DIARIA™
   screen09: {
-    eyebrow: 'TRANSFORMACIÓN DE FONDO',
-    beat1: 'Tal vez el verdadero cambio no está en saber más sobre el ciclo.',
-    beat2: 'Está en dejar de reaccionar con una sola explicación.',
-    leadPossibility: 'Porque cuando tienes más contexto...',
-    possibilityCore: '...tienes más posibilidades de responder con intención.',
-    triad: [
-      'No desde el miedo.',
-      'No desde la suposición.',
-      'Desde la comprensión.',
-    ],
+    eyebrow: 'MÉTRICA CUALITATIVA',
+    title: 'ÍNDICE DE CONEXIÓN DIARIA™',
+    modeLabel: 'MODO CUALITATIVO',
+    modeValue: 'HOY: COMPRENDER',
+    lead: 'Tu contexto de hoy sugiere una cosa:',
+    directive: 'NO TE ADELANTES A LA INTERPRETACIÓN.',
+    note: 'Una orientación diseñada para pausar la reactividad automática.',
     ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 10 — LO QUE NO CAMBIA (CREDIBILIDAD Y LÍMITES)
+  // SCREEN 10 — UNA ACCIÓN PARA HOY
   screen10: {
-    eyebrow: 'LÍMITES REALISTAS',
-    warningLead: 'Pero hay algo importante.',
-    hardTruths: [
-      'Seguirán existiendo días difíciles.',
-      'Seguirán existiendo conversaciones incómodas.',
-      'Seguirán existiendo desacuerdos.',
-    ],
-    realityCheck: 'Contexto™ no elimina eso.',
-    purposeClosure: 'Solo te ayuda a llegar a esos momentos con una pieza más de información.',
-    ctaLabel: 'CONTINUAR',
+    eyebrow: 'ACCIÓN CONTEXTUAL',
+    ideaTitle: 'UNA IDEA PARA HOY',
+    ideaBody: 'Antes de asumir que algo tiene que ver contigo, pregúntale cómo está.',
+    microgestureTitle: 'UN MICROGESTO',
+    microgestureBody: '“¿Cómo estás hoy?”',
+    guidance1: 'Si quiere hablar, escucha.',
+    guidance2: 'Si necesita espacio, respétalo.',
+    avoidTitle: '¿QUÉ EVITAR?',
+    avoidBody: 'Convertir inmediatamente un cambio de ánimo, cansancio o distancia en una conclusión sobre la relación.',
+    ctaLabel: 'VER EL SIGUIENTE PASO',
   },
 
-  // SCREEN 11 — EL DESEO (AUTOEVALUACIÓN)
+  // SCREEN 11 — ¿TE SERÍA ÚTIL?
   screen11: {
-    eyebrow: 'IMAGINACIÓN COTIDIANA',
-    lead1: 'Ahora imagina tener esa referencia todos los días.',
-    notFor: [
-      'No para controlar.',
-      'No para predecir.',
-      'No para encontrar excusas.',
-    ],
-    forLead: 'Para comprender.',
-    forClosure: 'Antes de reaccionar.',
-    finalQuestion: '¿Te serviría?',
+    eyebrow: 'EVALUACIÓN DE VALOR',
+    beat1: 'Acabas de ver una pequeña parte de lo que Contexto™ puede hacer.',
+    beat2: 'Ahora quiero preguntarte algo.',
+    beat3: 'Si pudieras tener este contexto cada día...',
+    question: '¿Crees que te sería útil?',
     options: [
       {
-        id: 'opt_quite_a_lot',
-        code: 'A',
-        label: 'Sí, bastante.',
-        feedback: 'Tener una coordenada diaria transforma la incertidumbre en claridad operativa.',
+        id: 'opt_yes',
+        code: 'YES' as const,
+        label: 'SÍ, ME SERÍA ÚTIL',
+        feedback: 'Tener una referencia antes de reaccionar cambia por completo la calidad de la respuesta cotidiana.',
       },
       {
-        id: 'opt_think_so',
-        code: 'B',
-        label: 'Creo que sí.',
-        feedback: 'Contar con una referencia previa facilita abordar las conversaciones con serenidad.',
+        id: 'opt_unsure',
+        code: 'UNSURE' as const,
+        label: 'NO ESTOY SEGURO',
+        feedback: 'Es natural tener dudas. El verdadero impacto se observa cuando se utiliza de forma continuada en momentos clave.',
       },
-      {
-        id: 'opt_try_first',
-        code: 'C',
-        label: 'Tendría que probarlo.',
-        feedback: 'Experimentar el impacto en situaciones reales es la forma más honesta de evaluarlo.',
-      },
-      {
-        id: 'opt_not_sure',
-        code: 'D',
-        label: 'No estoy seguro.',
-        feedback: 'Es natural mantener la reserva antes de comprobar cómo se siente en tu día a día.',
-      },
-    ] as ChoiceOption[],
+    ],
     ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 12 — PREPARACIÓN PARA LA REVELACIÓN
+  // SCREEN 12 — PRUEBA COMPLETADA
   screen12: {
-    eyebrow: 'EL SIGUIENTE UMBRAL',
-    lead1: 'Hay algo que todavía no has visto.',
-    lead2: 'Porque hasta ahora...',
-    lead3: '...solo has imaginado cómo podría ser utilizar Contexto™.',
-    prelude: 'Ahora vas a ver...',
-    dominantReveal: '...qué hay realmente detrás.',
-    ctaLabel: 'VER LA REVELACIÓN',
+    eyebrow: 'PRUEBA COMPLETADA',
+    beat1: 'Ya utilizaste una pequeña parte de Contexto™.',
+    beat2: 'Ahora sabes cómo se siente tener información adicional antes de reaccionar.',
+    beat3: 'Pero hay algo que todavía no hemos investigado.',
+    dominantQuestion: '¿Qué podría cambiar en tu relación si tuvieras este contexto todos los días?',
+    ctaLabel: 'DESCUBRIRLO',
   },
 };
