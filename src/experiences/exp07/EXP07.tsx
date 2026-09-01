@@ -861,62 +861,58 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         {currentScreenId === 'screen_07_not_an_answer' && (
           <div
             id="screen-07-not-an-answer"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
+            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
             <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                   {EXP07_CONTENT.screen07.eyebrow}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
                 </span>
               </div>
 
               <div
-                className={`space-y-1 transition-all duration-1000 ${
+                className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-3 transition-all duration-1000 ${
                   screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                <span className="text-[10px] font-mono tracking-widest uppercase text-orange-400 block">
+                  {EXP07_CONTENT.screen07.title}
+                </span>
+                <p className="text-xl sm:text-2xl font-serif italic text-white leading-snug">
                   {EXP07_CONTENT.screen07.beat1}
                 </p>
-                <p className="text-xl sm:text-2xl font-serif italic text-white">
+                <p className="text-sm sm:text-base text-neutral-300 font-body">
                   {EXP07_CONTENT.screen07.beat2}
                 </p>
-                <p className="text-base text-neutral-400 font-body">
+                <p className="text-xs sm:text-sm text-neutral-400 font-body border-t border-[#181818] pt-3">
                   {EXP07_CONTENT.screen07.beat3}
                 </p>
               </div>
 
-              {/* Dominant Word Reveal */}
+              {/* Dominant Highlight Reveal */}
               <div
-                className={`p-6 rounded-2xl bg-[#080808] border border-[#222] text-center transition-all duration-1000 ${
+                className={`p-6 rounded-2xl bg-[#0C0C0C] border border-orange-500/30 text-center transition-all duration-1000 ${
                   screenStage >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                 }`}
               >
-                <span className="text-3xl sm:text-5xl font-serif italic text-orange-400 tracking-wider">
-                  {EXP07_CONTENT.screen07.dominantWord}
+                <p className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-2">
+                  {EXP07_CONTENT.screen07.dominantLead}
+                </p>
+                <span className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 tracking-wide font-semibold block">
+                  “{EXP07_CONTENT.screen07.dominantWord}”
                 </span>
               </div>
 
               <div
-                className={`space-y-2 transition-all duration-1000 ${
+                className={`p-4 rounded-xl bg-[#080808] border border-[#161616] text-center transition-all duration-1000 ${
                   screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-sm sm:text-base text-neutral-300 font-body leading-relaxed">
+                <p className="text-base sm:text-lg font-serif italic text-orange-200">
                   {EXP07_CONTENT.screen07.beat4}
-                </p>
-              </div>
-
-              <div
-                className={`pt-3 border-t border-[#181818] space-y-1 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono text-neutral-500 italic">
-                  {EXP07_CONTENT.screen07.beat5}
-                </p>
-                <p className="text-base sm:text-lg font-serif italic text-orange-300">
-                  {EXP07_CONTENT.screen07.beat6}
                 </p>
               </div>
             </div>
@@ -939,9 +935,9 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         {currentScreenId === 'screen_08_what_to_consider' && (
           <div
             id="screen-08-what-to-consider"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
+            className="w-full flex flex-col items-center text-center space-y-6 animate-fade-in max-w-xl mx-auto py-6"
           >
-            <div className="space-y-6 text-left w-full">
+            <div className="space-y-5 text-left w-full">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                   {EXP07_CONTENT.screen08.eyebrow}
@@ -951,50 +947,43 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
                 </span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
-                {EXP07_CONTENT.screen08.title}
-              </h2>
+              <div className="space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
+                  {EXP07_CONTENT.screen08.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen08.subtitle}
+                </p>
+              </div>
 
+              {/* 3 Categories in clean, human cards */}
+              <div className="space-y-3">
+                {EXP07_CONTENT.screen08.categories.map((cat, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] flex items-start space-x-3.5 transition-all duration-1000 ${
+                      screenStage >= idx + 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <span className="px-2.5 py-1 rounded bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-mono tracking-wider font-semibold shrink-0">
+                      {cat.tag}
+                    </span>
+                    <p className="text-sm font-body text-neutral-200 leading-relaxed pt-0.5">
+                      {cat.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Closure Banner */}
               <div
-                className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-4 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                className={`p-3.5 rounded-xl bg-[#0C0C0C] border border-[#1F1F1F] text-center transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-sm sm:text-base font-body text-neutral-300 leading-relaxed">
-                  {cycleResult.phaseData.practicalConsideration}
+                <p className="text-xs sm:text-sm font-mono uppercase tracking-wider text-orange-400">
+                  {EXP07_CONTENT.screen08.closure}
                 </p>
-
-                <div
-                  className={`pt-3 border-t border-[#161616] space-y-3 transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    {EXP07_CONTENT.screen08.principlesLead}
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {EXP07_CONTENT.screen08.verbs.map((verb, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-lg bg-[#0C0C0C] border border-[#1A1A1A] text-center"
-                      >
-                        <span className="text-sm sm:text-base font-serif italic text-orange-400 font-semibold">
-                          {verb}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  className={`pt-2 border-t border-[#141414] transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-center text-xs sm:text-sm font-mono uppercase tracking-wider text-orange-300/90">
-                    {EXP07_CONTENT.screen08.closure}
-                  </p>
-                </div>
               </div>
             </div>
 

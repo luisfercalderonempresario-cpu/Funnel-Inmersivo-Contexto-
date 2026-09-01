@@ -1,7 +1,7 @@
 // Qualitative Connection Mode Card for EXP_07 (Screen 09)
 import React from 'react';
 import { EXP07_CONTENT } from '../exp07Content';
-import { Compass, ShieldAlert } from 'lucide-react';
+import { Compass } from 'lucide-react';
 
 interface ConnectionModeCardProps {
   caseId: string;
@@ -40,24 +40,30 @@ export const ConnectionModeCard: React.FC<ConnectionModeCardProps> = ({
               <span className="text-[10px] font-mono tracking-wider uppercase text-orange-400 block">
                 {EXP07_CONTENT.screen09.modeLabel}
               </span>
-              <p className="text-xl sm:text-2xl font-serif italic text-white font-semibold">
+              <p className="text-2xl sm:text-3xl font-serif italic text-white font-semibold">
                 {EXP07_CONTENT.screen09.modeValue}
               </p>
             </div>
-            <span className="text-xs font-mono px-2.5 py-1 rounded bg-orange-500/20 text-orange-300">
-              ORIENTACIÓN
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+              30 SEGUNDOS AL DÍA
             </span>
+          </div>
+
+          <div className="space-y-1 pt-1 text-xs sm:text-sm text-neutral-300 font-body">
+            <p>{EXP07_CONTENT.screen09.lead1}</p>
+            <p className="font-serif italic text-orange-200">{EXP07_CONTENT.screen09.lead2}</p>
           </div>
         </div>
 
-        <div className="pt-2 space-y-2">
-          <p className="text-sm font-body text-neutral-400">
-            {EXP07_CONTENT.screen09.lead}
-          </p>
-          <div className="p-4 rounded-xl bg-[#0C0C0C] border border-[#222]">
+        <div className="pt-2 border-t border-[#161616] space-y-3">
+          <div className="p-4 rounded-xl bg-[#0C0C0C] border border-[#222] space-y-2">
             <p className="text-lg sm:text-xl font-serif italic text-orange-400 text-center">
               “{EXP07_CONTENT.screen09.directive}”
             </p>
+            <div className="space-y-1 text-xs text-neutral-300 font-body text-center pt-1 border-t border-[#181818]">
+              <p>{EXP07_CONTENT.screen09.explanation1}</p>
+              <p className="text-neutral-400">{EXP07_CONTENT.screen09.explanation2}</p>
+            </div>
           </div>
           <p className="text-xs text-neutral-500 font-mono text-center pt-1">
             {EXP07_CONTENT.screen09.note}

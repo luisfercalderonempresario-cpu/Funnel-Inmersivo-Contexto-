@@ -65,25 +65,37 @@ export const ContextResultCard: React.FC<ContextResultCardProps> = ({
           </div>
         </div>
 
-        {/* Scientific Context Summary */}
-        <div className="p-3.5 rounded-xl bg-[#0C0C0C] border border-[#181818] space-y-1">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block">
-            MARCO FISIOLÓGICO
+        {/* Human Context Points */}
+        <div className="p-4 rounded-xl bg-[#0C0C0C] border border-[#181818] space-y-3">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-orange-400/90 block">
+            {EXP07_CONTENT.screen06.sectionTitle}
           </span>
-          <p className="text-xs sm:text-sm text-neutral-300 font-body leading-relaxed">
-            {phaseData.scientificContext}
-          </p>
+          <div className="space-y-2 text-xs sm:text-sm text-neutral-300 font-body leading-relaxed">
+            <div className="flex items-start space-x-2">
+              <span className="text-orange-400 font-bold shrink-0 mt-0.5">•</span>
+              <p>{EXP07_CONTENT.screen06.point1}</p>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="text-orange-400 font-bold shrink-0 mt-0.5">•</span>
+              <p>{EXP07_CONTENT.screen06.point2}</p>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="text-orange-400 font-bold shrink-0 mt-0.5">•</span>
+              <p>{EXP07_CONTENT.screen06.point3}</p>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="text-orange-400 font-bold shrink-0 mt-0.5">•</span>
+              <p>{EXP07_CONTENT.screen06.point4}</p>
+            </div>
+          </div>
         </div>
 
-        {/* Disclaimers & Safety Framing */}
-        <div className="pt-2 border-t border-[#141414] space-y-2">
-          <div className="flex items-start space-x-2 text-xs text-neutral-400">
-            <Info className="w-3.5 h-3.5 text-neutral-500 shrink-0 mt-0.5" />
-            <p>{EXP07_CONTENT.screen06.clarification1}</p>
-          </div>
-          <div className="flex items-start space-x-2 text-xs text-neutral-400">
-            <Info className="w-3.5 h-3.5 text-neutral-500 shrink-0 mt-0.5" />
-            <p>{EXP07_CONTENT.screen06.clarification2}</p>
+        {/* Closing Axiom */}
+        <div className="pt-2 border-t border-[#141414]">
+          <div className="p-3 rounded-lg bg-black/40 border border-[#1C1C1C] text-center">
+            <p className="text-xs sm:text-sm font-mono uppercase tracking-wider text-orange-300">
+              {EXP07_CONTENT.screen06.closure}
+            </p>
           </div>
         </div>
       </div>
