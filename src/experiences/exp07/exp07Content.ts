@@ -1,4 +1,4 @@
-// EXP_07 — LA PRUEBA (Content & Copy Definitions V1.0)
+// EXP_07 — LA PRUEBA (Content & Copy Definitions V2.0 - Interactive Product Demo)
 import { CyclePhase } from './cycleEngine';
 
 export interface UtilityOption {
@@ -8,61 +8,66 @@ export interface UtilityOption {
   feedback: string;
 }
 
+export interface SituationOption {
+  id: 'A' | 'B' | 'C';
+  code: 'A' | 'B' | 'C';
+  label: string;
+  text: string;
+}
+
 export const EXP07_CONTENT = {
+  // Demo Case Static Reference
+  demoCase: {
+    dateStr: '2026-08-25',
+    displayDate: '25 DE AGOSTO',
+    description: 'Primer día de la última menstruación.',
+  },
+
   // SCREEN 01 — EL CAMBIO
   screen01: {
     eyebrow: 'EXP_07 / LA PRUEBA',
-    beat1: 'LA INVESTIGACIÓN TE MOSTRÓ ALGO.',
-    beat2: 'A veces no necesitas una mejor reacción.',
-    beat3: 'Necesitas más información antes de reaccionar.',
-    beat4: 'Ahora vamos a probarlo.',
-    ctaLabel: 'PROBAR CONTEXTO™',
+    beat1: 'Hemos pasado varios minutos intentando entender algo.',
+    beat2: 'Y hay una idea que empieza a aparecer.',
+    beat3: 'No siempre reaccionas mal porque no sabes qué hacer.',
+    beat4: 'A veces reaccionas con la información que tienes.',
+    beat5: '¿Y si pudieras tener un poco más de contexto antes de hacerlo?',
+    ctaLabel: 'QUIERO VERLO',
   },
 
   // SCREEN 02 — VAMOS A PROBARLO
   screen02: {
-    eyebrow: 'EXPERIENCIA PRÁCTICA',
-    beat1: 'Por un momento, olvida la investigación.',
-    beat2: 'Imagina que hoy es un día cualquiera.',
-    beat3: 'Ella está frente a ti.',
-    beat4: 'Y tú quieres saber algo antes de reaccionar.',
-    beat5: '¿Qué contexto tienes hoy?',
-    beat6: 'Vamos a descubrirlo.',
-    ctaLabel: 'EMPEZAR',
+    eyebrow: 'DEMOSTRACIÓN INTERACTIVA',
+    beat1: 'Vamos a probar Contexto™ con un caso.',
+    beat2: 'Sin configurar nada.',
+    beat3: 'Sin aprender nada.',
+    beat4: 'Solo vamos a darle un dato.',
+    ctaLabel: 'EMPEZAR PRUEBA',
   },
 
-  // SCREEN 03 — EL DATO
+  // SCREEN 03 — EL CASO
   screen03: {
-    eyebrow: 'EL PUNTO DE PARTIDA',
-    title: 'CONTEXTO™ NECESITA UN PUNTO DE PARTIDA.',
-    beat1: 'Una fecha.',
-    beat2: 'El primer día de su última menstruación.',
-    beat3: 'No necesitas recordarla con exactitud.',
-    beat4: 'Una fecha aproximada también puede servir como referencia.',
-    ctaLabel: 'INTRODUCIR FECHA',
+    eyebrow: 'CASO DEMOSTRATIVO',
+    title: 'CASO DEMOSTRATIVO',
+    beat1: 'Imagina que el primer día de la última menstruación de tu novia fue el 25 de agosto.',
+    beat2: 'No necesitas introducir la fecha.',
+    beat3: 'Contexto™ hará el resto.',
+    ctaLabel: 'VER QUÉ ENCUENTRA',
   },
 
-  // SCREEN 04 — LA FECHA
+  // SCREEN 04 — EL DATO
   screen04: {
-    eyebrow: 'ENTRADA DE INFORMACIÓN',
-    title: '¿CUÁNDO COMENZÓ SU ÚLTIMA MENSTRUACIÓN?',
-    subtitle: 'Si no recuerdas el día exacto, introduce una fecha aproximada.',
-    approximateToggleLabel: 'No recuerdo la fecha exacta (usar aproximación)',
-    approximateHelper: 'Usaremos esta información solo como referencia orientativa.',
-    quickPresets: [
-      { label: 'Hace ~1 semana', daysAgo: 7 },
-      { label: 'Hace ~2 semanas', daysAgo: 14 },
-      { label: 'Hace ~3 semanas', daysAgo: 21 },
-      { label: 'Hace ~4 semanas', daysAgo: 28 },
-    ],
-    ctaLabel: 'ANALIZAR MI CONTEXTO',
+    eyebrow: 'DATO RECIBIDO',
+    dateTag: '25 DE AGOSTO',
+    dateSubtext: 'Primer día de la última menstruación.',
+    beat1: 'Ahora mira qué hace Contexto™ con un dato tan sencillo.',
+    ctaLabel: 'ANALIZAR',
   },
 
-  // SCREEN 05 — ANALIZANDO EL CASO
+  // SCREEN 05 — MOTOR CONTEXTUAL
   screen05: {
     eyebrow: 'MOTOR CONTEXTUAL',
-    headline: 'ANALIZANDO TU DATO...',
-    subheadline: 'Preparando tu contexto de hoy.',
+    headline: 'ANALIZANDO EL DATO...',
+    subheadline: 'Preparando tu contexto.',
     helper: 'Esto tomará solo un momento.',
     steps: [
       { id: 'step1', text: 'RECIBIENDO DATO...' },
@@ -74,97 +79,130 @@ export const EXP07_CONTENT = {
     ctaLabel: 'VER RESULTADO',
   },
 
-  // SCREEN 06 — TU CONTEXTO DE HOY
+  // SCREEN 06 — EL CONTEXTO
   screen06: {
     eyebrow: 'CONTEXTO DE HOY',
-    lead: 'Según la fecha que ingresaste...',
+    lead: 'Con este dato, Contexto™ puede generar una referencia orientativa del momento del ciclo.',
     sublabel: 'PODRÍA ESTAR EN',
     disclaimerBadge: 'Estimación orientativa',
-    sectionTitle: 'PARA ENTENDER EL CONTEXTO',
+    sectionTitle: '¿QUÉ ME APORTA SABER ESTO?',
     point1: 'Durante esta etapa ocurren cambios naturales en el cuerpo.',
     point2: 'No significa que ella vaya a sentirse o comportarse de una manera determinada.',
     point3: 'Cada mujer y cada ciclo pueden ser diferentes.',
     point4: 'Lo importante es que ahora tienes una pieza más de información antes de interpretar lo que ocurre.',
-    clarification1: 'El ciclo menstrual varía entre mujeres y entre ciclos.',
-    clarification2: 'Esta información no determina cómo se sentirá o comportará tu pareja.',
     closure: 'EL CONTEXTO ORIENTA. LA CONVERSACIÓN CONFIRMA.',
     ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 07 — NO ES UNA RESPUESTA
+  // SCREEN 07 — LO IMPORTANTE NO ES LA FASE
   screen07: {
     eyebrow: 'INTERPRETACIÓN CORRECTA',
-    title: 'NO ES UNA RESPUESTA',
-    beat1: 'Esto no te dice cómo se siente ella.',
-    beat2: 'Tampoco puede decirte exactamente cómo va a reaccionar.',
-    beat3: 'Porque el ciclo no determina la personalidad, las emociones ni las decisiones de una persona.',
-    dominantLead: 'Lo que sí hace es darte algo que antes no tenías:',
+    title: 'LO IMPORTANTE NO ES LA FASE',
+    beat1: 'Pero aquí está lo importante.',
+    beat2: 'La fase no te dice cómo se siente ella.',
+    beat3: 'Tampoco te dice cómo va a reaccionar.',
+    beatQuestion: 'Entonces... ¿para qué sirve?',
+    beat4: 'Para que no tengas que interpretar una situación con una sola pieza de información.',
     dominantWord: 'UNA PIEZA MÁS DE CONTEXTO',
-    beat4: 'Y eso cambia la pregunta.',
-    ctaLabel: 'VER LO QUE PUEDES CONSIDERAR',
+    beat5: 'Ahora tienes un dato más.',
+    beat6: 'Y ese dato puede cambiar la forma en que miras lo que está pasando.',
+    ctaLabel: 'VER EL EJEMPLO',
   },
 
-  // SCREEN 08 — LO QUE PUEDES CONSIDERAR
+  // SCREEN 08 — UNA SITUACIÓN REAL
   screen08: {
-    eyebrow: 'CONSIDERACIONES PRÁCTICAS',
-    title: 'LO QUE PUEDES CONSIDERAR',
-    subtitle: 'Contexto™ no te dice qué pensar de ella. Te ayuda a saber qué mirar antes de reaccionar.',
-    categories: [
+    eyebrow: 'SITUACIÓN COTIDIANA',
+    title: 'IMAGINA ESTO',
+    story1: 'Ella llega a casa.',
+    story2: 'Está más callada de lo habitual.',
+    story3: 'Le preguntas si ocurre algo.',
+    herResponse: '“Estoy cansada.”',
+    question: '¿Qué harías normalmente?',
+    options: [
       {
-        tag: 'OBSERVA',
-        description: 'Antes de asumir qué ocurre, mira cómo está realmente.',
+        id: 'A',
+        code: 'A',
+        label: 'OPCIÓN A',
+        text: '“Seguro está molesta conmigo.”',
       },
       {
-        tag: 'PREGUNTA',
-        description: 'En lugar de adivinar, pregúntale.',
+        id: 'B',
+        code: 'B',
+        label: 'OPCIÓN B',
+        text: '“Le doy espacio y no pregunto más.”',
       },
       {
-        tag: 'ESCUCHA',
-        description: 'Deja que su respuesta tenga más peso que tu primera interpretación.',
+        id: 'C',
+        code: 'C',
+        label: 'OPCIÓN C',
+        text: '“Le pregunto qué necesita y escucho su respuesta.”',
       },
-    ],
-    closure: 'EL CONTEXTO ORIENTA. LA CONVERSACIÓN CONFIRMA.',
-    ctaLabel: 'VER ÍNDICE DE CONEXIÓN',
+    ] as SituationOption[],
   },
 
-  // SCREEN 09 — ÍNDICE DE CONEXIÓN DIARIA™
+  // SCREEN 09 — CONTEXTO EN ACCIÓN
   screen09: {
-    eyebrow: 'MÉTRICA CUALITATIVA',
+    eyebrow: 'LA DIFERENCIA CONTEXTUAL',
+    title: 'FÍJATE EN LO QUE ACABA DE PASAR',
+    beat1: 'Sin contexto, tu mente tiene que completar los espacios vacíos.',
+    beat2: 'Y cuando faltan datos, es fácil llenarlos con suposiciones.',
+    beat3: 'Contexto™ no decide por ti.',
+    beat4: 'Te ayuda a llegar a la situación con una pieza más de información.',
+    formula: {
+      part1: 'DATO',
+      part2: 'OBSERVACIÓN',
+      part3: 'CONVERSACIÓN',
+      result: 'MEJOR CONTEXTO',
+    },
+    ctaLabel: 'VER QUÉ PREGUNTAR',
+  },
+
+  // SCREEN 10 — UNA MEJOR PREGUNTA
+  screen10: {
+    eyebrow: 'EN LUGAR DE ADIVINAR...',
+    title: 'UNA MEJOR PREGUNTA',
+    leadQuestion: '¿Qué necesita ella realmente?',
+    alternative1Title: 'OPCIÓN 1',
+    alternative1: '“¿Quieres contarme qué pasa?”',
+    alternative2Title: 'OPCIÓN 2',
+    alternative2: '“¿Quieres descansar un rato?”',
+    takeaway: 'Contexto™ no te da una respuesta automática. Te ayuda a hacer mejores preguntas.',
+    ctaLabel: 'VER ACCIÓN DE HOY',
+  },
+
+  // SCREEN 11 — UNA ACCIÓN PARA HOY
+  screen11: {
+    eyebrow: 'HERRAMIENTA COTIDIANA',
     title: 'ÍNDICE DE CONEXIÓN DIARIA™',
     modeLabel: 'MODO CUALITATIVO',
     modeValue: 'HOY: COMPRENDER',
-    lead1: 'No necesitas resolver lo que ocurre inmediatamente.',
-    lead2: 'Primero intenta comprenderlo.',
-    directiveTitle: 'DIRECTIVA CENTRAL',
-    directive: 'NO TE ADELANTES A LA INTERPRETACIÓN.',
-    explanation1: 'Si algo cambia en ella, no tienes que inventar una explicación.',
-    explanation2: 'Ahora tienes una pieza de contexto que puede ayudarte a mirar la situación de otra manera.',
-    note: '30 segundos al día para pausar la reactividad automática.',
-    ctaLabel: 'VER ACCIÓN PARA HOY',
-  },
-
-  // SCREEN 10 — UNA ACCIÓN PARA HOY
-  screen10: {
-    eyebrow: 'ACCIÓN CONTEXTUAL',
-    title: 'UNA ACCIÓN PARA HOY',
-    ideaTitle: 'IDEA',
-    ideaBody: 'En lugar de intentar arreglarlo todo, empieza preguntando cómo está.',
+    ideaTitle: 'UNA ACCIÓN',
+    ideaBody: 'Antes de sacar una conclusión, pregunta.',
     microgestureTitle: 'MICROGESTO',
     microgestureBody: '“¿Cómo estás hoy?”',
-    guidance1: 'Si quiere hablar, escucha.',
-    guidance2: 'Si necesita espacio, respétalo.',
     avoidTitle: 'QUÉ EVITAR',
-    avoidBody: 'No interpretes su respuesta antes de escucharla.',
-    ctaLabel: 'VER EL SIGUIENTE PASO',
+    avoidBody: 'Convertir inmediatamente su estado de ánimo en una explicación sobre ti.',
+    note: 'Una orientación diseñada para pausar la reactividad automática.',
+    ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 11 — ¿TE SERÍA ÚTIL?
-  screen11: {
-    eyebrow: 'EVALUACIÓN DE VALOR',
-    beat1: 'Acabas de ver una pequeña parte de lo que Contexto™ puede hacer.',
-    beat2: 'Ahora quiero preguntarte algo.',
-    beat3: 'Si pudieras tener este contexto cada día...',
-    question: '¿Crees que te sería útil?',
+  // SCREEN 12 — EL MICRORESULTADO
+  screen12: {
+    eyebrow: 'EL CAMBIO EN LA CONVERSACIÓN',
+    beat1: 'Hace unos minutos solo tenías una situación.',
+    beat2: 'Ahora tienes otra forma de mirarla.',
+    beat3: 'No sabes exactamente qué le pasa.',
+    beat4: 'Pero tampoco necesitas inventarlo.',
+    verbs: ['Puedes observar.', 'Puedes preguntar.', 'Puedes escuchar.'],
+    closure: 'Y eso ya cambia la conversación.',
+    ctaLabel: 'CONTINUAR',
+  },
+
+  // SCREEN 13 — ¿TE SERÍA ÚTIL?
+  screen13: {
+    eyebrow: 'EVALUACIÓN DE UTILIDAD',
+    lead: 'Si pudieras tener esta información contigo cada día...',
+    question: '¿Crees que te ayudaría a reaccionar con más contexto?',
     options: [
       {
         id: 'opt_yes',
@@ -178,17 +216,18 @@ export const EXP07_CONTENT = {
         label: 'NO ESTOY SEGURO',
         feedback: 'Es natural tener dudas. El verdadero impacto se observa cuando se utiliza de forma continuada en momentos clave.',
       },
-    ],
+    ] as UtilityOption[],
     ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 12 — PRUEBA COMPLETADA
-  screen12: {
-    eyebrow: 'PRUEBA COMPLETADA',
-    beat1: 'Ya utilizaste una pequeña parte de Contexto™.',
-    beat2: 'Ahora sabes cómo se siente tener información adicional antes de reaccionar.',
-    beat3: 'Pero hay algo que todavía no hemos investigado.',
-    dominantQuestion: '¿Qué podría cambiar en tu relación si tuvieras este contexto todos los días?',
-    ctaLabel: 'DESCUBRIRLO',
+  // SCREEN 14 — CIERRE DE LA PRUEBA
+  screen14: {
+    eyebrow: 'DEMOSTRACIÓN FINALIZADA',
+    beat1: 'Esto fue solo una demostración.',
+    beat2: 'Usamos un caso de ejemplo.',
+    beat3: 'En Contexto™ real, el contexto se construye alrededor de tu relación y del momento que estás viviendo.',
+    beat4: 'No para decirte cómo es ella.',
+    beat5: 'Sino para ayudarte a comprender antes de reaccionar.',
+    ctaLabel: 'CONTINUAR',
   },
 };

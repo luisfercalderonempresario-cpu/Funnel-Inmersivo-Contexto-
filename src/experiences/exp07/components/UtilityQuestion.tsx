@@ -1,9 +1,9 @@
-// Psychological Utility Recognition Question for EXP_07 (Screen 11)
+// Psychological Utility Recognition Question for EXP_07 (Screen 13)
 import React, { useState } from 'react';
 import { EXP07_CONTENT, UtilityOption } from '../exp07Content';
 import { ChoiceButton } from '../../../components/ui/ChoiceButton';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface UtilityQuestionProps {
   selectedCode?: 'YES' | 'UNSURE' | null;
@@ -28,14 +28,14 @@ export const UtilityQuestion: React.FC<UtilityQuestionProps> = ({
     onSelect(opt.code, opt.label);
   };
 
-  const selectedOpt = EXP07_CONTENT.screen11.options.find(
+  const selectedOpt = EXP07_CONTENT.screen13.options.find(
     (o) => o.code === currentSelection
   );
 
   return (
     <div id="utility-question-container" className="w-full space-y-6 text-left animate-fade-in">
       <div className="space-y-3">
-        {EXP07_CONTENT.screen11.options.map((opt) => {
+        {EXP07_CONTENT.screen13.options.map((opt) => {
           const isSelected = currentSelection === opt.code;
           return (
             <div key={opt.id} className="w-full">
@@ -56,7 +56,7 @@ export const UtilityQuestion: React.FC<UtilityQuestionProps> = ({
       {selectedOpt && (
         <div
           id="utility-feedback-box"
-          className="p-4 rounded-xl bg-[#0A0A0A] border border-[#1A1A1A] space-y-2 animate-fade-in"
+          className="p-4 rounded-xl bg-[#0A0A0A] border border-[#1A1A1A] space-y-3 animate-fade-in"
         >
           <div className="flex items-center space-x-2 text-xs font-mono text-orange-400">
             <Sparkles className="w-3.5 h-3.5" />
@@ -66,9 +66,9 @@ export const UtilityQuestion: React.FC<UtilityQuestionProps> = ({
             {selectedOpt.feedback}
           </p>
 
-          <div className="pt-3">
+          <div className="pt-2">
             <PrimaryCTA id="utility-continue-cta" onClick={onContinue}>
-              {EXP07_CONTENT.screen11.ctaLabel}
+              {EXP07_CONTENT.screen13.ctaLabel}
             </PrimaryCTA>
           </div>
         </div>

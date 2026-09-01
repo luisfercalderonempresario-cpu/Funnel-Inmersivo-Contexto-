@@ -1,14 +1,13 @@
-// EXP_07 — LA PRUEBA (Interactive Contexto™ Product Experience V1.0)
+// EXP_07 — LA PRUEBA (Contexto™ Interactive Product Demo V2.0)
 import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
 import { ExperienceId } from '../../engine/state/types';
-import { EXP07_CONTENT } from './exp07Content';
+import { EXP07_CONTENT, SituationOption } from './exp07Content';
 import { EXP07_DEFINITION } from './exp07Definition';
 import {
   calculateCycleContext,
   CycleCalculationResult,
-  CyclePhase,
 } from './cycleEngine';
 import { ExperienceMemoryManager } from '../../engine/experience/experienceMemory';
 import {
@@ -19,14 +18,13 @@ import {
 import { ExperienceRuntimeState } from '../../engine/experience/types';
 import { eventTracker } from '../../engine/events/eventTracker';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
-import { Volume2, VolumeX, Sparkles, Compass, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { ChoiceButton } from '../../components/ui/ChoiceButton';
+import { Volume2, VolumeX, Sparkles, Compass, ShieldCheck, HeartHandshake, Calendar, ArrowRight, HelpCircle, Check, MessageSquare } from 'lucide-react';
 import { useNarrativePacing, CTAReveal, NarrativeBeat } from '../../engine/pacing';
 
 // Subcomponents
-import { CycleDateInput } from './components/CycleDateInput';
 import { ContextAnalysis } from './components/ContextAnalysis';
 import { ContextResultCard } from './components/ContextResultCard';
-import { ConnectionModeCard } from './components/ConnectionModeCard';
 import { DailyActionCard } from './components/DailyActionCard';
 import { UtilityQuestion } from './components/UtilityQuestion';
 
@@ -93,7 +91,9 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       experienceId: 'exp07',
       currentScreen: 'screen_01_the_shift',
       status: 'ACTIVE',
-      localData: {},
+      localData: {
+        demoDate: EXP07_CONTENT.demoCase.dateStr,
+      },
       localMemory: {},
       completedScreens: [],
       startedAt: new Date().toISOString(),
@@ -108,113 +108,121 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
 
   const currentScreenId = runtimeState.currentScreen;
 
-  // Restore saved inputs from memory/state
+  // Restore saved state from responses/localData
   const savedResponses = (state.responses.exp07 || {}) as Record<string, unknown>;
-  const savedMenstruationDate = (savedResponses['exp07.menstruationDate'] ||
-    runtimeState.localData?.menstruationDate ||
-    '') as string;
-  const savedDateIsApproximate = Boolean(
-    savedResponses['exp07.dateIsApproximate'] ??
-      runtimeState.localData?.dateIsApproximate ??
-      false
-  );
+  const savedSituationChoice = (savedResponses['exp07.demoSituationChoice'] ||
+    runtimeState.localData?.demoSituationChoice) as 'A' | 'B' | 'C' | undefined;
   const savedUtilityRecognition = (savedResponses['exp07.productUtilityRecognition'] ||
     runtimeState.localData?.productUtilityRecognition) as 'YES' | 'UNSURE' | undefined;
 
-  // Compute cycle result from saved date (or fallback)
+  // Compute cycle result using fixed demo date (25th August)
   const cycleResult: CycleCalculationResult = useMemo(() => {
-    if (!savedMenstruationDate) {
-      // Default to 18 days ago (Luteal phase demo) if no date selected yet
-      const fallbackDate = new Date();
-      fallbackDate.setDate(fallbackDate.getDate() - 18);
-      return calculateCycleContext({
-        menstruationDate: fallbackDate.toISOString().split('T')[0],
-        dateIsApproximate: true,
-      });
-    }
     return calculateCycleContext({
-      menstruationDate: savedMenstruationDate,
-      dateIsApproximate: savedDateIsApproximate,
+      menstruationDate: EXP07_CONTENT.demoCase.dateStr,
+      dateIsApproximate: false,
     });
-  }, [savedMenstruationDate, savedDateIsApproximate]);
+  }, []);
 
-  // Narrative Beats Configuration for EXP_07
+  // Narrative Beats Configuration for all 14 screens of EXP_07
   const currentBeats: NarrativeBeat[] = useMemo(() => {
     switch (currentScreenId) {
       case 'screen_01_the_shift':
         return [
-          { id: 'caseId', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1', stage: 2, pacing: 'LONG', label: 'La investigación te mostró algo' },
-          { id: 'beat2', stage: 3, pacing: 'MEDIUM', label: 'A veces no necesitas mejor reacción' },
-          { id: 'beat3', stage: 4, pacing: 'LONG', label: 'Necesitas más información antes de reaccionar' },
-          { id: 'beat4', stage: 5, pacing: 'REVELATION', label: 'Ahora vamos a probarlo' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Probar Contexto™', isCTA: true },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Hemos pasado varios minutos' },
+          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'No siempre reaccionas mal' },
+          { id: 'beat5', stage: 4, pacing: 'REVELATION', label: '¿Y si pudieras tener más contexto?' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Quiero Verlo', isCTA: true },
         ];
       case 'screen_02_lets_try_it':
         return [
-          { id: 'beat1_2', stage: 1, pacing: 'MEDIUM', label: 'Olvida la investigación / Día cualquiera' },
-          { id: 'beat3_4', stage: 2, pacing: 'LONG', label: 'Ella frente a ti / Quieres saber algo' },
-          { id: 'beat5_6', stage: 3, pacing: 'REVELATION', label: '¿Qué contexto tienes hoy? / Vamos a descubrirlo' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Empezar', isCTA: true },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1', stage: 2, pacing: 'MEDIUM', label: 'Vamos a probar Contexto™ con un caso' },
+          { id: 'beat2_3', stage: 3, pacing: 'LONG', label: 'Sin configurar nada / Sin aprender nada' },
+          { id: 'beat4', stage: 4, pacing: 'REVELATION', label: 'Solo vamos a darle un dato' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Empezar Prueba', isCTA: true },
         ];
-      case 'screen_03_the_data':
+      case 'screen_03_the_case':
         return [
-          { id: 'title', stage: 1, pacing: 'LONG', label: 'Contexto™ necesita un punto de partida' },
-          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Una fecha / Primer día de su última menstruación' },
-          { id: 'beat3_4', stage: 3, pacing: 'REVELATION', label: 'No necesitas recordarla con exactitud / Aproximada sirve' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Introducir Fecha', isCTA: true },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1', stage: 2, pacing: 'LONG', label: 'Imagina que fue el 25 de agosto' },
+          { id: 'beat2_3', stage: 3, pacing: 'REVELATION', label: 'No necesitas introducirla / Contexto™ hará el resto' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Ver Qué Encuentra', isCTA: true },
         ];
-      case 'screen_04_date_input':
+      case 'screen_04_the_data':
         return [
-          { id: 'form', stage: 1, pacing: 'SHORT', label: 'Formulario de Fecha' },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'card', stage: 2, pacing: 'LONG', label: 'Tarjeta Dato 25 de Agosto' },
+          { id: 'beat1', stage: 3, pacing: 'REVELATION', label: 'Mira qué hace Contexto™ con un dato tan sencillo' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Analizar', isCTA: true },
         ];
       case 'screen_05_analyzing':
         return [
-          { id: 'analysis', stage: 1, pacing: 'LONG', label: 'Análisis en tiempo real' },
+          { id: 'analysis', stage: 1, pacing: 'LONG', label: 'Motor Contextual en progreso' },
         ];
-      case 'screen_06_today_context':
+      case 'screen_06_the_context':
         return [
           { id: 'card', stage: 1, pacing: 'LONG', label: 'Resultado de Contexto de Hoy' },
-          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Ver Mi Contexto de Hoy', isCTA: true },
-        ];
-      case 'screen_07_not_an_answer':
-        return [
-          { id: 'beat1_2', stage: 1, pacing: 'MEDIUM', label: 'Pero hay algo importante / No te dice cómo está ella' },
-          { id: 'dominant', stage: 2, pacing: 'REVELATION', label: 'Palabra dominante CONTEXTO' },
-          { id: 'beat4', stage: 3, pacing: 'LONG', label: 'Pieza de información para considerar' },
-          { id: 'beat5_6', stage: 4, pacing: 'REVELATION', label: 'No reemplaza lo que ella te dice / Ayuda a interpretar' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Mi Contexto', isCTA: true },
-        ];
-      case 'screen_08_what_to_consider':
-        return [
-          { id: 'lead', stage: 1, pacing: 'LONG', label: 'Hoy podrías considerar' },
-          { id: 'principles', stage: 2, pacing: 'LONG', label: 'No asumas / Observa, pregunta, escucha' },
-          { id: 'closure', stage: 3, pacing: 'REVELATION', label: 'El contexto orienta. La conversación confirma.' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_09_daily_connection_index':
-        return [
-          { id: 'card', stage: 1, pacing: 'LONG', label: 'Índice de Conexión Diaria™' },
           { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
-      case 'screen_10_daily_action':
+      case 'screen_07_not_just_phase':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1_2_3', stage: 2, pacing: 'LONG', label: 'Pero aquí está lo importante' },
+          { id: 'question', stage: 3, pacing: 'MEDIUM', label: '¿Entonces para qué sirve?' },
+          { id: 'dominant', stage: 4, pacing: 'REVELATION', label: 'Una pieza más de contexto' },
+          { id: 'beat5_6', stage: 5, pacing: 'LONG', label: 'Ahora tienes un dato más' },
+          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Ver el Ejemplo', isCTA: true },
+        ];
+      case 'screen_08_situation':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'story', stage: 2, pacing: 'LONG', label: 'Ella llega a casa / Cansada' },
+          { id: 'question', stage: 3, pacing: 'REVELATION', label: '¿Qué harías normalmente?' },
+          { id: 'options', stage: 4, pacing: 'MANUAL', label: 'Opciones A, B, C', isOptions: true },
+        ];
+      case 'screen_09_context_in_action':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Sin contexto tu mente completa los espacios' },
+          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'Contexto™ no decide por ti / Da información' },
+          { id: 'formula', stage: 4, pacing: 'REVELATION', label: 'Fórmula Contextual' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Qué Preguntar', isCTA: true },
+        ];
+      case 'screen_10_better_question':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'lead', stage: 2, pacing: 'LONG', label: '¿Qué necesita ella realmente?' },
+          { id: 'alts', stage: 3, pacing: 'LONG', label: 'Alternativas de preguntas' },
+          { id: 'takeaway', stage: 4, pacing: 'REVELATION', label: 'Te ayuda a hacer mejores preguntas' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Acción de Hoy', isCTA: true },
+        ];
+      case 'screen_11_daily_action':
         return [
           { id: 'card', stage: 1, pacing: 'LONG', label: 'Acción y Microgesto de Hoy' },
-          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Ver el Siguiente Paso', isCTA: true },
+          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
-      case 'screen_11_utility_question':
+      case 'screen_12_micro_result':
         return [
-          { id: 'beat1_2', stage: 1, pacing: 'MEDIUM', label: 'Acabas de ver una pequeña parte / Quiero preguntarte algo' },
-          { id: 'beat3_q', stage: 2, pacing: 'LONG', label: 'Si tuvieras este contexto cada día / ¿Crees que te sería útil?' },
-          { id: 'options', stage: 3, pacing: 'MANUAL', label: 'Opciones Sí / No estoy seguro', isOptions: true },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Hace unos minutos solo tenías una situación' },
+          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'No sabes exactamente qué le pasa / No necesitas inventarlo' },
+          { id: 'verbs', stage: 4, pacing: 'REVELATION', label: 'Puedes observar, preguntar, escuchar' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
-      case 'screen_12_trial_completed':
+      case 'screen_13_utility_question':
         return [
-          { id: 'beat1', stage: 1, pacing: 'SHORT', label: 'Prueba completada' },
-          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'Ya utilizaste una pequeña parte de Contexto™' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Pero hay algo que todavía no hemos investigado' },
-          { id: 'dominant', stage: 4, pacing: 'REVELATION', label: '¿Qué podría cambiar en tu relación si tuvieras este contexto todos los días?' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Descubrirlo', isCTA: true },
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'lead_q', stage: 2, pacing: 'LONG', label: 'Si tuvieras esta información cada día' },
+          { id: 'options', stage: 3, pacing: 'MANUAL', label: 'Opciones de Utilidad', isOptions: true },
+        ];
+      case 'screen_14_trial_completed':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Esto fue solo una demostración' },
+          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'En Contexto™ real se construye alrededor de tu relación' },
+          { id: 'beat4_5', stage: 4, pacing: 'REVELATION', label: 'Para ayudarte a comprender antes de reaccionar' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
       default:
         return [];
@@ -222,7 +230,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
   }, [currentScreenId]);
 
   // Hook into Narrative Pacing System
-  const { stage: screenStage, isCTARevealed, advanceStage } = useNarrativePacing({
+  const { stage: screenStage, isCTARevealed } = useNarrativePacing({
     experienceId: 'exp07',
     screenId: currentScreenId,
     beats: currentBeats,
@@ -251,15 +259,33 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       payload: { screenId: currentScreenId },
     });
 
-    if (currentScreenId === 'screen_03_the_data') {
-      eventTracker.trackEvent('DATE_INPUT_STARTED', {
+    if (currentScreenId === 'screen_03_the_case') {
+      eventTracker.trackEvent('EXP07_DEMO_CASE_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
     }
 
-    if (currentScreenId === 'screen_06_today_context') {
+    if (currentScreenId === 'screen_04_the_data') {
+      eventTracker.trackEvent('EXP07_DEMO_DATA_SHOWN', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+        payload: { date: EXP07_CONTENT.demoCase.dateStr },
+      });
+    }
+
+    if (currentScreenId === 'screen_06_the_context') {
+      eventTracker.trackEvent('EXP07_DEMO_CONTEXT_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+        payload: {
+          phase: cycleResult.estimatedPhase,
+          cycleDay: cycleResult.estimatedCycleDay,
+        },
+      });
       eventTracker.trackEvent('CONTEXT_VIEWED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
@@ -271,24 +297,28 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       });
     }
 
-    if (currentScreenId === 'screen_07_not_an_answer') {
-      eventTracker.trackEvent('CONTEXT_DISCLAIMER_VIEWED', {
+    if (currentScreenId === 'screen_08_situation') {
+      eventTracker.trackEvent('EXP07_DEMO_SITUATION_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
     }
 
-    if (currentScreenId === 'screen_09_daily_connection_index') {
-      eventTracker.trackEvent('CONNECTION_MODE_VIEWED', {
+    if (currentScreenId === 'screen_09_context_in_action') {
+      eventTracker.trackEvent('EXP07_DEMO_INSIGHT_REVEALED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
-        payload: { mode: 'UNDERSTAND' },
       });
     }
 
-    if (currentScreenId === 'screen_10_daily_action') {
+    if (currentScreenId === 'screen_11_daily_action') {
+      eventTracker.trackEvent('EXP07_DEMO_ACTION_SHOWN', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
       eventTracker.trackEvent('DAILY_ACTION_VIEWED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
@@ -296,7 +326,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       });
     }
 
-    if (currentScreenId === 'screen_11_utility_question') {
+    if (currentScreenId === 'screen_13_utility_question') {
       eventTracker.trackEvent('UTILITY_QUESTION_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
@@ -319,7 +349,15 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       caseId: state.session.caseId,
       experience: 'exp07',
     });
-    memoryManagerRef.current.setMemory('exp07.started', true, 'global');
+    eventTracker.trackEvent('EXP07_DEMO_STARTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
+    });
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp07.started', value: true, scope: 'global' },
+      { key: 'exp07.demoCase', value: true, scope: 'global' },
+    ]);
   }, [state.session.sessionId, state.session.caseId]);
 
   // Generic transition forward between screens
@@ -336,8 +374,8 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
     });
   };
 
-  // Handler for Screen 04 Date Submission
-  const handleDateSubmit = (dateStr: string, isApprox: boolean) => {
+  // Handler for Screen 04 Date Analysis Trigger
+  const handleStartAnalysis = () => {
     if (isProcessing) return;
     setIsProcessing(true);
 
@@ -345,60 +383,35 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { action: 'submit_date', date: dateStr, isApproximate: isApprox },
+      payload: { action: 'analyze_demo_date', date: EXP07_CONTENT.demoCase.dateStr },
     });
-
-    eventTracker.trackEvent('DATE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { date: dateStr, isApproximate: isApprox },
-    });
-
-    if (isApprox) {
-      eventTracker.trackEvent('DATE_APPROXIMATE_SELECTED', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp07',
-        payload: { date: dateStr },
-      });
-    }
-
-    const calculated = calculateCycleContext({
-      menstruationDate: dateStr,
-      dateIsApproximate: isApprox,
-    });
-
-    // Save locally and globally
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.menstruationDate', value: dateStr, scope: 'global' },
-      { key: 'exp07.dateIsApproximate', value: isApprox, scope: 'global' },
-      { key: 'exp07.estimatedCycleDay', value: calculated.estimatedCycleDay, scope: 'global' },
-      { key: 'exp07.estimatedPhase', value: calculated.estimatedPhase, scope: 'global' },
-      { key: 'exp07.confidenceLevel', value: calculated.confidenceLevel, scope: 'global' },
-    ]);
-
-    // Save to runtime localData for fast resume
-    const nextState: ExperienceRuntimeState = {
-      ...runtimeState,
-      currentScreen: 'screen_05_analyzing',
-      localData: {
-        ...runtimeState.localData,
-        menstruationDate: dateStr,
-        dateIsApproximate: isApprox,
-        estimatedCycleDay: calculated.estimatedCycleDay,
-        estimatedPhase: calculated.estimatedPhase,
-      },
-      lastActivityAt: new Date().toISOString(),
-    };
-    persistExperienceRuntimeState(nextState);
 
     eventTracker.trackEvent('CONTEXT_ANALYSIS_STARTED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { date: dateStr, isApproximate: isApprox },
+      payload: { date: EXP07_CONTENT.demoCase.dateStr, isDemo: true },
     });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp07.demoDate', value: EXP07_CONTENT.demoCase.dateStr, scope: 'global' },
+      { key: 'exp07.estimatedCycleDay', value: cycleResult.estimatedCycleDay, scope: 'global' },
+      { key: 'exp07.estimatedPhase', value: cycleResult.estimatedPhase, scope: 'global' },
+      { key: 'exp07.confidenceLevel', value: cycleResult.confidenceLevel, scope: 'global' },
+    ]);
+
+    const nextState: ExperienceRuntimeState = {
+      ...runtimeState,
+      currentScreen: 'screen_05_analyzing',
+      localData: {
+        ...runtimeState.localData,
+        demoDate: EXP07_CONTENT.demoCase.dateStr,
+        estimatedCycleDay: cycleResult.estimatedCycleDay,
+        estimatedPhase: cycleResult.estimatedPhase,
+      },
+      lastActivityAt: new Date().toISOString(),
+    };
+    persistExperienceRuntimeState(nextState);
 
     startTransition(() => {
       setRuntimeState(nextState);
@@ -418,10 +431,43 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       },
     });
 
-    advanceToScreen('screen_06_today_context');
+    advanceToScreen('screen_06_the_context');
   };
 
-  // Handler for Screen 11 Utility Response
+  // Handler for Screen 08 Situation Choice
+  const handleSelectSituationChoice = (opt: SituationOption) => {
+    if (isProcessing) return;
+
+    eventTracker.trackEvent('CHOICE_SELECTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
+      payload: { choiceCode: opt.code, choiceLabel: opt.text },
+    });
+
+    eventTracker.trackEvent('EXP07_DEMO_CHOICE_SELECTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
+      payload: { choice: opt.code, label: opt.text },
+    });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp07.demoSituationChoice', value: opt.code, scope: 'global' },
+    ]);
+
+    setRuntimeState((prev) => ({
+      ...prev,
+      localData: {
+        ...prev.localData,
+        demoSituationChoice: opt.code,
+      },
+    }));
+
+    advanceToScreen('screen_09_context_in_action');
+  };
+
+  // Handler for Screen 13 Utility Response
   const handleSelectUtility = (code: 'YES' | 'UNSURE', label: string) => {
     eventTracker.trackEvent('CHOICE_SELECTED', {
       sessionId: state.session.sessionId,
@@ -442,7 +488,6 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       { key: 'productUtilityRecognition', value: code, scope: 'global' },
     ]);
 
-    // Update runtime local data
     setRuntimeState((prev) => ({
       ...prev,
       localData: {
@@ -452,7 +497,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
     }));
   };
 
-  // Handler for Screen 12 Completion & Navigation to EXP_08
+  // Handler for Screen 14 Completion & Navigation to EXP_08
   const handleCompleteExp07 = () => {
     if (isCompletedGuard || completingRef.current) return;
     completingRef.current = true;
@@ -462,18 +507,19 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { action: 'complete_exp07', label: EXP07_CONTENT.screen12.ctaLabel },
+      payload: { action: 'complete_exp07', label: EXP07_CONTENT.screen14.ctaLabel },
     });
 
     const now = new Date().toISOString();
     const finalMemory = {
       ...memoryManagerRef.current.getExperienceMemory(),
       started: true,
-      menstruationDate: savedMenstruationDate || cycleResult.phaseDisplayName,
-      dateIsApproximate: savedDateIsApproximate,
+      demoCase: true,
+      demoDate: EXP07_CONTENT.demoCase.dateStr,
       estimatedCycleDay: cycleResult.estimatedCycleDay,
       estimatedPhase: cycleResult.estimatedPhase,
       confidenceLevel: cycleResult.confidenceLevel,
+      demoSituationChoice: savedSituationChoice || 'C',
       contextViewed: true,
       connectionMode: 'UNDERSTAND',
       dailyContextViewed: true,
@@ -486,11 +532,18 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
 
     memoryManagerRef.current.applyUpdates([
       { key: 'exp07.started', value: true, scope: 'global' },
+      { key: 'exp07.demoCase', value: true, scope: 'global' },
+      { key: 'exp07.demoDate', value: EXP07_CONTENT.demoCase.dateStr, scope: 'global' },
+      { key: 'exp07.estimatedCycleDay', value: cycleResult.estimatedCycleDay, scope: 'global' },
+      { key: 'exp07.estimatedPhase', value: cycleResult.estimatedPhase, scope: 'global' },
+      { key: 'exp07.confidenceLevel', value: cycleResult.confidenceLevel, scope: 'global' },
       { key: 'exp07.contextViewed', value: true, scope: 'global' },
       { key: 'exp07.connectionMode', value: 'UNDERSTAND', scope: 'global' },
       { key: 'exp07.dailyContextViewed', value: true, scope: 'global' },
+      { key: 'exp07.productUtilityRecognition', value: savedUtilityRecognition || 'YES', scope: 'global' },
       { key: 'exp07.completed', value: true, scope: 'global' },
       { key: 'exp07.completedAt', value: now, scope: 'global' },
+      { key: 'productUtilityRecognition', value: savedUtilityRecognition || 'YES', scope: 'global' },
       { key: 'trialCompleted', value: true, scope: 'global' },
       { key: 'productValueExperienced', value: true, scope: 'global' },
       { key: 'estimatedCyclePhase', value: cycleResult.estimatedPhase, scope: 'global' },
@@ -505,6 +558,12 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       };
       persistExperienceRuntimeState(next);
       return next;
+    });
+
+    eventTracker.trackEvent('EXP07_DEMO_COMPLETED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
     });
 
     eventTracker.trackEvent('EXP07_COMPLETED', {
@@ -607,6 +666,9 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed">
                   {EXP07_CONTENT.screen01.beat1}
                 </h1>
+                <p className="text-base sm:text-lg text-neutral-400 font-body mt-2">
+                  {EXP07_CONTENT.screen01.beat2}
+                </p>
               </div>
 
               <div
@@ -614,27 +676,20 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
                   screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
+                <p className="text-base sm:text-lg text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen01.beat3}
+                </p>
                 <p className="text-base sm:text-lg text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen01.beat2}
+                  {EXP07_CONTENT.screen01.beat4}
                 </p>
 
                 <div
-                  className={`transition-all duration-1000 ${
+                  className={`pt-3 transition-all duration-1000 ${
                     screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                   }`}
                 >
                   <p className="text-xl sm:text-2xl font-serif italic text-orange-400 leading-snug">
-                    {EXP07_CONTENT.screen01.beat3}
-                  </p>
-                </div>
-
-                <div
-                  className={`pt-2 transition-all duration-1000 ${
-                    screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base font-body text-neutral-300">
-                    {EXP07_CONTENT.screen01.beat4}
+                    {EXP07_CONTENT.screen01.beat5}
                   </p>
                 </div>
               </div>
@@ -668,41 +723,35 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
               </div>
 
               <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg font-serif italic text-neutral-200">
-                  {EXP07_CONTENT.screen02.beat1}
-                </p>
-                <p className="text-sm font-mono text-neutral-500 uppercase tracking-wider">
-                  {EXP07_CONTENT.screen02.beat2}
-                </p>
-              </div>
-
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
+                className={`transition-all duration-1000 ${
                   screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-lg sm:text-xl font-serif italic text-white leading-snug">
-                  {EXP07_CONTENT.screen02.beat3}
+                <h2 className="text-2xl sm:text-3xl font-serif italic text-white leading-snug">
+                  {EXP07_CONTENT.screen02.beat1}
+                </h2>
+              </div>
+
+              <div
+                className={`p-5 rounded-xl bg-[#080808] border border-[#181818] space-y-2 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base text-neutral-300 font-body">
+                  • {EXP07_CONTENT.screen02.beat2}
                 </p>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen02.beat4}
+                <p className="text-base text-neutral-300 font-body">
+                  • {EXP07_CONTENT.screen02.beat3}
                 </p>
               </div>
 
               <div
-                className={`pt-4 border-t border-[#181818] space-y-1 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                className={`pt-2 transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-2xl sm:text-3xl font-serif italic text-orange-400">
-                  {EXP07_CONTENT.screen02.beat5}
-                </p>
-                <p className="text-sm text-neutral-500 font-mono italic">
-                  {EXP07_CONTENT.screen02.beat6}
+                <p className="text-xl sm:text-2xl font-serif italic text-orange-400">
+                  {EXP07_CONTENT.screen02.beat4}
                 </p>
               </div>
             </div>
@@ -710,7 +759,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
                 id="screen-02-cta"
-                onClick={() => advanceToScreen('screen_03_the_data')}
+                onClick={() => advanceToScreen('screen_03_the_case')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen02.ctaLabel}
@@ -720,53 +769,48 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 03 — EL DATO */}
+        {/* SCREEN 03 — EL CASO */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_03_the_data' && (
+        {currentScreenId === 'screen_03_the_case' && (
           <div
-            id="screen-03-the-data"
+            id="screen-03-the-case"
             className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
           >
             <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                   {EXP07_CONTENT.screen03.eyebrow}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
                 </span>
               </div>
 
               <div
-                className={`p-5 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-xl sm:text-2xl font-serif italic text-white leading-snug">
-                  {EXP07_CONTENT.screen03.title}
-                </h2>
-              </div>
-
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
+                className={`p-6 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-4 transition-all duration-1000 ${
                   screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-lg font-serif italic text-orange-400">
-                  “{EXP07_CONTENT.screen03.beat1}”
-                </p>
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen03.beat2}
+                <div className="flex items-center space-x-2 text-xs font-mono text-orange-400 uppercase tracking-wider">
+                  <Calendar className="w-4 h-4" />
+                  <span>EJEMPLO ORIENTATIVO</span>
+                </div>
+
+                <p className="text-xl sm:text-2xl font-serif italic text-white leading-relaxed">
+                  {EXP07_CONTENT.screen03.beat1}
                 </p>
               </div>
 
               <div
-                className={`pt-3 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
+                className={`pt-2 space-y-2 transition-all duration-1000 ${
                   screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen03.beat3}
+                <p className="text-base text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen03.beat2}
                 </p>
-                <p className="text-sm sm:text-base font-serif italic text-neutral-200">
-                  {EXP07_CONTENT.screen03.beat4}
+                <p className="text-lg font-serif italic text-orange-300">
+                  {EXP07_CONTENT.screen03.beat3}
                 </p>
               </div>
             </div>
@@ -774,7 +818,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
                 id="screen-03-cta"
-                onClick={() => advanceToScreen('screen_04_date_input')}
+                onClick={() => advanceToScreen('screen_04_the_data')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen03.ctaLabel}
@@ -784,14 +828,14 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 04 — LA FECHA (SELECTOR DE FECHA MOBILE-FIRST) */}
+        {/* SCREEN 04 — EL DATO */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_04_date_input' && (
+        {currentScreenId === 'screen_04_the_data' && (
           <div
-            id="screen-04-date-input"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
+            id="screen-04-the-data"
+            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-8"
           >
-            <div className="space-y-4 text-left w-full">
+            <div className="space-y-6 text-left w-full">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                   {EXP07_CONTENT.screen04.eyebrow}
@@ -801,27 +845,48 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
                 </span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
-                {EXP07_CONTENT.screen04.title}
-              </h2>
+              {/* Data Card Highlight */}
+              <div
+                className={`p-6 rounded-2xl bg-[#080808] border border-orange-500/30 shadow-xl space-y-3 text-center transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}
+              >
+                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 block">
+                  FECHA INTRODUCIDA
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-serif italic text-orange-400 font-semibold tracking-wide">
+                  {EXP07_CONTENT.screen04.dateTag}
+                </h2>
+                <p className="text-xs sm:text-sm font-mono text-neutral-500 pt-1">
+                  {EXP07_CONTENT.screen04.dateSubtext}
+                </p>
+              </div>
 
-              <p className="text-sm text-neutral-400 font-body">
-                {EXP07_CONTENT.screen04.subtitle}
-              </p>
+              <div
+                className={`pt-2 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base sm:text-lg text-neutral-300 font-body leading-relaxed">
+                  {EXP07_CONTENT.screen04.beat1}
+                </p>
+              </div>
             </div>
 
-            {/* Interactive Cycle Date Form */}
-            <CycleDateInput
-              initialDate={savedMenstruationDate}
-              initialIsApproximate={savedDateIsApproximate}
-              onSubmit={handleDateSubmit}
-              disabled={isProcessing}
-            />
+            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+              <PrimaryCTA
+                id="screen-04-cta"
+                onClick={handleStartAnalysis}
+                disabled={isProcessing}
+              >
+                {EXP07_CONTENT.screen04.ctaLabel}
+              </PrimaryCTA>
+            </CTAReveal>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 05 — ANALIZANDO EL CASO (PROCESO PAUSADO) */}
+        {/* SCREEN 05 — MOTOR CONTEXTUAL */}
         {/* ========================================================================= */}
         {currentScreenId === 'screen_05_analyzing' && (
           <div id="screen-05-analyzing" className="w-full animate-fade-in">
@@ -830,23 +895,23 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 06 — TU CONTEXTO DE HOY (MICRO-APP FEEL) */}
+        {/* SCREEN 06 — EL CONTEXTO */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_06_today_context' && (
+        {currentScreenId === 'screen_06_the_context' && (
           <div
-            id="screen-06-today-context"
+            id="screen-06-the-context"
             className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
             <ContextResultCard
               caseId={caseId}
               result={cycleResult}
-              isApproximate={savedDateIsApproximate}
+              isApproximate={false}
             />
 
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
               <PrimaryCTA
                 id="screen-06-cta"
-                onClick={() => advanceToScreen('screen_07_not_an_answer')}
+                onClick={() => advanceToScreen('screen_07_not_just_phase')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen06.ctaLabel}
@@ -856,11 +921,11 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 07 — NO ES UNA RESPUESTA */}
+        {/* SCREEN 07 — LO IMPORTANTE NO ES LA FASE */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_07_not_an_answer' && (
+        {currentScreenId === 'screen_07_not_just_phase' && (
           <div
-            id="screen-07-not-an-answer"
+            id="screen-07-not-just-phase"
             className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
             <div className="space-y-6 text-left w-full">
@@ -875,7 +940,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
 
               <div
                 className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
                 <span className="text-[10px] font-mono tracking-widest uppercase text-orange-400 block">
@@ -885,34 +950,41 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
                   {EXP07_CONTENT.screen07.beat1}
                 </p>
                 <p className="text-sm sm:text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen07.beat2}
+                  {EXP07_CONTENT.screen07.beat2} {EXP07_CONTENT.screen07.beat3}
                 </p>
-                <p className="text-xs sm:text-sm text-neutral-400 font-body border-t border-[#181818] pt-3">
-                  {EXP07_CONTENT.screen07.beat3}
+              </div>
+
+              <div
+                className={`pt-1 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base sm:text-lg font-serif italic text-orange-200">
+                  {EXP07_CONTENT.screen07.beatQuestion}
                 </p>
               </div>
 
               {/* Dominant Highlight Reveal */}
               <div
                 className={`p-6 rounded-2xl bg-[#0C0C0C] border border-orange-500/30 text-center transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  screenStage >= 4 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                 }`}
               >
                 <p className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-2">
-                  {EXP07_CONTENT.screen07.dominantLead}
+                  {EXP07_CONTENT.screen07.beat4}
                 </p>
-                <span className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 tracking-wide font-semibold block">
+                <span className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 tracking-wide font-semibold block">
                   “{EXP07_CONTENT.screen07.dominantWord}”
                 </span>
               </div>
 
               <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#161616] text-center transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                className={`p-4 rounded-xl bg-[#080808] border border-[#161616] text-left transition-all duration-1000 ${
+                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-base sm:text-lg font-serif italic text-orange-200">
-                  {EXP07_CONTENT.screen07.beat4}
+                <p className="text-sm sm:text-base text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen07.beat5} {EXP07_CONTENT.screen07.beat6}
                 </p>
               </div>
             </div>
@@ -920,7 +992,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
                 id="screen-07-cta"
-                onClick={() => advanceToScreen('screen_08_what_to_consider')}
+                onClick={() => advanceToScreen('screen_08_situation')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen07.ctaLabel}
@@ -930,89 +1002,163 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 08 — LO QUE PUEDES CONSIDERAR */}
+        {/* SCREEN 08 — UNA SITUACIÓN REAL (INTERACTIVE CHOICE) */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_08_what_to_consider' && (
+        {currentScreenId === 'screen_08_situation' && (
           <div
-            id="screen-08-what-to-consider"
-            className="w-full flex flex-col items-center text-center space-y-6 animate-fade-in max-w-xl mx-auto py-6"
+            id="screen-08-situation"
+            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
-            <div className="space-y-5 text-left w-full">
+            <div className="space-y-6 text-left w-full">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
                   {EXP07_CONTENT.screen08.eyebrow}
                 </span>
-                <span className="text-xs font-mono text-orange-400">
-                  {cycleResult.phaseDisplayName}
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
-                  {EXP07_CONTENT.screen08.title}
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen08.subtitle}
-                </p>
-              </div>
-
-              {/* 3 Categories in clean, human cards */}
-              <div className="space-y-3">
-                {EXP07_CONTENT.screen08.categories.map((cat, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] flex items-start space-x-3.5 transition-all duration-1000 ${
-                      screenStage >= idx + 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <span className="px-2.5 py-1 rounded bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-mono tracking-wider font-semibold shrink-0">
-                      {cat.tag}
-                    </span>
-                    <p className="text-sm font-body text-neutral-200 leading-relaxed pt-0.5">
-                      {cat.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Closure Banner */}
+              {/* Story Box */}
               <div
-                className={`p-3.5 rounded-xl bg-[#0C0C0C] border border-[#1F1F1F] text-center transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-2.5 transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-xs sm:text-sm font-mono uppercase tracking-wider text-orange-400">
-                  {EXP07_CONTENT.screen08.closure}
+                <span className="text-[10px] font-mono uppercase tracking-widest text-orange-400 block">
+                  {EXP07_CONTENT.screen08.title}
+                </span>
+                <p className="text-base text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen08.story1} {EXP07_CONTENT.screen08.story2}
                 </p>
+                <p className="text-base text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen08.story3}
+                </p>
+                <div className="pt-2">
+                  <p className="text-xl sm:text-2xl font-serif italic text-orange-300 font-semibold">
+                    {EXP07_CONTENT.screen08.herResponse}
+                  </p>
+                </div>
+              </div>
+
+              {/* Question */}
+              <div
+                className={`pt-1 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <h3 className="text-xl sm:text-2xl font-serif italic text-white">
+                  {EXP07_CONTENT.screen08.question}
+                </h3>
+              </div>
+
+              {/* Interactive Options */}
+              <div className="space-y-3 pt-2">
+                {EXP07_CONTENT.screen08.options.map((opt) => {
+                  const isSelected = savedSituationChoice === opt.code;
+                  return (
+                    <div key={opt.id} className="w-full">
+                      <ChoiceButton
+                        id={`situation-opt-${opt.code.toLowerCase()}`}
+                        selected={isSelected}
+                        onClick={() => handleSelectSituationChoice(opt)}
+                        disabled={isProcessing}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-mono text-orange-400 font-semibold uppercase">
+                            {opt.label}:
+                          </span>
+                          <span>{opt.text}</span>
+                        </div>
+                      </ChoiceButton>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 09 — CONTEXTO EN ACCIÓN */}
+        {/* ========================================================================= */}
+        {currentScreenId === 'screen_09_context_in_action' && (
+          <div
+            id="screen-09-context-in-action"
+            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
+          >
+            <div className="space-y-6 text-left w-full">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+                  {EXP07_CONTENT.screen09.eyebrow}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
+                </span>
+              </div>
+
+              <div
+                className={`space-y-2 transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <h2 className="text-2xl sm:text-3xl font-serif italic text-white leading-snug">
+                  {EXP07_CONTENT.screen09.title}
+                </h2>
+                <p className="text-base text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen09.beat1}
+                </p>
+                <p className="text-sm text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen09.beat2}
+                </p>
+              </div>
+
+              <div
+                className={`p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-2 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base font-serif italic text-orange-200">
+                  {EXP07_CONTENT.screen09.beat3}
+                </p>
+                <p className="text-sm text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen09.beat4}
+                </p>
+              </div>
+
+              {/* Context Formula Card */}
+              <div
+                className={`p-5 rounded-2xl bg-[#0C0C0C] border border-orange-500/30 text-center space-y-3 transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}
+              >
+                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
+                  ESTRUCTURA DE COMPRENSIÓN
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm font-mono">
+                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-orange-300 font-semibold">
+                    {EXP07_CONTENT.screen09.formula.part1}
+                  </span>
+                  <span className="text-neutral-500 font-bold">+</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-200 font-semibold">
+                    {EXP07_CONTENT.screen09.formula.part2}
+                  </span>
+                  <span className="text-neutral-500 font-bold">+</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-200 font-semibold">
+                    {EXP07_CONTENT.screen09.formula.part3}
+                  </span>
+                  <span className="text-orange-400 font-bold">=</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-orange-500/20 border border-orange-500/40 text-orange-300 font-bold">
+                    {EXP07_CONTENT.screen09.formula.result}
+                  </span>
+                </div>
               </div>
             </div>
 
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
-                id="screen-08-cta"
-                onClick={() => advanceToScreen('screen_09_daily_connection_index')}
-                disabled={isProcessing}
-              >
-                {EXP07_CONTENT.screen08.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 09 — ÍNDICE DE CONEXIÓN DIARIA™ */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_09_daily_connection_index' && (
-          <div
-            id="screen-09-daily-connection-index"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <ConnectionModeCard caseId={caseId} connectionMode="UNDERSTAND" />
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
-              <PrimaryCTA
                 id="screen-09-cta"
-                onClick={() => advanceToScreen('screen_10_daily_action')}
+                onClick={() => advanceToScreen('screen_10_better_question')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen09.ctaLabel}
@@ -1022,19 +1168,76 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 10 — UNA ACCIÓN PARA HOY */}
+        {/* SCREEN 10 — UNA MEJOR PREGUNTA */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_10_daily_action' && (
+        {currentScreenId === 'screen_10_better_question' && (
           <div
-            id="screen-10-daily-action"
+            id="screen-10-better-question"
             className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
-            <DailyActionCard caseId={caseId} phase={cycleResult.estimatedPhase} />
+            <div className="space-y-6 text-left w-full">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+                  {EXP07_CONTENT.screen10.eyebrow}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
+                </span>
+              </div>
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
+              <div
+                className={`space-y-1 transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
+                  {EXP07_CONTENT.screen10.title}
+                </h2>
+                <p className="text-base text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen10.leadQuestion}
+                </p>
+              </div>
+
+              {/* Two Alternative Questions */}
+              <div
+                className={`space-y-3 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <div className="p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-orange-400 block">
+                    {EXP07_CONTENT.screen10.alternative1Title}
+                  </span>
+                  <p className="text-lg font-serif italic text-white">
+                    {EXP07_CONTENT.screen10.alternative1}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
+                    {EXP07_CONTENT.screen10.alternative2Title}
+                  </span>
+                  <p className="text-lg font-serif italic text-neutral-200">
+                    {EXP07_CONTENT.screen10.alternative2}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`p-4 rounded-xl bg-[#0C0C0C] border border-orange-500/20 text-center transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-sm sm:text-base font-serif italic text-orange-300">
+                  {EXP07_CONTENT.screen10.takeaway}
+                </p>
+              </div>
+            </div>
+
+            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
                 id="screen-10-cta"
-                onClick={() => advanceToScreen('screen_11_utility_question')}
+                onClick={() => advanceToScreen('screen_11_daily_action')}
                 disabled={isProcessing}
               >
                 {EXP07_CONTENT.screen10.ctaLabel}
@@ -1044,63 +1247,33 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 11 — ¿TE SERÍA ÚTIL? (EVALUACIÓN PSICOLÓGICA DE VALOR) */}
+        {/* SCREEN 11 — UNA ACCIÓN PARA HOY */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_11_utility_question' && (
+        {currentScreenId === 'screen_11_daily_action' && (
           <div
-            id="screen-11-utility-question"
+            id="screen-11-daily-action"
             className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
           >
-            <div className="space-y-4 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP07_CONTENT.screen11.eyebrow}
-                </span>
-              </div>
+            <DailyActionCard caseId={caseId} phase={cycleResult.estimatedPhase} />
 
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
+            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
+              <PrimaryCTA
+                id="screen-11-cta"
+                onClick={() => advanceToScreen('screen_12_micro_result')}
+                disabled={isProcessing}
               >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen11.beat1}
-                </p>
-                <p className="text-sm font-mono text-neutral-500 uppercase tracking-wider">
-                  {EXP07_CONTENT.screen11.beat2}
-                </p>
-              </div>
-
-              <div
-                className={`pt-2 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen11.beat3}
-                </p>
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white pt-1">
-                  {EXP07_CONTENT.screen11.question}
-                </h2>
-              </div>
-            </div>
-
-            {/* Utility question interaction */}
-            <UtilityQuestion
-              selectedCode={savedUtilityRecognition}
-              onSelect={handleSelectUtility}
-              onContinue={() => advanceToScreen('screen_12_trial_completed')}
-              disabled={isProcessing}
-            />
+                {EXP07_CONTENT.screen11.ctaLabel}
+              </PrimaryCTA>
+            </CTAReveal>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 12 — PRUEBA COMPLETADA (CIERRE Y DESBLOQUEO EXP_08) */}
+        {/* SCREEN 12 — EL MICRORESULTADO */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_12_trial_completed' && (
+        {currentScreenId === 'screen_12_micro_result' && (
           <div
-            id="screen-12-trial-completed"
+            id="screen-12-micro-result"
             className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
           >
             <div className="space-y-6 text-left w-full">
@@ -1127,33 +1300,152 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
               </div>
 
               <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
+                className={`p-5 rounded-2xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-1000 ${
                   screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 }`}
               >
-                <p className="text-sm font-mono text-neutral-500 uppercase tracking-wider">
+                <p className="text-base text-neutral-300 font-body">
                   {EXP07_CONTENT.screen12.beat3}
                 </p>
+                <p className="text-base font-serif italic text-orange-300">
+                  {EXP07_CONTENT.screen12.beat4}
+                </p>
+              </div>
 
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 leading-snug">
-                    {EXP07_CONTENT.screen12.dominantQuestion}
-                  </p>
+              <div
+                className={`space-y-2 text-center transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-3 text-sm sm:text-base font-serif italic text-neutral-200">
+                  {EXP07_CONTENT.screen12.verbs.map((verb, idx) => (
+                    <React.Fragment key={idx}>
+                      <span className="text-orange-400 font-semibold">{verb}</span>
+                      {idx < EXP07_CONTENT.screen12.verbs.length - 1 && (
+                        <span className="text-neutral-600">•</span>
+                      )}
+                    </React.Fragment>
+                  ))}
                 </div>
+                <p className="text-lg sm:text-xl font-serif italic text-white pt-2">
+                  {EXP07_CONTENT.screen12.closure}
+                </p>
               </div>
             </div>
 
             <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
               <PrimaryCTA
-                id="screen-12-complete-cta"
+                id="screen-12-cta"
+                onClick={() => advanceToScreen('screen_13_utility_question')}
+                disabled={isProcessing}
+              >
+                {EXP07_CONTENT.screen12.ctaLabel}
+              </PrimaryCTA>
+            </CTAReveal>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 13 — ¿TE SERÍA ÚTIL? */}
+        {/* ========================================================================= */}
+        {currentScreenId === 'screen_13_utility_question' && (
+          <div
+            id="screen-13-utility-question"
+            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
+          >
+            <div className="space-y-4 text-left w-full">
+              <div className="transition-all duration-1000 opacity-100">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+                  {EXP07_CONTENT.screen13.eyebrow}
+                </span>
+              </div>
+
+              <div
+                className={`space-y-2 transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen13.lead}
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-serif italic text-white pt-1 leading-snug">
+                  {EXP07_CONTENT.screen13.question}
+                </h2>
+              </div>
+            </div>
+
+            {/* Utility question interactive widget */}
+            <UtilityQuestion
+              selectedCode={savedUtilityRecognition}
+              onSelect={handleSelectUtility}
+              onContinue={() => advanceToScreen('screen_14_trial_completed')}
+              disabled={isProcessing}
+            />
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 14 — CIERRE DE LA PRUEBA */}
+        {/* ========================================================================= */}
+        {currentScreenId === 'screen_14_trial_completed' && (
+          <div
+            id="screen-14-trial-completed"
+            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
+          >
+            <div className="space-y-6 text-left w-full">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+                  {EXP07_CONTENT.screen14.eyebrow}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                  CASO #{caseId}
+                </span>
+              </div>
+
+              <div
+                className={`space-y-2 transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-xl sm:text-2xl font-serif italic text-white">
+                  {EXP07_CONTENT.screen14.beat1}
+                </p>
+                <p className="text-base text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen14.beat2}
+                </p>
+              </div>
+
+              <div
+                className={`p-5 rounded-2xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-1000 ${
+                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base text-neutral-300 font-body">
+                  {EXP07_CONTENT.screen14.beat3}
+                </p>
+              </div>
+
+              <div
+                className={`pt-2 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
+                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                <p className="text-base text-neutral-400 font-body">
+                  {EXP07_CONTENT.screen14.beat4}
+                </p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 leading-snug">
+                  {EXP07_CONTENT.screen14.beat5}
+                </p>
+              </div>
+            </div>
+
+            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+              <PrimaryCTA
+                id="screen-14-complete-cta"
                 onClick={handleCompleteExp07}
                 disabled={isProcessing || isCompletedGuard}
               >
-                {EXP07_CONTENT.screen12.ctaLabel}
+                {EXP07_CONTENT.screen14.ctaLabel}
               </PrimaryCTA>
             </CTAReveal>
           </div>
