@@ -61,6 +61,9 @@ export const EXP07_CONTENT = {
   // SCREEN 05 — ANALIZANDO EL CASO
   screen05: {
     eyebrow: 'MOTOR CONTEXTUAL',
+    headline: 'ANALIZANDO TU DATO...',
+    subheadline: 'Preparando tu contexto de hoy.',
+    helper: 'Esto tomará solo un momento.',
     steps: [
       { id: 'step1', text: 'RECIBIENDO DATO...' },
       { id: 'step2', text: 'CALCULANDO REFERENCIA...' },

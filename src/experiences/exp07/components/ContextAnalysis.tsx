@@ -1,7 +1,7 @@
 // Paced Sequential Analysis Component for EXP_07 (Screen 05)
 import React, { useState, useEffect, useRef } from 'react';
 import { EXP07_CONTENT } from '../exp07Content';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 
 interface ContextAnalysisProps {
@@ -21,7 +21,8 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
   const hasCompletedRef = useRef(false);
 
   useEffect(() => {
-    // Deliberate pacing between steps (1200ms per step)
+    // Deliberate, fluid pacing: ~300ms per step across 5 steps => ~1.2s total processing
+    const stepInterval = 300;
     const timer = setInterval(() => {
       setCurrentStepIndex((prev) => {
         const next = prev + 1;
@@ -35,17 +36,18 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
         }
         return next;
       });
-    }, 1200);
+    }, stepInterval);
 
     return () => clearInterval(timer);
   }, [steps.length, onStepChange]);
 
   useEffect(() => {
     if (isFinished && autoAdvance && !hasCompletedRef.current) {
+      // Brief 250ms completion state before smooth transition to Screen 06
       const finishTimer = setTimeout(() => {
         hasCompletedRef.current = true;
         onComplete();
-      }, 1000);
+      }, 250);
       return () => clearTimeout(finishTimer);
     }
   }, [isFinished, autoAdvance, onComplete]);
@@ -53,20 +55,33 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
   return (
     <div
       id="context-analysis-container"
-      className="w-full flex flex-col items-center justify-center space-y-8 py-10 max-w-md mx-auto text-left"
+      className="w-full flex flex-col items-center justify-center space-y-6 py-8 max-w-md mx-auto text-left animate-fade-in"
     >
-      <div className="w-full space-y-2">
+      {/* Header & Activity Pulse */}
+      <div className="w-full space-y-3">
         <div className="flex items-center justify-between text-xs font-mono uppercase tracking-widest text-neutral-500 pb-2 border-b border-[#181818]">
-          <span>{EXP07_CONTENT.screen05.eyebrow}</span>
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping" />
+            <span>{EXP07_CONTENT.screen05.eyebrow}</span>
+          </div>
           <span>
             {Math.min(currentStepIndex + 1, steps.length)} / {steps.length}
           </span>
         </div>
 
-        {/* Progress Line */}
+        <div className="space-y-1">
+          <h3 className="text-lg sm:text-xl font-serif italic text-white">
+            {EXP07_CONTENT.screen05.headline}
+          </h3>
+          <p className="text-xs sm:text-sm font-body text-neutral-400">
+            {EXP07_CONTENT.screen05.subheadline}
+          </p>
+        </div>
+
+        {/* Cinematic Minimal Progress Line */}
         <div className="w-full h-1 bg-[#141414] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-orange-600 to-amber-400 transition-all duration-700 ease-out"
+            className="h-full bg-gradient-to-r from-orange-600 via-amber-400 to-orange-400 transition-all duration-300 ease-out"
             style={{
               width: `${((currentStepIndex + 1) / steps.length) * 100}%`,
             }}
@@ -75,7 +90,7 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
       </div>
 
       {/* Sequential Step List */}
-      <div className="w-full space-y-3.5 pt-4">
+      <div className="w-full space-y-2.5 pt-2">
         {steps.map((step, idx) => {
           const isDone = currentStepIndex > idx;
           const isCurrent = currentStepIndex === idx;
@@ -86,9 +101,9 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
           return (
             <div
               key={step.id}
-              className={`p-3.5 rounded-xl border flex items-center justify-between transition-all duration-500 ${
+              className={`p-3 rounded-xl border flex items-center justify-between transition-all duration-300 ${
                 isCurrent
-                  ? 'bg-orange-950/10 border-orange-500/30 text-white shadow-sm'
+                  ? 'bg-orange-950/20 border-orange-500/40 text-white shadow-sm'
                   : 'bg-[#080808] border-[#161616] text-neutral-400'
               }`}
             >
@@ -100,7 +115,7 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               )}
               {isCurrent && !isFinished && (
-                <Loader2 className="w-4 h-4 text-orange-400 animate-spin shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shrink-0" />
               )}
               {isCurrent && isFinished && (
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -110,9 +125,15 @@ export const ContextAnalysis: React.FC<ContextAnalysisProps> = ({
         })}
       </div>
 
+      <div className="w-full pt-1 text-center">
+        <p className="text-[11px] font-mono text-neutral-500 italic">
+          {EXP07_CONTENT.screen05.helper}
+        </p>
+      </div>
+
       {/* Fallback button if auto-advance is disabled */}
       {isFinished && !autoAdvance && (
-        <div className="w-full pt-4 animate-fade-in">
+        <div className="w-full pt-2 animate-fade-in">
           <PrimaryCTA id="analysis-continue-cta" onClick={onComplete}>
             {EXP07_CONTENT.screen05.ctaLabel}
           </PrimaryCTA>
