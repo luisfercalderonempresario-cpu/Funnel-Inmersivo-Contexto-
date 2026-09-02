@@ -26,10 +26,24 @@ export const OneDayScenarioSection: React.FC = () => {
           <span>ESCENARIO HABITUAL &bull; 19:45 HS</span>
         </div>
 
-        <div className="space-y-4 text-sm sm:text-base text-neutral-300 font-body leading-relaxed">
-          <p className="p-4 rounded-xl bg-[#121212] border border-[#1E1E1E] text-neutral-200 font-mono text-xs sm:text-sm">
-            «Hoy su ciclo puede estar entrando en una etapa de mayor sobrecarga cognitiva y menor tolerancia al ruido.»
-          </p>
+        <div className="space-y-5 text-sm sm:text-base text-neutral-300 font-body leading-relaxed">
+          <div className="p-5 rounded-2xl bg-[#121212] border border-[#1E1E1E] text-neutral-200 space-y-3">
+            <p className="font-serif italic text-base sm:text-lg text-white">
+              «Le escribes: “¿Ya llegaste?”»
+            </p>
+            <p className="font-serif italic text-base sm:text-lg text-neutral-300">
+              Ella responde: “Sí.”
+            </p>
+            <p className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+              Nada más.
+            </p>
+            <div className="pt-2 border-t border-[#1C1C1C] space-y-1 text-xs sm:text-sm text-neutral-400 font-mono">
+              <p className="text-neutral-400">Y tú empiezas a pensar:</p>
+              <p className="text-neutral-300">“¿Está molesta conmigo?”</p>
+              <p className="text-neutral-300">“¿Hice algo?”</p>
+              <p className="text-neutral-300">“¿Por qué está tan seca?”</p>
+            </div>
+          </div>
 
           <div className="space-y-3 pt-2 text-neutral-400">
             <p className="flex items-center gap-2 text-neutral-300">

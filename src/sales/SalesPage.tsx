@@ -292,7 +292,8 @@ export const SalesPage: React.FC<SalesPageProps> = ({ onReturnToFunnel }) => {
         isConfigured={checkoutModalStatus.isConfigured}
         onProceedAnyway={() => {
           if (checkoutModalStatus.url && typeof window !== 'undefined') {
-            window.location.href = checkoutModalStatus.url;
+            window.open(checkoutModalStatus.url, '_blank', 'noopener,noreferrer');
+            setIsModalOpen(false);
           }
         }}
       />

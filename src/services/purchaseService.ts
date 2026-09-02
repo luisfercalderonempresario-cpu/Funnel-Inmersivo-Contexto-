@@ -46,12 +46,8 @@ export class PurchaseService {
         const checkoutUrl = PRODUCT_CONFIG.checkoutUrl;
         
         if (typeof window !== 'undefined') {
-          // Open external Hotmart checkout in a new secure tab or window
-          const checkoutWindow = window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-          if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
-            // Fallback to direct navigation if popup was blocked
-            window.location.href = checkoutUrl;
-          }
+          // Open external Hotmart checkout in a single new tab securely
+          window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
         }
 
         return {
