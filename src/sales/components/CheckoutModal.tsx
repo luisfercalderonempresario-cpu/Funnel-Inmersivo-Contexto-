@@ -55,18 +55,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         {isConfigured ? (
           <div className="space-y-4 text-sm text-neutral-300 leading-relaxed font-body">
             <p>
-              Estás a punto de ser redirigido a la plataforma de pago encriptado de <strong>{PRODUCT_CONFIG.name}</strong>.
+              Estás a punto de ser redirigido a la pasarela oficial de <strong>Hotmart</strong> para completar el acceso a <strong>{PRODUCT_CONFIG.name}</strong> ({PRODUCT_CONFIG.formattedPrice}).
             </p>
             <p className="text-xs text-neutral-400">
-              Tu expediente y contexto serán asociados a tu cuenta tras completar la orden.
+              Incluye el Manual de uso de Contexto™ (PDF con instrucciones de acceso) y {PRODUCT_CONFIG.guarantee.days} días de garantía.
             </p>
             <div className="pt-2">
               <button
                 type="button"
                 onClick={onProceedAnyway}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs uppercase tracking-widest font-semibold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs uppercase tracking-widest font-semibold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] cursor-pointer"
               >
-                <span>CONTINUAR AL PAGO</span>
+                <span>CONTINUAR A HOTMART</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -76,7 +76,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="p-3.5 rounded-xl bg-[#141414] border border-[#222222] flex gap-3 items-start">
               <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-neutral-400 leading-relaxed">
-                El enlace oficial de la pasarela de pagos (Hotmart / Stripe) está pendiente de vinculación final en este entorno.
+                El enlace oficial de la pasarela de pagos de Hotmart está pendiente de inicialización en este entorno.
               </p>
             </div>
             <p className="text-xs text-neutral-400">

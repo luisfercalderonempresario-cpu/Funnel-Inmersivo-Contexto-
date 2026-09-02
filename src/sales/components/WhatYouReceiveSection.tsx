@@ -21,6 +21,25 @@ export const WhatYouReceiveSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-2xl bg-[#0A0A0A] border border-[#1C1C1C] p-5 flex items-start gap-4 hover:border-[#2C2C2C] transition-colors md:col-span-2">
+          <div className="w-7 h-7 rounded-lg bg-orange-600/10 border border-orange-500/30 flex items-center justify-center shrink-0 mt-0.5">
+            <Check className="w-4 h-4 text-orange-400" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-white font-serif">
+                {PRODUCT_CONFIG.includedMaterial}
+              </h3>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#161616] text-orange-400 border border-orange-500/30">
+                PDF INCLUIDO
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-body">
+              {PRODUCT_CONFIG.includedMaterialDescription} para acceder a tu micro-aplicación y comenzar a utilizarla de inmediato en tu día a día.
+            </p>
+          </div>
+        </div>
+
         {PRODUCT_CONFIG.features.map((feature) => (
           <div
             key={feature.id}

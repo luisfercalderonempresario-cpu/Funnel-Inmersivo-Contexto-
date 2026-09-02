@@ -43,21 +43,23 @@ export class PurchaseService {
 
     if (this.isCheckoutConfigured()) {
       try {
-        const checkoutUrl = new URL(PRODUCT_CONFIG.checkoutUrl);
-        // Append context parameters if supported
-        checkoutUrl.searchParams.set('case_id', caseId);
-        checkoutUrl.searchParams.set('session_id', sessionId);
+        const checkoutUrl = PRODUCT_CONFIG.checkoutUrl;
         
         if (typeof window !== 'undefined') {
-          window.location.href = checkoutUrl.toString();
+          // Open external Hotmart checkout in a new secure tab or window
+          const checkoutWindow = window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+          if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
+            // Fallback to direct navigation if popup was blocked
+            window.location.href = checkoutUrl;
+          }
         }
 
         return {
           status: 'redirected',
-          url: checkoutUrl.toString(),
+          url: checkoutUrl,
         };
       } catch (err) {
-        console.error('[PurchaseService] Error parsing checkout URL:', err);
+        console.error('[PurchaseService] Error opening checkout URL:', err);
         eventTracker.trackEvent('PURCHASE_FAILED', {
           caseId,
           sessionId,
@@ -66,7 +68,7 @@ export class PurchaseService {
         });
         return {
           status: 'error',
-          message: 'Error al redirigir al procesador de pagos.',
+          message: 'Error al redirigir a la pasarela de Hotmart.',
         };
       }
     }

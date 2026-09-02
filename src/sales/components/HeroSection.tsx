@@ -58,11 +58,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </p>
         </div>
 
-        {/* Early CTA Button (Smooth scroll to offer) */}
+        {/* Early CTA Button */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
           <PrimaryCTA
             id="hero-cta-scroll-offer"
-            onClick={onScrollToOffer}
+            onClick={onCtaClick}
             variant="accent"
             className="w-full sm:w-auto"
           >

@@ -23,14 +23,18 @@ export interface ProductConfig {
   deviceSupport: string;
   price: number | null;
   currency: string | null;
-  formattedPrice?: string | null;
+  formattedPrice: string;
   checkoutUrl: string;
   guarantee: {
-    days?: number;
-    title?: string;
-    description?: string;
+    days: number;
+    title: string;
+    description: string;
     policyUrl?: string;
-  } | null;
+  };
+  includedMaterial: string;
+  includedMaterialDescription: string;
+  paymentPlatform: string;
+  paymentPlatformDescription: string;
   features: ProductFeature[];
 }
 
@@ -57,11 +61,19 @@ export const PRODUCT_CONFIG: ProductConfig = {
   type: "Micro-App",
   accessType: "Acceso Web Inmediato Multiplataforma",
   deviceSupport: "Optimizado para Smartphone, Tablet y Computadora",
-  price: null, // Pendiente de configuración comercial definitiva
-  currency: null,
-  formattedPrice: null,
-  checkoutUrl: "", // Conexión futura a pasarela (Hotmart / Stripe / etc.)
-  guarantee: null, // Sin inventar garantías legales si no están suscritas
+  price: 9.99,
+  currency: "USD",
+  formattedPrice: "$9.99 USD",
+  checkoutUrl: "https://pay.hotmart.com/S107279344E",
+  guarantee: {
+    days: 7,
+    title: "Garantía de Contexto™ — 7 días",
+    description: "Cuentas con 7 días de garantía completa con tu acceso a Contexto™.",
+  },
+  includedMaterial: "Manual de uso de Contexto™",
+  includedMaterialDescription: "PDF con instrucciones de acceso",
+  paymentPlatform: "Hotmart",
+  paymentPlatformDescription: "Compra respaldada por Hotmart y su pasarela de pago.",
   features: [
     {
       id: "cycle_tracking",

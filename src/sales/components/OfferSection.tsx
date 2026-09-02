@@ -44,7 +44,7 @@ export const OfferSection: React.FC<OfferSectionProps> = ({
               <Sparkles className="w-3 h-3" />
               Micro-App Digital
             </div>
-            <h3 className="text-2xl font-serif font-bold text-white">
+            <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">
               {PRODUCT_CONFIG.name}
             </h3>
             <p className="text-xs text-neutral-400 font-mono mt-0.5">
@@ -53,43 +53,65 @@ export const OfferSection: React.FC<OfferSectionProps> = ({
           </div>
 
           <div className="text-left sm:text-right">
-            {hasPrice ? (
-              <div>
-                <p className="text-xs font-mono uppercase text-neutral-500">Inversión Única</p>
-                <p className="text-3xl font-serif font-bold text-white">
-                  {PRODUCT_CONFIG.formattedPrice || `${PRODUCT_CONFIG.currency || 'USD'} $${PRODUCT_CONFIG.price}`}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-[10px] font-mono uppercase text-orange-400 font-bold tracking-wider">
-                  Acceso Especial
-                </p>
-                <p className="text-xs font-mono text-neutral-400">
-                  Licencia Digital
-                </p>
-              </div>
-            )}
+            <div>
+              <p className="text-xs font-mono uppercase text-neutral-500 tracking-wider">Inversión Única</p>
+              <p className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+                {PRODUCT_CONFIG.formattedPrice}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Feature Summary Checklist */}
-        <div className="space-y-3">
+        {/* What is included */}
+        <div className="space-y-4 pt-2">
           <p className="text-xs font-mono uppercase tracking-wider text-neutral-400 font-semibold">
-            INCLUYE ACCESO A:
+            INCLUYE:
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-300 font-body">
-            {PRODUCT_CONFIG.features.map((f) => (
-              <div key={f.id} className="flex items-center gap-2.5">
-                <Check className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                <span>{f.title}</span>
+          <div className="space-y-3 text-sm text-neutral-200 font-body">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0F0F0F] border border-[#1A1A1A]">
+              <Check className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-white font-serif">Acceso a Contexto™</p>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Micro-App con estimación de ciclo, Índice de Conexión Diaria™ y sugerencias reflexivas.
+                </p>
               </div>
-            ))}
+            </div>
+
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0F0F0F] border border-[#1A1A1A]">
+              <Check className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-white font-serif">{PRODUCT_CONFIG.includedMaterial}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {PRODUCT_CONFIG.includedMaterialDescription}.
+                </p>
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Guarantee and Platform Trust Box */}
+        <div className="p-4 rounded-2xl bg-[#090909] border border-[#1C1C1C] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-orange-400" />
+            </div>
+            <div>
+              <p className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                {PRODUCT_CONFIG.guarantee.title}
+              </p>
+              <p className="text-[11px] text-neutral-400">
+                {PRODUCT_CONFIG.paymentPlatformDescription}
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-[#141414] text-neutral-400 border border-[#222222] whitespace-nowrap">
+            {PRODUCT_CONFIG.guarantee.days} DÍAS
+          </span>
         </div>
 
         {/* Main Purchase CTA */}
-        <div className="space-y-4 pt-4 text-center">
+        <div className="space-y-4 pt-2 text-center">
           <PrimaryCTA
             id="offer-purchase-cta"
             onClick={onPurchase}
@@ -102,7 +124,7 @@ export const OfferSection: React.FC<OfferSectionProps> = ({
 
           <p className="text-[11px] font-mono text-neutral-500 flex items-center justify-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Procesamiento de orden protegido &bull; Sin cobros ocultos</span>
+            <span>{PRODUCT_CONFIG.paymentPlatformDescription}</span>
           </p>
         </div>
       </div>
