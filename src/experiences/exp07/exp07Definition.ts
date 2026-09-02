@@ -1,4 +1,4 @@
-// Declarative Experience Engine Definition for EXP_07 (La Prueba) - Contexto™ Interactive Demo V2.0
+// Declarative Experience Engine Definition for EXP_07 (La Prueba) - Contexto™ Interactive Demo V3.0
 import { ExperienceEngineDefinition } from '../../engine/experience/types';
 import { EXP07_CONTENT } from './exp07Content';
 
@@ -7,21 +7,21 @@ export const EXP07_DEFINITION: ExperienceEngineDefinition = {
   slug: 'la-prueba',
   title: 'La Prueba',
   number: 7,
-  initialScreen: 'screen_01_the_shift',
+  initialScreen: 'screen_01_the_test',
   screens: {
-    // SCREEN 01 — EL CAMBIO
-    screen_01_the_shift: {
-      id: 'screen_01_the_shift',
+    // SCREEN 01 — LA PRUEBA
+    screen_01_the_test: {
+      id: 'screen_01_the_test',
       type: 'INTRO',
       title: EXP07_CONTENT.screen01.beat1,
       subtitle: `${EXP07_CONTENT.screen01.beat2} ${EXP07_CONTENT.screen01.beat3}`,
       eyebrow: EXP07_CONTENT.screen01.eyebrow,
-      nextScreen: 'screen_02_lets_try_it',
+      nextScreen: 'screen_02_the_data',
       actions: [
         {
           type: 'CLICK',
           label: EXP07_CONTENT.screen01.ctaLabel,
-          targetScreen: 'screen_02_lets_try_it',
+          targetScreen: 'screen_02_the_data',
           payload: { action: 'start_exp07' },
           memoryUpdates: [
             {
@@ -30,7 +30,50 @@ export const EXP07_DEFINITION: ExperienceEngineDefinition = {
               scope: 'global',
             },
             {
-              key: 'exp07.demoCase',
+              key: 'exp07.simulatedDate',
+              value: EXP07_CONTENT.demoCase.dateStr,
+              scope: 'global',
+            },
+          ],
+        },
+      ],
+    },
+
+    // SCREEN 02 — EL DATO
+    screen_02_the_data: {
+      id: 'screen_02_the_data',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen02.dateTag,
+      subtitle: EXP07_CONTENT.screen02.beat1,
+      eyebrow: EXP07_CONTENT.screen02.eyebrow,
+      nextScreen: 'screen_03_engine',
+      actions: [
+        {
+          type: 'SUBMIT',
+          label: EXP07_CONTENT.screen02.ctaLabel,
+          targetScreen: 'screen_03_engine',
+          payload: { action: 'analyze_simulated_case' },
+        },
+      ],
+    },
+
+    // SCREEN 03 — MOTOR CONTEXTUAL
+    screen_03_engine: {
+      id: 'screen_03_engine',
+      type: 'WAIT',
+      title: EXP07_CONTENT.screen03.steps[0].text,
+      subtitle: 'Preparando contexto...',
+      eyebrow: EXP07_CONTENT.screen03.eyebrow,
+      nextScreen: 'screen_04_today_context',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: 'Continuar',
+          targetScreen: 'screen_04_today_context',
+          payload: { action: 'engine_completed' },
+          memoryUpdates: [
+            {
+              key: 'exp07.contextCalculated',
               value: true,
               scope: 'global',
             },
@@ -39,42 +82,24 @@ export const EXP07_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 02 — VAMOS A PROBARLO
-    screen_02_lets_try_it: {
-      id: 'screen_02_lets_try_it',
+    // SCREEN 04 — TU CONTEXTO DE HOY
+    screen_04_today_context: {
+      id: 'screen_04_today_context',
       type: 'CONTENT',
-      title: EXP07_CONTENT.screen02.beat1,
-      subtitle: `${EXP07_CONTENT.screen02.beat2} ${EXP07_CONTENT.screen02.beat3}`,
-      eyebrow: EXP07_CONTENT.screen02.eyebrow,
-      nextScreen: 'screen_03_the_case',
+      title: EXP07_CONTENT.screen04.title,
+      subtitle: EXP07_CONTENT.screen04.referenceValue,
+      eyebrow: EXP07_CONTENT.screen04.eyebrow,
+      nextScreen: 'screen_05_missing_piece',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP07_CONTENT.screen02.ctaLabel,
-          targetScreen: 'screen_03_the_case',
-          payload: { action: 'proceed_to_the_case' },
-        },
-      ],
-    },
-
-    // SCREEN 03 — EL CASO
-    screen_03_the_case: {
-      id: 'screen_03_the_case',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen03.title,
-      subtitle: EXP07_CONTENT.screen03.beat1,
-      eyebrow: EXP07_CONTENT.screen03.eyebrow,
-      nextScreen: 'screen_04_the_data',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen03.ctaLabel,
-          targetScreen: 'screen_04_the_data',
-          payload: { action: 'proceed_to_the_data' },
+          label: EXP07_CONTENT.screen04.ctaLabel,
+          targetScreen: 'screen_05_missing_piece',
+          payload: { action: 'proceed_to_missing_piece' },
           memoryUpdates: [
             {
-              key: 'exp07.demoDate',
-              value: '2026-08-25',
+              key: 'exp07.contextRecognized',
+              value: true,
               scope: 'global',
             },
           ],
@@ -82,226 +107,52 @@ export const EXP07_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 04 — EL DATO
-    screen_04_the_data: {
-      id: 'screen_04_the_data',
+    // SCREEN 05 — LO QUE ESTÁS PASANDO POR ALTO
+    screen_05_missing_piece: {
+      id: 'screen_05_missing_piece',
       type: 'CONTENT',
-      title: EXP07_CONTENT.screen04.dateTag,
-      subtitle: EXP07_CONTENT.screen04.beat1,
-      eyebrow: EXP07_CONTENT.screen04.eyebrow,
-      nextScreen: 'screen_05_analyzing',
-      actions: [
-        {
-          type: 'SUBMIT',
-          label: EXP07_CONTENT.screen04.ctaLabel,
-          targetScreen: 'screen_05_analyzing',
-          payload: { action: 'analyze_demo_data' },
-        },
-      ],
-    },
-
-    // SCREEN 05 — MOTOR CONTEXTUAL
-    screen_05_analyzing: {
-      id: 'screen_05_analyzing',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen05.headline,
-      subtitle: EXP07_CONTENT.screen05.subheadline,
+      title: EXP07_CONTENT.screen05.title,
+      subtitle: EXP07_CONTENT.screen05.highlight,
       eyebrow: EXP07_CONTENT.screen05.eyebrow,
-      nextScreen: 'screen_06_the_context',
+      nextScreen: 'screen_06_the_question',
       actions: [
         {
           type: 'CONTINUE',
           label: EXP07_CONTENT.screen05.ctaLabel,
-          targetScreen: 'screen_06_the_context',
-          payload: { action: 'proceed_to_the_context' },
-          memoryUpdates: [
-            {
-              key: 'exp07.analysisCompleted',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          targetScreen: 'screen_06_the_question',
+          payload: { action: 'proceed_to_the_question' },
         },
       ],
     },
 
-    // SCREEN 06 — EL CONTEXTO
-    screen_06_the_context: {
-      id: 'screen_06_the_context',
-      type: 'CONTENT',
-      title: 'Contexto de Hoy',
-      subtitle: 'Estimación orientativa del ciclo',
+    // SCREEN 06 — LA PREGUNTA
+    screen_06_the_question: {
+      id: 'screen_06_the_question',
+      type: 'QUESTION',
+      title: EXP07_CONTENT.screen06.title,
+      subtitle: EXP07_CONTENT.screen06.question,
       eyebrow: EXP07_CONTENT.screen06.eyebrow,
-      nextScreen: 'screen_07_not_just_phase',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen06.ctaLabel,
-          targetScreen: 'screen_07_not_just_phase',
-          payload: { action: 'proceed_to_not_just_phase' },
-          memoryUpdates: [
-            {
-              key: 'exp07.demoContextExperienced',
-              value: true,
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 07 — LO IMPORTANTE NO ES LA FASE
-    screen_07_not_just_phase: {
-      id: 'screen_07_not_just_phase',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen07.title,
-      subtitle: EXP07_CONTENT.screen07.dominantWord,
-      eyebrow: EXP07_CONTENT.screen07.eyebrow,
-      nextScreen: 'screen_08_situation',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen07.ctaLabel,
-          targetScreen: 'screen_08_situation',
-          payload: { action: 'proceed_to_situation' },
-          memoryUpdates: [
-            {
-              key: 'exp07.disclaimerViewed',
-              value: true,
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 08 — UNA SITUACIÓN REAL
-    screen_08_situation: {
-      id: 'screen_08_situation',
-      type: 'QUESTION',
-      title: EXP07_CONTENT.screen08.title,
-      subtitle: EXP07_CONTENT.screen08.question,
-      eyebrow: EXP07_CONTENT.screen08.eyebrow,
-      nextScreen: 'screen_09_context_in_action',
-      actions: [
-        {
-          type: 'SUBMIT',
-          label: 'CONTINUAR',
-          targetScreen: 'screen_09_context_in_action',
-          payload: { action: 'submit_situation_choice' },
-        },
-      ],
-    },
-
-    // SCREEN 09 — CONTEXTO EN ACCIÓN
-    screen_09_context_in_action: {
-      id: 'screen_09_context_in_action',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen09.title,
-      subtitle: EXP07_CONTENT.screen09.beat1,
-      eyebrow: EXP07_CONTENT.screen09.eyebrow,
-      nextScreen: 'screen_10_better_question',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen09.ctaLabel,
-          targetScreen: 'screen_10_better_question',
-          payload: { action: 'proceed_to_better_question' },
-        },
-      ],
-    },
-
-    // SCREEN 10 — UNA MEJOR PREGUNTA
-    screen_10_better_question: {
-      id: 'screen_10_better_question',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen10.title,
-      subtitle: EXP07_CONTENT.screen10.takeaway,
-      eyebrow: EXP07_CONTENT.screen10.eyebrow,
-      nextScreen: 'screen_11_daily_action',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen10.ctaLabel,
-          targetScreen: 'screen_11_daily_action',
-          payload: { action: 'proceed_to_daily_action' },
-          memoryUpdates: [
-            {
-              key: 'exp07.demoActionViewed',
-              value: true,
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 11 — UNA ACCIÓN PARA HOY
-    screen_11_daily_action: {
-      id: 'screen_11_daily_action',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen11.title,
-      subtitle: EXP07_CONTENT.screen11.ideaBody,
-      eyebrow: EXP07_CONTENT.screen11.eyebrow,
-      nextScreen: 'screen_12_micro_result',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen11.ctaLabel,
-          targetScreen: 'screen_12_micro_result',
-          payload: { action: 'proceed_to_micro_result' },
-          memoryUpdates: [
-            {
-              key: 'exp07.connectionMode',
-              value: 'UNDERSTAND',
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 12 — EL MICRORESULTADO
-    screen_12_micro_result: {
-      id: 'screen_12_micro_result',
-      type: 'CONTENT',
-      title: EXP07_CONTENT.screen12.eyebrow,
-      subtitle: EXP07_CONTENT.screen12.closure,
-      eyebrow: EXP07_CONTENT.screen12.eyebrow,
-      nextScreen: 'screen_13_utility_question',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP07_CONTENT.screen12.ctaLabel,
-          targetScreen: 'screen_13_utility_question',
-          payload: { action: 'proceed_to_utility_question' },
-        },
-      ],
-    },
-
-    // SCREEN 13 — ¿TE SERÍA ÚTIL?
-    screen_13_utility_question: {
-      id: 'screen_13_utility_question',
-      type: 'QUESTION',
-      title: EXP07_CONTENT.screen13.question,
-      subtitle: EXP07_CONTENT.screen13.lead,
-      eyebrow: EXP07_CONTENT.screen13.eyebrow,
-      nextScreen: 'screen_14_trial_completed',
-      options: EXP07_CONTENT.screen13.options.map((opt) => ({
+      nextScreen: 'screen_07_context_to_decision',
+      options: EXP07_CONTENT.screen06.options.map((opt) => ({
         id: opt.id,
         code: opt.code,
-        label: opt.label,
-        value: opt.label,
-        nextScreen: 'screen_14_trial_completed',
+        label: opt.text,
+        value: opt.text,
+        nextScreen: 'screen_07_context_to_decision',
         memoryUpdates: [
           {
-            key: 'exp07.productUtilityRecognition',
+            key: 'exp07.firstDecision',
+            value: opt.text,
+            scope: 'global',
+          },
+          {
+            key: 'exp07.firstDecisionCode',
             value: opt.code,
             scope: 'global',
           },
           {
-            key: 'productUtilityRecognition',
-            value: opt.code,
+            key: 'exp07.questionAnswered',
+            value: true,
             scope: 'global',
           },
         ],
@@ -309,29 +160,156 @@ export const EXP07_DEFINITION: ExperienceEngineDefinition = {
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP07_CONTENT.screen13.ctaLabel,
-          targetScreen: 'screen_14_trial_completed',
-          payload: { action: 'proceed_to_trial_completed' },
+          label: EXP07_CONTENT.screen06.ctaLabel,
+          targetScreen: 'screen_07_context_to_decision',
+          payload: { action: 'proceed_to_context_to_decision' },
         },
       ],
     },
 
-    // SCREEN 14 — CIERRE DE LA PRUEBA
-    screen_14_trial_completed: {
-      id: 'screen_14_trial_completed',
+    // SCREEN 07 — CONTEXTO → DECISIÓN
+    screen_07_context_to_decision: {
+      id: 'screen_07_context_to_decision',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen07.title,
+      subtitle: EXP07_CONTENT.screen07.blockBody,
+      eyebrow: EXP07_CONTENT.screen07.eyebrow,
+      nextScreen: 'screen_08_daily_action',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen07.ctaLabel,
+          targetScreen: 'screen_08_daily_action',
+          payload: { action: 'proceed_to_daily_action' },
+        },
+      ],
+    },
+
+    // SCREEN 08 — ACCIÓN DE HOY
+    screen_08_daily_action: {
+      id: 'screen_08_daily_action',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen08.title,
+      subtitle: EXP07_CONTENT.screen08.action,
+      eyebrow: EXP07_CONTENT.screen08.eyebrow,
+      nextScreen: 'screen_09_what_to_avoid',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen08.ctaLabel,
+          targetScreen: 'screen_09_what_to_avoid',
+          payload: { action: 'proceed_to_what_to_avoid' },
+          memoryUpdates: [
+            {
+              key: 'exp07.dailyActionShown',
+              value: true,
+              scope: 'global',
+            },
+          ],
+        },
+      ],
+    },
+
+    // SCREEN 09 — EL ERROR QUE CONTEXTO™ TE AYUDA A EVITAR
+    screen_09_what_to_avoid: {
+      id: 'screen_09_what_to_avoid',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen09.title,
+      subtitle: EXP07_CONTENT.screen09.highlight,
+      eyebrow: EXP07_CONTENT.screen09.eyebrow,
+      nextScreen: 'screen_10_connection_index',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen09.ctaLabel,
+          targetScreen: 'screen_10_connection_index',
+          payload: { action: 'proceed_to_connection_index' },
+        },
+      ],
+    },
+
+    // SCREEN 10 — ÍNDICE DE CONEXIÓN DIARIA™
+    screen_10_connection_index: {
+      id: 'screen_10_connection_index',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen10.title,
+      subtitle: EXP07_CONTENT.screen10.principle,
+      eyebrow: EXP07_CONTENT.screen10.eyebrow,
+      nextScreen: 'screen_11_wow_moment',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen10.ctaLabel,
+          targetScreen: 'screen_11_wow_moment',
+          payload: { action: 'proceed_to_wow_moment' },
+        },
+      ],
+    },
+
+    // SCREEN 11 — MOMENTO WOW
+    screen_11_wow_moment: {
+      id: 'screen_11_wow_moment',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen11.title,
+      subtitle: EXP07_CONTENT.screen11.summary,
+      eyebrow: EXP07_CONTENT.screen11.eyebrow,
+      nextScreen: 'screen_12_the_desire',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen11.ctaLabel,
+          targetScreen: 'screen_12_the_desire',
+          payload: { action: 'proceed_to_the_desire' },
+          memoryUpdates: [
+            {
+              key: 'exp07.productValueExperienced',
+              value: true,
+              scope: 'global',
+            },
+          ],
+        },
+      ],
+    },
+
+    // SCREEN 12 — EL DESEO
+    screen_12_the_desire: {
+      id: 'screen_12_the_desire',
+      type: 'CONTENT',
+      title: EXP07_CONTENT.screen12.title,
+      subtitle: EXP07_CONTENT.screen12.closure,
+      eyebrow: EXP07_CONTENT.screen12.eyebrow,
+      nextScreen: 'screen_13_transition_revelation',
+      actions: [
+        {
+          type: 'CONTINUE',
+          label: EXP07_CONTENT.screen12.ctaLabel,
+          targetScreen: 'screen_13_transition_revelation',
+          payload: { action: 'proceed_to_transition_revelation' },
+        },
+      ],
+    },
+
+    // SCREEN 13 — TRANSICIÓN A LA REVELACIÓN
+    screen_13_transition_revelation: {
+      id: 'screen_13_transition_revelation',
       type: 'TRANSITION',
-      title: EXP07_CONTENT.screen14.eyebrow,
-      subtitle: EXP07_CONTENT.screen14.beat5,
-      eyebrow: EXP07_CONTENT.screen14.eyebrow,
+      title: EXP07_CONTENT.screen13.eyebrow,
+      subtitle: EXP07_CONTENT.screen13.beat3,
+      eyebrow: EXP07_CONTENT.screen13.eyebrow,
       actions: [
         {
           type: 'COMPLETE',
-          label: EXP07_CONTENT.screen14.ctaLabel,
-          payload: { action: 'complete_exp07' },
+          label: EXP07_CONTENT.screen13.ctaLabel,
+          payload: { action: 'complete_exp07_to_exp08' },
           memoryUpdates: [
             {
               key: 'exp07.completed',
               value: true,
+              scope: 'global',
+            },
+            {
+              key: 'exp07.productUtilityRecognition',
+              value: 'YES',
               scope: 'global',
             },
             {

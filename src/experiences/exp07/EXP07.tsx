@@ -1,14 +1,10 @@
-// EXP_07 — LA PRUEBA (Contexto™ Interactive Product Demo V2.0)
+// EXP_07 — LA PRUEBA (Contexto™ Interactive Product Demo V3.0)
 import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
-import { ExperienceId } from '../../engine/state/types';
-import { EXP07_CONTENT, SituationOption } from './exp07Content';
+import { EXP07_CONTENT, QuestionOption } from './exp07Content';
 import { EXP07_DEFINITION } from './exp07Definition';
-import {
-  calculateCycleContext,
-  CycleCalculationResult,
-} from './cycleEngine';
+import { calculateCycleContext, CycleCalculationResult } from './cycleEngine';
 import { ExperienceMemoryManager } from '../../engine/experience/experienceMemory';
 import {
   loadExperienceRuntimeState,
@@ -19,14 +15,27 @@ import { ExperienceRuntimeState } from '../../engine/experience/types';
 import { eventTracker } from '../../engine/events/eventTracker';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { ChoiceButton } from '../../components/ui/ChoiceButton';
-import { Volume2, VolumeX, Sparkles, Compass, ShieldCheck, HeartHandshake, Calendar, ArrowRight, HelpCircle, Check, MessageSquare } from 'lucide-react';
+import {
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Calendar,
+  Compass,
+  ArrowRight,
+  ShieldCheck,
+  Check,
+  MessageSquare,
+  Eye,
+  HeartHandshake,
+  AlertCircle,
+  HelpCircle,
+} from 'lucide-react';
 import { useNarrativePacing, CTAReveal, NarrativeBeat } from '../../engine/pacing';
 
 // Subcomponents
-import { ContextAnalysis } from './components/ContextAnalysis';
-import { ContextResultCard } from './components/ContextResultCard';
-import { DailyActionCard } from './components/DailyActionCard';
-import { UtilityQuestion } from './components/UtilityQuestion';
+import { ContextEngineProcessing } from './components/ContextEngineProcessing';
+import { ConnectionIndexCard } from './components/ConnectionIndexCard';
+import { WowSequenceVisual } from './components/WowSequenceVisual';
 
 export const EXP07: React.FC<ExperienceComponentProps> = ({
   caseId,
@@ -89,10 +98,10 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
     }
     return {
       experienceId: 'exp07',
-      currentScreen: 'screen_01_the_shift',
+      currentScreen: 'screen_01_the_test',
       status: 'ACTIVE',
       localData: {
-        demoDate: EXP07_CONTENT.demoCase.dateStr,
+        simulatedDate: EXP07_CONTENT.demoCase.dateStr,
       },
       localMemory: {},
       completedScreens: [],
@@ -108,14 +117,15 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
 
   const currentScreenId = runtimeState.currentScreen;
 
-  // Restore saved state from responses/localData
+  // Restore saved responses from memory/state
   const savedResponses = (state.responses.exp07 || {}) as Record<string, unknown>;
-  const savedSituationChoice = (savedResponses['exp07.demoSituationChoice'] ||
-    runtimeState.localData?.demoSituationChoice) as 'A' | 'B' | 'C' | undefined;
-  const savedUtilityRecognition = (savedResponses['exp07.productUtilityRecognition'] ||
-    runtimeState.localData?.productUtilityRecognition) as 'YES' | 'UNSURE' | undefined;
+  const savedFirstDecision = (savedResponses['exp07.firstDecisionCode'] ||
+    runtimeState.localData?.firstDecisionCode) as 'A' | 'B' | 'C' | 'D' | undefined;
+  const [selectedOption, setSelectedOption] = useState<'A' | 'B' | 'C' | 'D' | null>(
+    savedFirstDecision || null
+  );
 
-  // Compute cycle result using fixed demo date (25th August)
+  // Compute deterministic cycle calculation for simulated date
   const cycleResult: CycleCalculationResult = useMemo(() => {
     return calculateCycleContext({
       menstruationDate: EXP07_CONTENT.demoCase.dateStr,
@@ -123,106 +133,101 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
     });
   }, []);
 
-  // Narrative Beats Configuration for all 14 screens of EXP_07
+  // Narrative Beats Configuration for all 13 screens of EXP_07
   const currentBeats: NarrativeBeat[] = useMemo(() => {
     switch (currentScreenId) {
-      case 'screen_01_the_shift':
+      case 'screen_01_the_test':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Hemos pasado varios minutos' },
-          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'No siempre reaccionas mal' },
-          { id: 'beat5', stage: 4, pacing: 'REVELATION', label: '¿Y si pudieras tener más contexto?' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Quiero Verlo', isCTA: true },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Hasta ahora has estado descubriendo' },
+          { id: 'beat3_4_5', stage: 3, pacing: 'LONG', label: 'Vamos a verlo funcionar' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Probar Contexto', isCTA: true },
         ];
-      case 'screen_02_lets_try_it':
-        return [
-          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1', stage: 2, pacing: 'MEDIUM', label: 'Vamos a probar Contexto™ con un caso' },
-          { id: 'beat2_3', stage: 3, pacing: 'LONG', label: 'Sin configurar nada / Sin aprender nada' },
-          { id: 'beat4', stage: 4, pacing: 'REVELATION', label: 'Solo vamos a darle un dato' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Empezar Prueba', isCTA: true },
-        ];
-      case 'screen_03_the_case':
-        return [
-          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1', stage: 2, pacing: 'LONG', label: 'Imagina que fue el 25 de agosto' },
-          { id: 'beat2_3', stage: 3, pacing: 'REVELATION', label: 'No necesitas introducirla / Contexto™ hará el resto' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Ver Qué Encuentra', isCTA: true },
-        ];
-      case 'screen_04_the_data':
+      case 'screen_02_the_data':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
           { id: 'card', stage: 2, pacing: 'LONG', label: 'Tarjeta Dato 25 de Agosto' },
-          { id: 'beat1', stage: 3, pacing: 'REVELATION', label: 'Mira qué hace Contexto™ con un dato tan sencillo' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Analizar', isCTA: true },
+          { id: 'beat1_2', stage: 3, pacing: 'LONG', label: 'Eso es prácticamente todo lo que necesitas' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Analizar Caso', isCTA: true },
         ];
-      case 'screen_05_analyzing':
+      case 'screen_03_engine':
         return [
-          { id: 'analysis', stage: 1, pacing: 'LONG', label: 'Motor Contextual en progreso' },
+          { id: 'engine', stage: 1, pacing: 'LONG', label: 'Motor Contextual' },
         ];
-      case 'screen_06_the_context':
-        return [
-          { id: 'card', stage: 1, pacing: 'LONG', label: 'Resultado de Contexto de Hoy' },
-          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_07_not_just_phase':
+      case 'screen_04_today_context':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1_2_3', stage: 2, pacing: 'LONG', label: 'Pero aquí está lo importante' },
-          { id: 'question', stage: 3, pacing: 'MEDIUM', label: '¿Entonces para qué sirve?' },
-          { id: 'dominant', stage: 4, pacing: 'REVELATION', label: 'Una pieza más de contexto' },
-          { id: 'beat5_6', stage: 5, pacing: 'LONG', label: 'Ahora tienes un dato más' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Ver el Ejemplo', isCTA: true },
+          { id: 'reference', stage: 2, pacing: 'LONG', label: 'Referencia estimada' },
+          { id: 'explanation', stage: 3, pacing: 'LONG', label: 'Explicación humana' },
+          { id: 'closure', stage: 4, pacing: 'REVELATION', label: 'Lo importante es saber qué observar' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Qué Hacer', isCTA: true },
         ];
-      case 'screen_08_situation':
+      case 'screen_05_missing_piece':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'story', stage: 2, pacing: 'LONG', label: 'Ella llega a casa / Cansada' },
-          { id: 'question', stage: 3, pacing: 'REVELATION', label: '¿Qué harías normalmente?' },
-          { id: 'options', stage: 4, pacing: 'MANUAL', label: 'Opciones A, B, C', isOptions: true },
+          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Tú recibes únicamente el comportamiento' },
+          { id: 'highlight', stage: 3, pacing: 'REVELATION', label: 'El Momento del Ciclo' },
+          { id: 'beat3_4', stage: 4, pacing: 'LONG', label: 'Cambia la forma de acercarte' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Mostrarme el Contexto', isCTA: true },
         ];
-      case 'screen_09_context_in_action':
+      case 'screen_06_the_question':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Sin contexto tu mente completa los espacios' },
-          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'Contexto™ no decide por ti / Da información' },
-          { id: 'formula', stage: 4, pacing: 'REVELATION', label: 'Fórmula Contextual' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Qué Preguntar', isCTA: true },
+          { id: 'question', stage: 2, pacing: 'LONG', label: '¿Qué sería más inteligente hacer primero?' },
+          { id: 'options', stage: 3, pacing: 'MANUAL', label: 'Opciones A, B, C, D', isOptions: true },
+          { id: 'reflection', stage: 4, pacing: 'REVELATION', label: 'Reflexión y botón continuar' },
         ];
-      case 'screen_10_better_question':
+      case 'screen_07_context_to_decision':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'lead', stage: 2, pacing: 'LONG', label: '¿Qué necesita ella realmente?' },
-          { id: 'alts', stage: 3, pacing: 'LONG', label: 'Alternativas de preguntas' },
-          { id: 'takeaway', stage: 4, pacing: 'REVELATION', label: 'Te ayuda a hacer mejores preguntas' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Acción de Hoy', isCTA: true },
+          { id: 'beat1_quote', stage: 2, pacing: 'LONG', label: 'No te dice ella está así' },
+          { id: 'block_today', stage: 3, pacing: 'REVELATION', label: 'Bloque Hoy' },
+          { id: 'comparison', stage: 4, pacing: 'LONG', label: 'Comparación de preguntas' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Acción', isCTA: true },
         ];
-      case 'screen_11_daily_action':
-        return [
-          { id: 'card', stage: 1, pacing: 'LONG', label: 'Acción y Microgesto de Hoy' },
-          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_12_micro_result':
+      case 'screen_08_daily_action':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Hace unos minutos solo tenías una situación' },
-          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'No sabes exactamente qué le pasa / No necesitas inventarlo' },
-          { id: 'verbs', stage: 4, pacing: 'REVELATION', label: 'Puedes observar, preguntar, escuchar' },
+          { id: 'action', stage: 2, pacing: 'LONG', label: 'Tu acción de hoy' },
+          { id: 'scenarios', stage: 3, pacing: 'LONG', label: 'Tres escenarios' },
+          { id: 'closure', stage: 4, pacing: 'REVELATION', label: 'Conversación de 2 minutos' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver Qué Evitar', isCTA: true },
+        ];
+      case 'screen_09_what_to_avoid':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'avoid_title', stage: 2, pacing: 'LONG', label: 'Interpretar antes de preguntar' },
+          { id: 'examples', stage: 3, pacing: 'LONG', label: 'Ejemplos prácticos' },
+          { id: 'closure', stage: 4, pacing: 'REVELATION', label: 'Te ayuda a no inventarla' },
           { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
-      case 'screen_13_utility_question':
+      case 'screen_10_connection_index':
         return [
-          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'lead_q', stage: 2, pacing: 'LONG', label: 'Si tuvieras esta información cada día' },
-          { id: 'options', stage: 3, pacing: 'MANUAL', label: 'Opciones de Utilidad', isOptions: true },
+          { id: 'card', stage: 1, pacing: 'LONG', label: 'Índice de Conexión Diaria' },
+          { id: 'cta', stage: 2, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
-      case 'screen_14_trial_completed':
+      case 'screen_11_wow_moment':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
-          { id: 'beat1_2', stage: 2, pacing: 'LONG', label: 'Esto fue solo una demostración' },
-          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'En Contexto™ real se construye alrededor de tu relación' },
-          { id: 'beat4_5', stage: 4, pacing: 'REVELATION', label: 'Para ayudarte a comprender antes de reaccionar' },
+          { id: 'lead', stage: 2, pacing: 'SHORT', label: 'Solo introdujimos un dato' },
+          { id: 'flow', stage: 3, pacing: 'LONG', label: 'Flujo visual WOW' },
+          { id: 'summary', stage: 4, pacing: 'REVELATION', label: 'Eso es Contexto™' },
           { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
+        ];
+      case 'screen_12_the_desire':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'questions', stage: 2, pacing: 'LONG', label: 'No tener que preguntarte constantemente' },
+          { id: 'features', stage: 3, pacing: 'LONG', label: 'Lista de contexto diario' },
+          { id: 'closure', stage: 4, pacing: 'REVELATION', label: 'Eso cambia la forma de vivir una relación' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Quiero Ver Mi Contexto Cada Día', isCTA: true },
+        ];
+      case 'screen_13_transition_revelation':
+        return [
+          { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
+          { id: 'beat1', stage: 2, pacing: 'MEDIUM', label: 'Esto fue solo una demostración' },
+          { id: 'beat2_3', stage: 3, pacing: 'LONG', label: 'En la aplicación real cambia cada día' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Ver el Resumen de Mi Caso', isCTA: true },
         ];
       default:
         return [];
@@ -248,316 +253,213 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       progress: {
         ...prev.progress,
         currentExperience: 'exp07',
-        currentScreen: currentScreenId,
       },
     }));
 
-    eventTracker.trackEvent('SCREEN_VIEWED', {
+    eventTracker.trackEvent('EXP07_SCREEN_VIEWED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
       payload: { screenId: currentScreenId },
     });
 
-    if (currentScreenId === 'screen_03_the_case') {
-      eventTracker.trackEvent('EXP07_DEMO_CASE_SHOWN', {
+    // Special event tracks per screen
+    if (currentScreenId === 'screen_01_the_test') {
+      eventTracker.trackEvent('EXP07_STARTED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
-    }
-
-    if (currentScreenId === 'screen_04_the_data') {
+      eventTracker.trackEvent('EXP07_DEMO_STARTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
+    } else if (currentScreenId === 'screen_02_the_data') {
+      eventTracker.trackEvent('EXP07_SIMULATION_STARTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
       eventTracker.trackEvent('EXP07_DEMO_DATA_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
-        payload: { date: EXP07_CONTENT.demoCase.dateStr },
       });
-    }
-
-    if (currentScreenId === 'screen_06_the_context') {
+    } else if (currentScreenId === 'screen_04_today_context') {
+      eventTracker.trackEvent('EXP07_CONTEXT_CALCULATED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+        payload: {
+          phase: cycleResult.estimatedPhase,
+          day: cycleResult.estimatedCycleDay,
+        },
+      });
+      eventTracker.trackEvent('EXP07_CONTEXT_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
       eventTracker.trackEvent('EXP07_DEMO_CONTEXT_REVEALED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
-        payload: {
-          phase: cycleResult.estimatedPhase,
-          cycleDay: cycleResult.estimatedCycleDay,
-        },
       });
-      eventTracker.trackEvent('CONTEXT_VIEWED', {
+    } else if (currentScreenId === 'screen_06_the_question') {
+      eventTracker.trackEvent('EXP07_DECISION_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
-        payload: {
-          phase: cycleResult.estimatedPhase,
-          cycleDay: cycleResult.estimatedCycleDay,
-        },
       });
-    }
-
-    if (currentScreenId === 'screen_08_situation') {
       eventTracker.trackEvent('EXP07_DEMO_SITUATION_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
-    }
-
-    if (currentScreenId === 'screen_09_context_in_action') {
-      eventTracker.trackEvent('EXP07_DEMO_INSIGHT_REVEALED', {
+    } else if (currentScreenId === 'screen_08_daily_action') {
+      eventTracker.trackEvent('EXP07_ACTION_REVEALED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
-    }
-
-    if (currentScreenId === 'screen_11_daily_action') {
       eventTracker.trackEvent('EXP07_DEMO_ACTION_SHOWN', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
-      eventTracker.trackEvent('DAILY_ACTION_VIEWED', {
+    } else if (currentScreenId === 'screen_10_connection_index') {
+      eventTracker.trackEvent('EXP07_CONNECTION_INDEX_SHOWN', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
+    } else if (currentScreenId === 'screen_11_wow_moment') {
+      eventTracker.trackEvent('EXP07_WOW_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
+      eventTracker.trackEvent('EXP07_DEMO_INSIGHT_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp07',
+      });
+    } else if (currentScreenId === 'screen_12_the_desire') {
+      eventTracker.trackEvent('EXP07_DESIRE_REVEALED', {
         sessionId: state.session.sessionId,
         caseId: state.session.caseId,
         experience: 'exp07',
       });
     }
+  }, [currentScreenId, state.session.sessionId, state.session.caseId, cycleResult, updateState]);
 
-    if (currentScreenId === 'screen_13_utility_question') {
-      eventTracker.trackEvent('UTILITY_QUESTION_SHOWN', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp07',
-      });
-    }
-  }, [
-    currentScreenId,
-    cycleResult.estimatedCycleDay,
-    cycleResult.estimatedPhase,
-    state.session.sessionId,
-    state.session.caseId,
-    updateState,
-  ]);
-
-  // Initial event tracker on mount
-  useEffect(() => {
-    eventTracker.trackEvent('EXP07_STARTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-    });
-    eventTracker.trackEvent('EXP07_DEMO_STARTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-    });
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.started', value: true, scope: 'global' },
-      { key: 'exp07.demoCase', value: true, scope: 'global' },
-    ]);
-  }, [state.session.sessionId, state.session.caseId]);
-
-  // Generic transition forward between screens
-  const advanceToScreen = (targetScreenId: string) => {
+  // Generic navigation handler between screens
+  const handleNavigate = (targetScreen: string) => {
     if (isProcessing) return;
     setIsProcessing(true);
 
-    const nextState = transitionScreenState(runtimeState, targetScreenId);
-    persistExperienceRuntimeState(nextState);
+    eventTracker.trackEvent('EXP07_CTA_CLICKED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
+      payload: { fromScreen: currentScreenId, targetScreen },
+    });
 
     startTransition(() => {
-      setRuntimeState(nextState);
+      setRuntimeState((prev) =>
+        transitionScreenState(prev, targetScreen, 'ACTIVE')
+      );
       setIsProcessing(false);
     });
   };
 
-  // Handler for Screen 04 Date Analysis Trigger
-  const handleStartAnalysis = () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
+  // Option selection on Screen 06
+  const handleSelectDecisionOption = (option: QuestionOption) => {
+    setSelectedOption(option.code);
 
-    eventTracker.trackEvent('CTA_CLICKED', {
+    memoryManagerRef.current.setMemory('exp07.firstDecision', option.text, 'global');
+    memoryManagerRef.current.setMemory('exp07.firstDecisionCode', option.code, 'global');
+    memoryManagerRef.current.setMemory('exp07.questionAnswered', true, 'global');
+
+    eventTracker.trackEvent('EXP07_DECISION_SELECTED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { action: 'analyze_demo_date', date: EXP07_CONTENT.demoCase.dateStr },
-    });
-
-    eventTracker.trackEvent('CONTEXT_ANALYSIS_STARTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { date: EXP07_CONTENT.demoCase.dateStr, isDemo: true },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.demoDate', value: EXP07_CONTENT.demoCase.dateStr, scope: 'global' },
-      { key: 'exp07.estimatedCycleDay', value: cycleResult.estimatedCycleDay, scope: 'global' },
-      { key: 'exp07.estimatedPhase', value: cycleResult.estimatedPhase, scope: 'global' },
-      { key: 'exp07.confidenceLevel', value: cycleResult.confidenceLevel, scope: 'global' },
-    ]);
-
-    const nextState: ExperienceRuntimeState = {
-      ...runtimeState,
-      currentScreen: 'screen_05_analyzing',
-      localData: {
-        ...runtimeState.localData,
-        demoDate: EXP07_CONTENT.demoCase.dateStr,
-        estimatedCycleDay: cycleResult.estimatedCycleDay,
-        estimatedPhase: cycleResult.estimatedPhase,
-      },
-      lastActivityAt: new Date().toISOString(),
-    };
-    persistExperienceRuntimeState(nextState);
-
-    startTransition(() => {
-      setRuntimeState(nextState);
-      setIsProcessing(false);
-    });
-  };
-
-  // Handler for Screen 05 Analysis Finished
-  const handleAnalysisComplete = () => {
-    eventTracker.trackEvent('CONTEXT_ANALYSIS_COMPLETED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: {
-        phase: cycleResult.estimatedPhase,
-        cycleDay: cycleResult.estimatedCycleDay,
-      },
-    });
-
-    advanceToScreen('screen_06_the_context');
-  };
-
-  // Handler for Screen 08 Situation Choice
-  const handleSelectSituationChoice = (opt: SituationOption) => {
-    if (isProcessing) return;
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { choiceCode: opt.code, choiceLabel: opt.text },
+      payload: { code: option.code, text: option.text },
     });
 
     eventTracker.trackEvent('EXP07_DEMO_CHOICE_SELECTED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { choice: opt.code, label: opt.text },
+      payload: { choice: option.code },
     });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.demoSituationChoice', value: opt.code, scope: 'global' },
-    ]);
-
-    setRuntimeState((prev) => ({
-      ...prev,
-      localData: {
-        ...prev.localData,
-        demoSituationChoice: opt.code,
-      },
-    }));
-
-    advanceToScreen('screen_09_context_in_action');
   };
 
-  // Handler for Screen 13 Utility Response
-  const handleSelectUtility = (code: 'YES' | 'UNSURE', label: string) => {
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { choiceCode: code, choiceLabel: label },
-    });
-
-    eventTracker.trackEvent('UTILITY_RESPONSE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { response: code, label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.productUtilityRecognition', value: code, scope: 'global' },
-      { key: 'productUtilityRecognition', value: code, scope: 'global' },
-    ]);
-
-    setRuntimeState((prev) => ({
-      ...prev,
-      localData: {
-        ...prev.localData,
-        productUtilityRecognition: code,
-      },
-    }));
-  };
-
-  // Handler for Screen 14 Completion & Navigation to EXP_08
-  const handleCompleteExp07 = () => {
-    if (isCompletedGuard || completingRef.current) return;
+  // Completion and transition to EXP_08 (La Revelación)
+  const handleCompleteExperience = () => {
+    if (completingRef.current || isCompletedGuard) return;
     completingRef.current = true;
     setIsCompletedGuard(true);
 
-    eventTracker.trackEvent('CTA_CLICKED', {
+    const now = new Date().toISOString();
+
+    // Persist all required memory keys
+    memoryManagerRef.current.setMemory('exp07.completed', true, 'global');
+    memoryManagerRef.current.setMemory('exp07.completedAt', now, 'global');
+    memoryManagerRef.current.setMemory('exp07.productUtilityRecognition', 'YES', 'global');
+    memoryManagerRef.current.setMemory('exp07.simulatedDate', EXP07_CONTENT.demoCase.dateStr, 'global');
+    memoryManagerRef.current.setMemory('exp07.estimatedCycleDay', cycleResult.estimatedCycleDay, 'global');
+    memoryManagerRef.current.setMemory('exp07.estimatedPhase', cycleResult.estimatedPhase, 'global');
+    memoryManagerRef.current.setMemory('exp07.contextRecognized', true, 'global');
+    memoryManagerRef.current.setMemory('exp07.dailyActionShown', true, 'global');
+    memoryManagerRef.current.setMemory('exp07.productValueExperienced', true, 'global');
+    memoryManagerRef.current.setMemory('trialCompleted', true, 'global');
+    memoryManagerRef.current.setMemory('productValueExperienced', true, 'global');
+
+    // Update runtime state
+    setRuntimeState((prev) => ({
+      ...prev,
+      status: 'COMPLETED',
+      completedAt: now,
+    }));
+
+    // Unlock EXP_08 in global funnel state
+    updateState((prev) => {
+      const exp07Responses = (prev.responses.exp07 || {}) as Record<string, unknown>;
+      const completedList = prev.progress.completedExperiences.includes('exp07')
+        ? prev.progress.completedExperiences
+        : [...prev.progress.completedExperiences, 'exp07' as const];
+
+      return {
+        ...prev,
+        progress: {
+          ...prev.progress,
+          currentExperience: 'exp08',
+          completedExperiences: completedList,
+        },
+        responses: {
+          ...prev.responses,
+          exp07: {
+            ...exp07Responses,
+            'exp07.completed': true,
+            'exp07.completedAt': now,
+            'exp07.simulatedDate': EXP07_CONTENT.demoCase.dateStr,
+            'exp07.estimatedCycleDay': cycleResult.estimatedCycleDay,
+            'exp07.estimatedPhase': cycleResult.estimatedPhase,
+            'exp07.productUtilityRecognition': 'YES',
+            'trialCompleted': true,
+            'productValueExperienced': true,
+          },
+        },
+      };
+    });
+
+    eventTracker.trackEvent('EXP07_COMPLETED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp07',
-      payload: { action: 'complete_exp07', label: EXP07_CONTENT.screen14.ctaLabel },
-    });
-
-    const now = new Date().toISOString();
-    const finalMemory = {
-      ...memoryManagerRef.current.getExperienceMemory(),
-      started: true,
-      demoCase: true,
-      demoDate: EXP07_CONTENT.demoCase.dateStr,
-      estimatedCycleDay: cycleResult.estimatedCycleDay,
-      estimatedPhase: cycleResult.estimatedPhase,
-      confidenceLevel: cycleResult.confidenceLevel,
-      demoSituationChoice: savedSituationChoice || 'C',
-      contextViewed: true,
-      connectionMode: 'UNDERSTAND',
-      dailyContextViewed: true,
-      productUtilityRecognition: savedUtilityRecognition || 'YES',
-      trialCompleted: true,
-      productValueExperienced: true,
-      completed: true,
-      completedAt: now,
-    };
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp07.started', value: true, scope: 'global' },
-      { key: 'exp07.demoCase', value: true, scope: 'global' },
-      { key: 'exp07.demoDate', value: EXP07_CONTENT.demoCase.dateStr, scope: 'global' },
-      { key: 'exp07.estimatedCycleDay', value: cycleResult.estimatedCycleDay, scope: 'global' },
-      { key: 'exp07.estimatedPhase', value: cycleResult.estimatedPhase, scope: 'global' },
-      { key: 'exp07.confidenceLevel', value: cycleResult.confidenceLevel, scope: 'global' },
-      { key: 'exp07.contextViewed', value: true, scope: 'global' },
-      { key: 'exp07.connectionMode', value: 'UNDERSTAND', scope: 'global' },
-      { key: 'exp07.dailyContextViewed', value: true, scope: 'global' },
-      { key: 'exp07.productUtilityRecognition', value: savedUtilityRecognition || 'YES', scope: 'global' },
-      { key: 'exp07.completed', value: true, scope: 'global' },
-      { key: 'exp07.completedAt', value: now, scope: 'global' },
-      { key: 'productUtilityRecognition', value: savedUtilityRecognition || 'YES', scope: 'global' },
-      { key: 'trialCompleted', value: true, scope: 'global' },
-      { key: 'productValueExperienced', value: true, scope: 'global' },
-      { key: 'estimatedCyclePhase', value: cycleResult.estimatedPhase, scope: 'global' },
-    ]);
-
-    setRuntimeState((prev) => {
-      const next: ExperienceRuntimeState = {
-        ...prev,
-        status: 'COMPLETED',
-        completedScreens: Array.from(new Set([...prev.completedScreens, prev.currentScreen])),
-        lastActivityAt: now,
-      };
-      persistExperienceRuntimeState(next);
-      return next;
     });
 
     eventTracker.trackEvent('EXP07_DEMO_COMPLETED', {
@@ -566,140 +468,85 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       experience: 'exp07',
     });
 
-    eventTracker.trackEvent('EXP07_COMPLETED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { memory: finalMemory },
-    });
-
-    eventTracker.trackEvent('EXPERIENCE_COMPLETED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp07',
-      payload: { experienceId: 'exp07' },
-    });
-
-    // Update FunnelState completed experiences to unlock EXP_08
-    updateState((prev) => {
-      const alreadyCompleted = prev.progress.completedExperiences.includes('exp07');
-      const updatedList: ExperienceId[] = alreadyCompleted
-        ? prev.progress.completedExperiences
-        : [...prev.progress.completedExperiences, 'exp07'];
-
-      return {
-        ...prev,
-        product: {
-          ...prev.product,
-          demoCompleted: true,
-        },
-        progress: {
-          ...prev.progress,
-          completedExperiences: updatedList,
-          completionPercentage: Math.max(prev.progress.completionPercentage, 87),
-        },
-      };
-    });
-
-    // Navigate to EXP_08
-    onComplete(finalMemory);
+    // Notify parent onComplete
+    setTimeout(() => {
+      onComplete();
+    }, 200);
   };
 
   return (
     <div
-      id="exp07-root-container"
-      className="relative min-h-[90vh] flex flex-col justify-between items-center bg-[#050505] text-neutral-100 px-4 sm:px-6 py-6 sm:py-10 selection:bg-orange-500/20 selection:text-orange-200"
+      id="exp07-container"
+      className="min-h-screen bg-[#050505] text-[#E0E0E0] flex flex-col justify-between p-4 sm:p-6 md:p-8 font-sans selection:bg-amber-500/20 selection:text-amber-200"
     >
-      {/* Top Bar with Minimal Case Reference & Audio Control */}
-      <header
-        id="exp07-header"
-        className="w-full max-w-xl flex items-center justify-between py-2 mb-4 border-b border-[#141414]"
-      >
-        <div className="flex items-center space-x-3">
-          <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
-            CASO #{caseId}
+      {/* Top Bar / Audio & Identity */}
+      <header className="w-full max-w-2xl mx-auto flex items-center justify-between py-2 border-b border-zinc-900">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs font-mono tracking-widest text-amber-500/80 font-semibold">
+            CONTEXTO™
           </span>
-          <span className="text-[10px] text-neutral-700 font-mono">/</span>
-          <span className="text-[10px] font-mono tracking-wider text-orange-400 uppercase">
-            EXP_07 — LA PRUEBA
+          <span className="text-zinc-700">/</span>
+          <span className="text-xs font-mono tracking-wider text-zinc-500">
+            DEMO
           </span>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <button
-            id="exp07-audio-toggle"
-            onClick={toggleAudio}
-            className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-300 hover:bg-[#141414] transition-colors focus:outline-none focus:ring-1 focus:ring-neutral-600"
-            title={isAudioActive ? 'Silenciar ambiente' : 'Activar audio'}
-            aria-label={isAudioActive ? 'Silenciar audio ambiental' : 'Activar audio ambiental'}
-          >
-            {isAudioActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleAudio}
+          className="p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-colors focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+          aria-label={isAudioActive ? 'Silenciar audio ambiental' : 'Activar audio ambiental'}
+          title={isAudioActive ? 'Silenciar' : 'Activar audio'}
+        >
+          {isAudioActive ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4" />}
+        </button>
       </header>
 
-      {/* Main Narrative Stage */}
-      <main id="exp07-main-stage" className="w-full max-w-xl flex-1 flex flex-col justify-center my-auto">
+      {/* Main Content Area */}
+      <main className="w-full max-w-xl mx-auto flex-1 flex flex-col justify-center py-6 sm:py-10 text-center">
         {/* ========================================================================= */}
-        {/* SCREEN 01 — EL CAMBIO */}
+        {/* SCREEN 01 — LA PRUEBA                                                    */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_01_the_shift' && (
-          <div
-            id="screen-01-the-shift"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_01_the_test' && (
+          <div id="exp07-screen-01" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen01.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed">
+            {screenStage >= 2 && (
+              <div className="space-y-4">
+                <p className="text-xl sm:text-2xl font-serif font-normal text-zinc-100 leading-relaxed">
                   {EXP07_CONTENT.screen01.beat1}
-                </h1>
-                <p className="text-base sm:text-lg text-neutral-400 font-body mt-2">
+                </p>
+                <p className="text-lg sm:text-xl font-sans text-zinc-300 font-light">
                   {EXP07_CONTENT.screen01.beat2}
                 </p>
               </div>
+            )}
 
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-300 font-body">
+            {screenStage >= 3 && (
+              <div className="space-y-3 pt-2">
+                <p className="text-2xl sm:text-3xl font-serif italic text-amber-200 font-semibold">
                   {EXP07_CONTENT.screen01.beat3}
                 </p>
-                <p className="text-base sm:text-lg text-neutral-400 font-body">
+                <p className="text-sm font-sans text-zinc-400">
                   {EXP07_CONTENT.screen01.beat4}
                 </p>
-
-                <div
-                  className={`pt-3 transition-all duration-1000 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl font-serif italic text-orange-400 leading-snug">
-                    {EXP07_CONTENT.screen01.beat5}
-                  </p>
-                </div>
+                <p className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
+                  {EXP07_CONTENT.screen01.beat5}
+                </p>
               </div>
-            </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            <CTAReveal isRevealed={isCTARevealed} className="pt-6">
               <PrimaryCTA
-                id="screen-01-cta"
-                onClick={() => advanceToScreen('screen_02_lets_try_it')}
-                disabled={isProcessing}
+                id="btn-exp07-start"
+                onClick={() => handleNavigate('screen_02_the_data')}
               >
                 {EXP07_CONTENT.screen01.ctaLabel}
               </PrimaryCTA>
@@ -708,59 +555,47 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 02 — VAMOS A PROBARLO */}
+        {/* SCREEN 02 — EL DATO                                                      */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_02_lets_try_it' && (
-          <div
-            id="screen-02-lets-try-it"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_02_the_data' && (
+          <div id="exp07-screen-02" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen02.eyebrow}
                 </span>
               </div>
+            )}
 
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white leading-snug">
+            {screenStage >= 2 && (
+              <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 shadow-2xl space-y-4 max-w-md mx-auto">
+                <p className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                  {EXP07_CONTENT.screen02.lead}
+                </p>
+                <div className="py-3 px-4 rounded-xl bg-zinc-950 border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] flex items-center justify-center gap-3">
+                  <Calendar className="w-6 h-6 text-amber-400" />
+                  <span className="text-2xl sm:text-3xl font-mono font-bold tracking-wider text-zinc-100">
+                    {EXP07_CONTENT.screen02.dateTag}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {screenStage >= 3 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-base sm:text-lg font-sans text-zinc-300">
                   {EXP07_CONTENT.screen02.beat1}
-                </h2>
-              </div>
-
-              <div
-                className={`p-5 rounded-xl bg-[#080808] border border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-300 font-body">
-                  • {EXP07_CONTENT.screen02.beat2}
                 </p>
-                <p className="text-base text-neutral-300 font-body">
-                  • {EXP07_CONTENT.screen02.beat3}
+                <p className="text-sm font-sans text-amber-200/90 font-medium">
+                  {EXP07_CONTENT.screen02.beat2}
                 </p>
               </div>
+            )}
 
-              <div
-                className={`pt-2 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xl sm:text-2xl font-serif italic text-orange-400">
-                  {EXP07_CONTENT.screen02.beat4}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-02-cta"
-                onClick={() => advanceToScreen('screen_03_the_case')}
-                disabled={isProcessing}
+                id="btn-exp07-analyze"
+                onClick={() => handleNavigate('screen_03_engine')}
               >
                 {EXP07_CONTENT.screen02.ctaLabel}
               </PrimaryCTA>
@@ -769,115 +604,79 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 03 — EL CASO */}
+        {/* SCREEN 03 — MOTOR CONTEXTUAL                                             */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_03_the_case' && (
-          <div
-            id="screen-03-the-case"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP07_CONTENT.screen03.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
-
-              <div
-                className={`p-6 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-4 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="flex items-center space-x-2 text-xs font-mono text-orange-400 uppercase tracking-wider">
-                  <Calendar className="w-4 h-4" />
-                  <span>EJEMPLO ORIENTATIVO</span>
-                </div>
-
-                <p className="text-xl sm:text-2xl font-serif italic text-white leading-relaxed">
-                  {EXP07_CONTENT.screen03.beat1}
-                </p>
-              </div>
-
-              <div
-                className={`pt-2 space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen03.beat2}
-                </p>
-                <p className="text-lg font-serif italic text-orange-300">
-                  {EXP07_CONTENT.screen03.beat3}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-03-cta"
-                onClick={() => advanceToScreen('screen_04_the_data')}
-                disabled={isProcessing}
-              >
-                {EXP07_CONTENT.screen03.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+        {currentScreenId === 'screen_03_engine' && (
+          <div id="exp07-screen-03" className="w-full">
+            <ContextEngineProcessing
+              onComplete={() => handleNavigate('screen_04_today_context')}
+              isReducedMotion={
+                typeof window !== 'undefined' &&
+                window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+              }
+            />
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 04 — EL DATO */}
+        {/* SCREEN 04 — TU CONTEXTO DE HOY                                           */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_04_the_data' && (
-          <div
-            id="screen-04-the-data"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_04_today_context' && (
+          <div id="exp07-screen-04" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen04.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              {/* Data Card Highlight */}
-              <div
-                className={`p-6 rounded-2xl bg-[#080808] border border-orange-500/30 shadow-xl space-y-3 text-center transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                }`}
-              >
-                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 block">
-                  FECHA INTRODUCIDA
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-serif italic text-orange-400 font-semibold tracking-wide">
-                  {EXP07_CONTENT.screen04.dateTag}
+            {screenStage >= 2 && (
+              <div className="space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100">
+                  {EXP07_CONTENT.screen04.title}
                 </h2>
-                <p className="text-xs sm:text-sm font-mono text-neutral-500 pt-1">
-                  {EXP07_CONTENT.screen04.dateSubtext}
-                </p>
+                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/20 via-zinc-900 to-zinc-950 border border-amber-500/30 max-w-md mx-auto">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-1">
+                    {EXP07_CONTENT.screen04.referenceLabel}
+                  </span>
+                  <p className="text-lg sm:text-xl font-serif italic text-amber-200 font-semibold">
+                    {EXP07_CONTENT.screen04.referenceValue}
+                  </p>
+                  <span className="text-[10px] font-mono text-zinc-500 mt-2 block">
+                    {EXP07_CONTENT.screen04.phaseSecondary}
+                  </span>
+                </div>
               </div>
+            )}
 
-              <div
-                className={`pt-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-300 font-body leading-relaxed">
-                  {EXP07_CONTENT.screen04.beat1}
+            {screenStage >= 3 && (
+              <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-left space-y-3 max-w-md mx-auto">
+                <p className="text-sm text-zinc-300 leading-relaxed font-sans">
+                  {EXP07_CONTENT.screen04.explanation1}
                 </p>
+                <div className="border-t border-zinc-800/60 pt-2 space-y-1">
+                  <p className="text-sm font-semibold text-zinc-200 font-sans">
+                    {EXP07_CONTENT.screen04.explanation2}
+                  </p>
+                  <p className="text-xs font-mono text-amber-400/90">
+                    {EXP07_CONTENT.screen04.explanation3}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            {screenStage >= 4 && (
+              <p className="text-sm sm:text-base font-serif italic text-zinc-200">
+                {EXP07_CONTENT.screen04.closure}
+              </p>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-04-cta"
-                onClick={handleStartAnalysis}
-                disabled={isProcessing}
+                id="btn-exp07-see-what-to-do"
+                onClick={() => handleNavigate('screen_05_missing_piece')}
               >
                 {EXP07_CONTENT.screen04.ctaLabel}
               </PrimaryCTA>
@@ -886,114 +685,221 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 05 — MOTOR CONTEXTUAL */}
+        {/* SCREEN 05 — LO QUE ESTÁS PASANDO POR ALTO                                */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_05_analyzing' && (
-          <div id="screen-05-analyzing" className="w-full animate-fade-in">
-            <ContextAnalysis onComplete={handleAnalysisComplete} />
-          </div>
-        )}
+        {currentScreenId === 'screen_05_missing_piece' && (
+          <div id="exp07-screen-05" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
+                  {EXP07_CONTENT.screen05.eyebrow}
+                </span>
+              </div>
+            )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 06 — EL CONTEXTO */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_06_the_context' && (
-          <div
-            id="screen-06-the-context"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <ContextResultCard
-              caseId={caseId}
-              result={cycleResult}
-              isApproximate={false}
-            />
+            {screenStage >= 2 && (
+              <div className="space-y-4">
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100">
+                  {EXP07_CONTENT.screen05.title}
+                </h2>
+                <p className="text-base sm:text-lg text-zinc-300 font-sans leading-relaxed">
+                  {EXP07_CONTENT.screen05.beat1}
+                </p>
+                <p className="text-sm sm:text-base text-zinc-400 font-sans">
+                  {EXP07_CONTENT.screen05.beat2}
+                </p>
+              </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
+            {screenStage >= 3 && (
+              <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/40 max-w-md mx-auto shadow-lg">
+                <span className="text-xl sm:text-2xl font-mono font-bold tracking-wider text-amber-300">
+                  {EXP07_CONTENT.screen05.highlight}
+                </span>
+              </div>
+            )}
+
+            {screenStage >= 4 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm font-sans text-zinc-400">
+                  {EXP07_CONTENT.screen05.beat3}
+                </p>
+                <p className="text-base sm:text-lg font-serif italic text-zinc-100 font-medium">
+                  {EXP07_CONTENT.screen05.beat4}
+                </p>
+              </div>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-06-cta"
-                onClick={() => advanceToScreen('screen_07_not_just_phase')}
-                disabled={isProcessing}
+                id="btn-exp07-show-context"
+                onClick={() => handleNavigate('screen_06_the_question')}
               >
-                {EXP07_CONTENT.screen06.ctaLabel}
+                {EXP07_CONTENT.screen05.ctaLabel}
               </PrimaryCTA>
             </CTAReveal>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 07 — LO IMPORTANTE NO ES LA FASE */}
+        {/* SCREEN 06 — LA PREGUNTA                                                  */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_07_not_just_phase' && (
-          <div
-            id="screen-07-not-just-phase"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_06_the_question' && (
+          <div id="exp07-screen-06" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
+                  {EXP07_CONTENT.screen06.eyebrow}
+                </span>
+              </div>
+            )}
+
+            {screenStage >= 2 && (
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-zinc-100">
+                  {EXP07_CONTENT.screen06.title}
+                </h2>
+                <p className="text-base sm:text-lg text-zinc-300 font-sans">
+                  {EXP07_CONTENT.screen06.question}
+                </p>
+              </div>
+            )}
+
+            {screenStage >= 3 && (
+              <div className="space-y-2.5 max-w-md mx-auto text-left">
+                {EXP07_CONTENT.screen06.options.map((opt) => {
+                  const isSelected = selectedOption === opt.code;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => handleSelectDecisionOption(opt)}
+                      className={`w-full p-3.5 rounded-xl border text-left transition-all duration-200 flex items-start gap-3 ${
+                        isSelected
+                          ? 'bg-amber-950/30 border-amber-500/60 text-amber-100 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/40'
+                          : 'bg-zinc-900/70 border-zinc-800 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900'
+                      }`}
+                    >
+                      <span
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5 ${
+                          isSelected
+                            ? 'bg-amber-500 text-zinc-950'
+                            : 'bg-zinc-800 text-zinc-400'
+                        }`}
+                      >
+                        {opt.label}
+                      </span>
+                      <span className="text-sm font-sans leading-snug">
+                        {opt.text}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {selectedOption && (
+              <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 max-w-md mx-auto space-y-2 text-center animate-fadeIn">
+                <p className="text-lg font-serif italic text-amber-200 font-semibold">
+                  {EXP07_CONTENT.screen06.reflectionTitle}
+                </p>
+                <p className="text-sm text-zinc-300 font-sans">
+                  {EXP07_CONTENT.screen06.reflectionBeat1}
+                </p>
+                <p className="text-sm font-medium text-zinc-100 font-sans">
+                  {EXP07_CONTENT.screen06.reflectionBeat2}
+                </p>
+                <div className="pt-2">
+                  <PrimaryCTA
+                    id="btn-exp07-question-continue"
+                    onClick={() => handleNavigate('screen_07_context_to_decision')}
+                  >
+                    {EXP07_CONTENT.screen06.ctaLabel}
+                  </PrimaryCTA>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 07 — CONTEXTO → DECISIÓN                                          */}
+        {/* ========================================================================= */}
+        {currentScreenId === 'screen_07_context_to_decision' && (
+          <div id="exp07-screen-07" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen07.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              <div
-                className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <span className="text-[10px] font-mono tracking-widest uppercase text-orange-400 block">
+            {screenStage >= 2 && (
+              <div className="space-y-3">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-zinc-100 leading-snug">
                   {EXP07_CONTENT.screen07.title}
-                </span>
-                <p className="text-xl sm:text-2xl font-serif italic text-white leading-snug">
-                  {EXP07_CONTENT.screen07.beat1}
-                </p>
-                <p className="text-sm sm:text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen07.beat2} {EXP07_CONTENT.screen07.beat3}
+                </h2>
+                <div className="space-y-1">
+                  <p className="text-xs font-mono text-zinc-500 uppercase">
+                    {EXP07_CONTENT.screen07.beat1}
+                  </p>
+                  <p className="text-sm font-sans line-through text-zinc-500">
+                    {EXP07_CONTENT.screen07.quote1}
+                  </p>
+                </div>
+                <div className="space-y-1 pt-1">
+                  <p className="text-xs font-mono text-amber-400 uppercase font-medium">
+                    {EXP07_CONTENT.screen07.beat2}
+                  </p>
+                  <p className="text-base sm:text-lg font-serif italic text-amber-200 font-semibold">
+                    {EXP07_CONTENT.screen07.quote2}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {screenStage >= 3 && (
+              <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 text-left max-w-md mx-auto space-y-3 shadow-xl">
+                <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold uppercase">
+                    {EXP07_CONTENT.screen07.blockLabel}
+                  </span>
+                </div>
+                <p className="text-sm text-zinc-200 leading-relaxed font-sans">
+                  {EXP07_CONTENT.screen07.blockBody}
                 </p>
               </div>
+            )}
 
-              <div
-                className={`pt-1 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg font-serif italic text-orange-200">
-                  {EXP07_CONTENT.screen07.beatQuestion}
-                </p>
+            {screenStage >= 4 && (
+              <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 text-left max-w-md mx-auto space-y-2.5">
+                <div>
+                  <span className="text-[10px] font-mono uppercase text-zinc-500 block">
+                    {EXP07_CONTENT.screen07.comparisonInstead}
+                  </span>
+                  <p className="text-xs font-mono text-zinc-400 line-through">
+                    {EXP07_CONTENT.screen07.comparisonBad}
+                  </p>
+                </div>
+                <div className="pt-1 border-t border-zinc-800/50">
+                  <span className="text-[10px] font-mono uppercase text-amber-400 block">
+                    {EXP07_CONTENT.screen07.comparisonTry}
+                  </span>
+                  <p className="text-sm font-serif italic text-amber-100 leading-relaxed font-medium">
+                    {EXP07_CONTENT.screen07.comparisonGood}
+                  </p>
+                </div>
               </div>
+            )}
 
-              {/* Dominant Highlight Reveal */}
-              <div
-                className={`p-6 rounded-2xl bg-[#0C0C0C] border border-orange-500/30 text-center transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                }`}
-              >
-                <p className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-2">
-                  {EXP07_CONTENT.screen07.beat4}
-                </p>
-                <span className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 tracking-wide font-semibold block">
-                  “{EXP07_CONTENT.screen07.dominantWord}”
-                </span>
-              </div>
-
-              <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#161616] text-left transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm sm:text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen07.beat5} {EXP07_CONTENT.screen07.beat6}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-07-cta"
-                onClick={() => advanceToScreen('screen_08_situation')}
-                disabled={isProcessing}
+                id="btn-exp07-see-action"
+                onClick={() => handleNavigate('screen_08_daily_action')}
               >
                 {EXP07_CONTENT.screen07.ctaLabel}
               </PrimaryCTA>
@@ -1002,164 +908,122 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 08 — UNA SITUACIÓN REAL (INTERACTIVE CHOICE) */}
+        {/* SCREEN 08 — ACCIÓN DE HOY                                                */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_08_situation' && (
-          <div
-            id="screen-08-situation"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_08_daily_action' && (
+          <div id="exp07-screen-08" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen08.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              {/* Story Box */}
-              <div
-                className={`p-5 rounded-2xl bg-[#080808] border border-[#1E1E1E] space-y-2.5 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <span className="text-[10px] font-mono uppercase tracking-widest text-orange-400 block">
-                  {EXP07_CONTENT.screen08.title}
-                </span>
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen08.story1} {EXP07_CONTENT.screen08.story2}
-                </p>
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen08.story3}
-                </p>
-                <div className="pt-2">
-                  <p className="text-xl sm:text-2xl font-serif italic text-orange-300 font-semibold">
-                    {EXP07_CONTENT.screen08.herResponse}
-                  </p>
+            {screenStage >= 2 && (
+              <div className="p-5 rounded-2xl bg-zinc-900/90 border border-amber-500/30 text-left max-w-md mx-auto space-y-3 shadow-xl">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <h2 className="text-lg font-mono font-bold uppercase tracking-wider text-amber-300">
+                    {EXP07_CONTENT.screen08.title}
+                  </h2>
+                  <span className="text-[10px] font-mono text-zinc-500">HOY</span>
                 </div>
+                <p className="text-xs font-mono text-zinc-400 uppercase">
+                  {EXP07_CONTENT.screen08.timing}
+                </p>
+                <p className="text-sm sm:text-base font-serif italic text-zinc-100 leading-relaxed font-medium">
+                  {EXP07_CONTENT.screen08.action}
+                </p>
               </div>
+            )}
 
-              {/* Question */}
-              <div
-                className={`pt-1 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
+            {screenStage >= 3 && (
+              <div className="space-y-2 max-w-md mx-auto text-left">
+                {EXP07_CONTENT.screen08.scenarios.map((sc) => (
+                  <div
+                    key={sc.condition}
+                    className="p-3 rounded-xl bg-zinc-950 border border-zinc-800/80 flex items-center justify-between text-xs font-mono"
+                  >
+                    <span className="text-zinc-400">{sc.condition}</span>
+                    <span className="text-amber-400 font-bold">{sc.action}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {screenStage >= 4 && (
+              <p className="text-sm font-serif italic text-zinc-300 max-w-md mx-auto">
+                {EXP07_CONTENT.screen08.closure}
+              </p>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
+              <PrimaryCTA
+                id="btn-exp07-see-avoid"
+                onClick={() => handleNavigate('screen_09_what_to_avoid')}
               >
-                <h3 className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP07_CONTENT.screen08.question}
-                </h3>
-              </div>
-
-              {/* Interactive Options */}
-              <div className="space-y-3 pt-2">
-                {EXP07_CONTENT.screen08.options.map((opt) => {
-                  const isSelected = savedSituationChoice === opt.code;
-                  return (
-                    <div key={opt.id} className="w-full">
-                      <ChoiceButton
-                        id={`situation-opt-${opt.code.toLowerCase()}`}
-                        selected={isSelected}
-                        onClick={() => handleSelectSituationChoice(opt)}
-                        disabled={isProcessing}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-mono text-orange-400 font-semibold uppercase">
-                            {opt.label}:
-                          </span>
-                          <span>{opt.text}</span>
-                        </div>
-                      </ChoiceButton>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                {EXP07_CONTENT.screen08.ctaLabel}
+              </PrimaryCTA>
+            </CTAReveal>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 09 — CONTEXTO EN ACCIÓN */}
+        {/* SCREEN 09 — EL ERROR QUE CONTEXTO™ TE AYUDA A EVITAR                     */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_09_context_in_action' && (
-          <div
-            id="screen-09-context-in-action"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_09_what_to_avoid' && (
+          <div id="exp07-screen-09" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-rose-400" />
+                <span className="text-[11px] font-mono tracking-widest text-rose-400 uppercase font-semibold">
                   {EXP07_CONTENT.screen09.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white leading-snug">
+            {screenStage >= 2 && (
+              <div className="space-y-3">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-zinc-100">
                   {EXP07_CONTENT.screen09.title}
                 </h2>
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen09.beat1}
-                </p>
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen09.beat2}
-                </p>
-              </div>
-
-              <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base font-serif italic text-orange-200">
-                  {EXP07_CONTENT.screen09.beat3}
-                </p>
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen09.beat4}
-                </p>
-              </div>
-
-              {/* Context Formula Card */}
-              <div
-                className={`p-5 rounded-2xl bg-[#0C0C0C] border border-orange-500/30 text-center space-y-3 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                }`}
-              >
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
-                  ESTRUCTURA DE COMPRENSIÓN
-                </span>
-                <div className="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm font-mono">
-                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-orange-300 font-semibold">
-                    {EXP07_CONTENT.screen09.formula.part1}
-                  </span>
-                  <span className="text-neutral-500 font-bold">+</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-200 font-semibold">
-                    {EXP07_CONTENT.screen09.formula.part2}
-                  </span>
-                  <span className="text-neutral-500 font-bold">+</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-200 font-semibold">
-                    {EXP07_CONTENT.screen09.formula.part3}
-                  </span>
-                  <span className="text-orange-400 font-bold">=</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-orange-500/20 border border-orange-500/40 text-orange-300 font-bold">
-                    {EXP07_CONTENT.screen09.formula.result}
+                <div className="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 max-w-md mx-auto">
+                  <span className="text-base sm:text-lg font-mono font-bold tracking-wide text-rose-300">
+                    {EXP07_CONTENT.screen09.highlight}
                   </span>
                 </div>
               </div>
-            </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            {screenStage >= 3 && (
+              <div className="space-y-2.5 max-w-md mx-auto text-left">
+                {EXP07_CONTENT.screen09.examples.map((ex) => (
+                  <div
+                    key={ex.trigger}
+                    className="p-3.5 rounded-xl bg-zinc-900/70 border border-zinc-800 space-y-1"
+                  >
+                    <span className="text-xs font-mono font-semibold text-zinc-200 block">
+                      {ex.trigger}
+                    </span>
+                    <p className="text-xs sm:text-sm text-zinc-400 font-sans">
+                      {ex.note}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {screenStage >= 4 && (
+              <p className="text-base sm:text-lg font-serif italic text-amber-200 font-semibold max-w-md mx-auto">
+                {EXP07_CONTENT.screen09.closure}
+              </p>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-09-cta"
-                onClick={() => advanceToScreen('screen_10_better_question')}
-                disabled={isProcessing}
+                id="btn-exp07-avoid-continue"
+                onClick={() => handleNavigate('screen_10_connection_index')}
               >
                 {EXP07_CONTENT.screen09.ctaLabel}
               </PrimaryCTA>
@@ -1168,77 +1032,16 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 10 — UNA MEJOR PREGUNTA */}
+        {/* SCREEN 10 — ÍNDICE DE CONEXIÓN DIARIA™                                    */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_10_better_question' && (
-          <div
-            id="screen-10-better-question"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP07_CONTENT.screen10.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
+        {currentScreenId === 'screen_10_connection_index' && (
+          <div id="exp07-screen-10" className="space-y-6 animate-fadeIn">
+            <ConnectionIndexCard />
 
-              <div
-                className={`space-y-1 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white">
-                  {EXP07_CONTENT.screen10.title}
-                </h2>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen10.leadQuestion}
-                </p>
-              </div>
-
-              {/* Two Alternative Questions */}
-              <div
-                className={`space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-orange-400 block">
-                    {EXP07_CONTENT.screen10.alternative1Title}
-                  </span>
-                  <p className="text-lg font-serif italic text-white">
-                    {EXP07_CONTENT.screen10.alternative1}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#080808] border border-[#1A1A1A] space-y-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
-                    {EXP07_CONTENT.screen10.alternative2Title}
-                  </span>
-                  <p className="text-lg font-serif italic text-neutral-200">
-                    {EXP07_CONTENT.screen10.alternative2}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`p-4 rounded-xl bg-[#0C0C0C] border border-orange-500/20 text-center transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm sm:text-base font-serif italic text-orange-300">
-                  {EXP07_CONTENT.screen10.takeaway}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-10-cta"
-                onClick={() => advanceToScreen('screen_11_daily_action')}
-                disabled={isProcessing}
+                id="btn-exp07-index-continue"
+                onClick={() => handleNavigate('screen_11_wow_moment')}
               >
                 {EXP07_CONTENT.screen10.ctaLabel}
               </PrimaryCTA>
@@ -1247,20 +1050,52 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 11 — UNA ACCIÓN PARA HOY */}
+        {/* SCREEN 11 — MOMENTO WOW                                                  */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_11_daily_action' && (
-          <div
-            id="screen-11-daily-action"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <DailyActionCard caseId={caseId} phase={cycleResult.estimatedPhase} />
+        {currentScreenId === 'screen_11_wow_moment' && (
+          <div id="exp07-screen-11" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
+                  {EXP07_CONTENT.screen11.eyebrow}
+                </span>
+              </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-2">
+            {screenStage >= 2 && (
+              <div className="space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100">
+                  {EXP07_CONTENT.screen11.title}
+                </h2>
+                <p className="text-base sm:text-lg font-mono text-amber-300 font-semibold">
+                  {EXP07_CONTENT.screen11.lead}
+                </p>
+              </div>
+            )}
+
+            {screenStage >= 3 && <WowSequenceVisual />}
+
+            {screenStage >= 4 && (
+              <div className="space-y-3 max-w-md mx-auto pt-2">
+                <p className="text-xl sm:text-2xl font-serif italic text-amber-200 font-bold">
+                  {EXP07_CONTENT.screen11.summary}
+                </p>
+                <div className="space-y-1">
+                  <p className="text-xs sm:text-sm text-zinc-400 font-sans">
+                    {EXP07_CONTENT.screen11.conclusion1}
+                  </p>
+                  <p className="text-sm sm:text-base text-zinc-200 font-sans font-medium">
+                    {EXP07_CONTENT.screen11.conclusion2}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-11-cta"
-                onClick={() => advanceToScreen('screen_12_micro_result')}
-                disabled={isProcessing}
+                id="btn-exp07-wow-continue"
+                onClick={() => handleNavigate('screen_12_the_desire')}
               >
                 {EXP07_CONTENT.screen11.ctaLabel}
               </PrimaryCTA>
@@ -1269,75 +1104,66 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 12 — EL MICRORESULTADO */}
+        {/* SCREEN 12 — EL DESEO                                                     */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_12_micro_result' && (
-          <div
-            id="screen-12-micro-result"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_12_the_desire' && (
+          <div id="exp07-screen-12" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen12.eyebrow}
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
               </div>
+            )}
 
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP07_CONTENT.screen12.beat1}
+            {screenStage >= 2 && (
+              <div className="space-y-3">
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100">
+                  {EXP07_CONTENT.screen12.title}
+                </h2>
+                <p className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                  {EXP07_CONTENT.screen12.lead}
                 </p>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen12.beat2}
-                </p>
-              </div>
-
-              <div
-                className={`p-5 rounded-2xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen12.beat3}
-                </p>
-                <p className="text-base font-serif italic text-orange-300">
-                  {EXP07_CONTENT.screen12.beat4}
-                </p>
-              </div>
-
-              <div
-                className={`space-y-2 text-center transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="flex items-center justify-center space-x-3 text-sm sm:text-base font-serif italic text-neutral-200">
-                  {EXP07_CONTENT.screen12.verbs.map((verb, idx) => (
-                    <React.Fragment key={idx}>
-                      <span className="text-orange-400 font-semibold">{verb}</span>
-                      {idx < EXP07_CONTENT.screen12.verbs.length - 1 && (
-                        <span className="text-neutral-600">•</span>
-                      )}
-                    </React.Fragment>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {EXP07_CONTENT.screen12.questions.map((q) => (
+                    <span
+                      key={q}
+                      className="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-serif italic text-zinc-400 line-through"
+                    >
+                      {q}
+                    </span>
                   ))}
                 </div>
-                <p className="text-lg sm:text-xl font-serif italic text-white pt-2">
-                  {EXP07_CONTENT.screen12.closure}
-                </p>
               </div>
-            </div>
+            )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            {screenStage >= 3 && (
+              <div className="p-5 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-amber-500/40 shadow-2xl max-w-md mx-auto space-y-3 text-left">
+                <p className="text-xs font-mono text-amber-400 uppercase tracking-wider font-semibold border-b border-zinc-800 pb-2">
+                  {EXP07_CONTENT.screen12.transition}
+                </p>
+                <ul className="space-y-2 text-xs sm:text-sm font-mono text-zinc-200">
+                  {EXP07_CONTENT.screen12.features.map((feat) => (
+                    <li key={feat} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {screenStage >= 4 && (
+              <p className="text-base sm:text-lg font-serif italic text-amber-200 font-semibold">
+                {EXP07_CONTENT.screen12.closure}
+              </p>
+            )}
+
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4">
               <PrimaryCTA
-                id="screen-12-cta"
-                onClick={() => advanceToScreen('screen_13_utility_question')}
-                disabled={isProcessing}
+                id="btn-exp07-desire-cta"
+                onClick={() => handleNavigate('screen_13_transition_revelation')}
               >
                 {EXP07_CONTENT.screen12.ctaLabel}
               </PrimaryCTA>
@@ -1346,117 +1172,53 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 13 — ¿TE SERÍA ÚTIL? */}
+        {/* SCREEN 13 — TRANSICIÓN A LA REVELACIÓN                                   */}
         {/* ========================================================================= */}
-        {currentScreenId === 'screen_13_utility_question' && (
-          <div
-            id="screen-13-utility-question"
-            className="w-full flex flex-col items-center text-center space-y-8 animate-fade-in max-w-xl mx-auto py-6"
-          >
-            <div className="space-y-4 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+        {currentScreenId === 'screen_13_transition_revelation' && (
+          <div id="exp07-screen-13" className="space-y-6 animate-fadeIn">
+            {screenStage >= 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-mono tracking-widest text-amber-400/90 uppercase font-semibold">
                   {EXP07_CONTENT.screen13.eyebrow}
                 </span>
               </div>
+            )}
 
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen13.lead}
+            {screenStage >= 2 && (
+              <p className="text-xl sm:text-2xl font-serif italic text-zinc-200">
+                {EXP07_CONTENT.screen13.beat1}
+              </p>
+            )}
+
+            {screenStage >= 3 && (
+              <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 max-w-md mx-auto space-y-3">
+                <p className="text-sm sm:text-base font-sans text-zinc-300 leading-relaxed">
+                  {EXP07_CONTENT.screen13.beat2}
                 </p>
-                <h2 className="text-2xl sm:text-3xl font-serif italic text-white pt-1 leading-snug">
-                  {EXP07_CONTENT.screen13.question}
-                </h2>
-              </div>
-            </div>
-
-            {/* Utility question interactive widget */}
-            <UtilityQuestion
-              selectedCode={savedUtilityRecognition}
-              onSelect={handleSelectUtility}
-              onContinue={() => advanceToScreen('screen_14_trial_completed')}
-              disabled={isProcessing}
-            />
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 14 — CIERRE DE LA PRUEBA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_14_trial_completed' && (
-          <div
-            id="screen-14-trial-completed"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP07_CONTENT.screen14.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
-
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP07_CONTENT.screen14.beat1}
-                </p>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen14.beat2}
+                <p className="text-base sm:text-lg font-serif italic text-amber-300 font-semibold">
+                  {EXP07_CONTENT.screen13.beat3}
                 </p>
               </div>
+            )}
 
-              <div
-                className={`p-5 rounded-2xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP07_CONTENT.screen14.beat3}
-                </p>
-              </div>
-
-              <div
-                className={`pt-2 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP07_CONTENT.screen14.beat4}
-                </p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 leading-snug">
-                  {EXP07_CONTENT.screen14.beat5}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+            <CTAReveal isRevealed={isCTARevealed} className="pt-6">
               <PrimaryCTA
-                id="screen-14-complete-cta"
-                onClick={handleCompleteExp07}
-                disabled={isProcessing || isCompletedGuard}
+                id="btn-exp07-complete-to-exp08"
+                onClick={handleCompleteExperience}
               >
-                {EXP07_CONTENT.screen14.ctaLabel}
+                {EXP07_CONTENT.screen13.ctaLabel}
               </PrimaryCTA>
             </CTAReveal>
           </div>
         )}
       </main>
 
-      {/* Subtle Footer status */}
-      <footer id="exp07-footer" className="w-full max-w-xl text-center py-3 border-t border-[#111]">
-        <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-          CONTEXTO™ — DEMOSTRACIÓN INTERACTIVA ORIENTATIVA
-        </span>
+      {/* Footer / Brand watermark */}
+      <footer className="w-full max-w-2xl mx-auto text-center py-4 border-t border-zinc-900">
+        <p className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
+          CONTEXTO™ · SISTEMA DE COMPRENSIÓN RELACIONAL
+        </p>
       </footer>
     </div>
   );
