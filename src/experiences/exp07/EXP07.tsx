@@ -1,5 +1,5 @@
 // EXP_07 — LA PRUEBA (Contexto™ Interactive Product Demo V3.0)
-import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useTransition, useMemo, useCallback } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
 import { EXP07_CONTENT, QuestionOption } from './exp07Content';
@@ -151,9 +151,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
           { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Analizar Caso', isCTA: true },
         ];
       case 'screen_03_engine':
-        return [
-          { id: 'engine', stage: 1, pacing: 'LONG', label: 'Motor Contextual' },
-        ];
+        return []; // Autonomous engine processing handled by ContextEngineProcessing
       case 'screen_04_today_context':
         return [
           { id: 'eyebrow', stage: 1, pacing: 'SHORT', label: 'Eyebrow' },
@@ -355,10 +353,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
   }, [currentScreenId, state.session.sessionId, state.session.caseId, cycleResult, updateState]);
 
   // Generic navigation handler between screens
-  const handleNavigate = (targetScreen: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-
+  const handleNavigate = useCallback((targetScreen: string) => {
     eventTracker.trackEvent('EXP07_CTA_CLICKED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
@@ -372,7 +367,28 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
       );
       setIsProcessing(false);
     });
-  };
+  }, [currentScreenId, state.session.caseId, state.session.sessionId]);
+
+  // Dedicated handler for screen 03 completion
+  const handleEngineComplete = useCallback(() => {
+    memoryManagerRef.current.setMemory('exp07.contextCalculated', true, 'global');
+
+    eventTracker.trackEvent('EXP07_CONTEXT_CALCULATED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp07',
+      payload: {
+        phase: cycleResult.estimatedPhase,
+        day: cycleResult.estimatedCycleDay,
+      },
+    });
+
+    startTransition(() => {
+      setRuntimeState((prev) =>
+        transitionScreenState(prev, 'screen_04_today_context', 'ACTIVE')
+      );
+    });
+  }, [cycleResult.estimatedCycleDay, cycleResult.estimatedPhase, state.session.caseId, state.session.sessionId]);
 
   // Option selection on Screen 06
   const handleSelectDecisionOption = (option: QuestionOption) => {
@@ -609,7 +625,7 @@ export const EXP07: React.FC<ExperienceComponentProps> = ({
         {currentScreenId === 'screen_03_engine' && (
           <div id="exp07-screen-03" className="w-full">
             <ContextEngineProcessing
-              onComplete={() => handleNavigate('screen_04_today_context')}
+              onComplete={handleEngineComplete}
               isReducedMotion={
                 typeof window !== 'undefined' &&
                 window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
