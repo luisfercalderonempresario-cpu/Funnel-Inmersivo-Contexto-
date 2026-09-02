@@ -93,7 +93,17 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
+  const [isTransitioningToReport, setIsTransitioningToReport] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
+  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
 
   const currentScreenId = runtimeState.currentScreen;
 
@@ -183,15 +193,16 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
         return [
           { id: 'header', stage: 1, pacing: 'SHORT', label: 'Caso ID & Investigación Completada' },
           { id: 'finding', stage: 2, pacing: 'REVELATION', label: 'HALLAZGO PRINCIPAL' },
-          { id: 'closure', stage: 3, pacing: 'LONG', label: 'Posibilidad de llevarlo contigo' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Ver Paso Final', isCTA: true },
+          { id: 'closure', stage: 3, pacing: 'LONG', label: 'Toda la evidencia apunta a la misma conclusión' },
+          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
         ];
       case 'screen_13_final_step':
         return [
-          { id: 'beat1', stage: 1, pacing: 'LONG', label: 'El caso termina aquí' },
-          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'Pero tu relación continúa' },
-          { id: 'question', stage: 3, pacing: 'REVELATION', label: '¿Quieres llevar Contexto™ contigo?' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Quiero Contexto™', isCTA: true },
+          { id: 'beat1', stage: 1, pacing: 'LONG', label: 'Has llegado al final de la investigación' },
+          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'A estas alturas ya puedes ver algo...' },
+          { id: 'beat3_4', stage: 3, pacing: 'LONG', label: 'No necesitabas aprender a adivinarla...' },
+          { id: 'beat5', stage: 4, pacing: 'REVELATION', label: 'Falta una última pieza' },
+          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Abrir Informe Final', isCTA: true },
         ];
       default:
         return [];
@@ -389,17 +400,30 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
     }
   }, [currentScreenId, screenStage, state.session.sessionId, state.session.caseId]);
 
-  // Complete EXP_08 and Transition to Sales Page (/compra)
+  // Complete EXP_08 and Transition to Sales Page (Informe Final del Caso)
   const handleCompleteExp08 = () => {
     if (isCompletedGuard || completingRef.current) return;
     completingRef.current = true;
     setIsCompletedGuard(true);
+    setIsTransitioningToReport(true);
 
     eventTracker.trackEvent('CTA_CLICKED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp08',
-      payload: { action: 'complete_exp08', label: EXP08_CONTENT.screen13.ctaLabel },
+      payload: { action: 'open_final_report', label: EXP08_CONTENT.screen13.ctaLabel },
+    });
+
+    eventTracker.trackEvent('EXP08_FINAL_REPORT_OPENED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp08',
+    });
+
+    eventTracker.trackEvent('FINAL_REPORT_OPENED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp08',
     });
 
     const now = new Date().toISOString();
@@ -415,6 +439,7 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
       autonomyRecognized: true,
       completed: true,
       completedAt: now,
+      finalReportOpened: true,
     };
 
     memoryManagerRef.current.applyUpdates([
@@ -428,6 +453,7 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
       { key: 'exp08.autonomyRecognized', value: true, scope: 'global' },
       { key: 'exp08.completed', value: true, scope: 'global' },
       { key: 'exp08.completedAt', value: now, scope: 'global' },
+      { key: 'exp08.finalReportOpened', value: true, scope: 'global' },
     ]);
 
     setRuntimeState((prev) => {
@@ -490,8 +516,10 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
       payload: { caseId: state.session.caseId },
     });
 
-    // Invoke funnel completion callback to navigate to /compra (Sales Page)
-    onComplete(finalMemory);
+    // Brief cinematic transition of ~2.2s before displaying the final report
+    transitionTimerRef.current = setTimeout(() => {
+      onComplete(finalMemory);
+    }, 2200);
   };
 
   return (
@@ -1389,56 +1417,108 @@ export const EXP08: React.FC<ExperienceComponentProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SCREEN 13 — PASO FINAL */}
+        {/* SCREEN 13 — PASO FINAL (CIERRE DE LA INVESTIGACIÓN) */}
         {/* ========================================================================= */}
         {currentScreenId === 'screen_13_final_step' && (
           <div
             id="screen-13-final-step"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-10"
+            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
           >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP08_CONTENT.screen13.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
-
+            {isTransitioningToReport ? (
               <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#161616] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
+                id="exp08-opening-report-transition"
+                className="w-full flex flex-col items-center justify-center text-center space-y-8 animate-fade-in py-16"
               >
-                <p className="text-sm font-mono text-neutral-500 uppercase tracking-wider">
-                  {EXP08_CONTENT.screen13.beat1}
-                </p>
-                <p className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP08_CONTENT.screen13.beat2}
-                </p>
-              </div>
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500">
+                    CASO #{caseId}
+                  </span>
+                  <div className="flex items-center justify-center gap-2 text-xs font-mono text-emerald-400 uppercase tracking-widest">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>ARCHIVO FINALIZADO</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-serif italic text-orange-400 animate-pulse pt-2">
+                    ABRIENDO INFORME FINAL...
+                  </h2>
+                </div>
 
-              <div
-                className={`pt-4 border-t border-[#181818] transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 leading-snug">
-                  {EXP08_CONTENT.screen13.finalQuestion}
-                </h1>
+                {/* Subtle progress indicator */}
+                <div className="w-48 h-1 bg-[#151515] rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400 animate-[progress_2s_ease-in-out_infinite] w-full" />
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="space-y-6 text-left w-full">
+                  <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
+                    <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+                      {EXP08_CONTENT.screen13.eyebrow}
+                    </span>
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
+                      CASO #{caseId}
+                    </span>
+                  </div>
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-6">
-              <PrimaryCTA
-                id="screen-13-final-cta"
-                onClick={handleCompleteExp08}
-                disabled={isProcessing || isCompletedGuard}
-              >
-                {EXP08_CONTENT.screen13.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+                  {/* Beat 1: Has llegado al final de la investigación. */}
+                  <div
+                    className={`transition-all duration-1000 ${
+                      screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <h2 className="text-2xl sm:text-3xl font-serif italic text-white leading-relaxed">
+                      {EXP08_CONTENT.screen13.beat1}
+                    </h2>
+                  </div>
+
+                  {/* Beat 2: A estas alturas ya puedes ver algo que antes era mucho más difícil de ver. */}
+                  <div
+                    className={`transition-all duration-1000 ${
+                      screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <p className="text-base sm:text-lg font-body text-neutral-300 leading-relaxed">
+                      {EXP08_CONTENT.screen13.beat2}
+                    </p>
+                  </div>
+
+                  {/* Beat 3 & Beat 4: No necesitabas aprender a adivinarla. Necesitabas aprender a comprender su contexto. */}
+                  <div
+                    className={`p-5 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-neutral-400 space-y-2 transition-all duration-1000 ${
+                      screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <p className="text-base sm:text-lg font-serif italic text-neutral-400">
+                      {EXP08_CONTENT.screen13.beat3}
+                    </p>
+                    <p className="text-lg sm:text-xl font-serif italic text-white font-medium">
+                      {EXP08_CONTENT.screen13.beat4}
+                    </p>
+                  </div>
+
+                  {/* Beat 5: Y ahora que has visto cómo funciona, falta una última pieza. */}
+                  <div
+                    className={`pt-4 border-t border-[#181818] transition-all duration-1000 ${
+                      screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <p className="text-xl sm:text-2xl font-serif italic text-orange-400 leading-snug">
+                      {EXP08_CONTENT.screen13.beat5}
+                    </p>
+                  </div>
+                </div>
+
+                <CTAReveal isRevealed={isCTARevealed} className="w-full pt-6">
+                  <PrimaryCTA
+                    id="screen-13-final-cta"
+                    onClick={handleCompleteExp08}
+                    disabled={isProcessing || isCompletedGuard}
+                    className="w-full py-4 tracking-widest text-sm font-mono uppercase"
+                  >
+                    {EXP08_CONTENT.screen13.ctaLabel}
+                  </PrimaryCTA>
+                </CTAReveal>
+              </>
+            )}
           </div>
         )}
       </main>

@@ -183,8 +183,8 @@ export const EXP08_CONTENT = {
     invitationLead1: 'Durante toda esta investigación has estado buscando una respuesta.',
     invitationLead2: 'Y ahora ya sabes dónde buscarla.',
     invitationHighlight: 'En el contexto.',
-    invitationClosure1: 'Si quieres tener esa pieza contigo en tu día a día...',
-    invitationClosure2: '...Contexto™ está listo para acompañarte.',
+    invitationClosure1: 'Durante toda esta investigación has estado buscando una respuesta.',
+    invitationClosure2: 'Y ahora ya sabes dónde buscarla: en el contexto.',
     ctaLabel: 'CONTINUAR',
   },
 
@@ -194,16 +194,18 @@ export const EXP08_CONTENT = {
     caseTitle: 'Investigación completada.',
     mainFindingLabel: 'HALLAZGO PRINCIPAL',
     mainFindingText: 'Comprender antes de reaccionar empieza por tener contexto.',
-    closureBeat: 'Y ahora tienes la posibilidad de llevarlo contigo.',
-    ctaLabel: 'VER PASO FINAL',
+    closureBeat: 'Toda la evidencia recogida apunta a la misma conclusión.',
+    ctaLabel: 'CONTINUAR',
   },
 
-  // SCREEN 13 — PASO FINAL
+  // SCREEN 13 — PASO FINAL (CIERRE DE LA INVESTIGACIÓN)
   screen13: {
-    eyebrow: 'CONCLUSIÓN // PUERTA DE SALIDA',
-    beat1: 'El caso termina aquí.',
-    beat2: 'Pero tu relación continúa.',
-    finalQuestion: '¿Quieres llevar Contexto™ contigo?',
-    ctaLabel: 'QUIERO CONTEXTO™',
+    eyebrow: 'EXPEDIENTE // CIERRE DE LA INVESTIGACIÓN',
+    beat1: 'Has llegado al final de la investigación.',
+    beat2: 'A estas alturas ya puedes ver algo que antes era mucho más difícil de ver.',
+    beat3: 'No necesitabas aprender a adivinarla.',
+    beat4: 'Necesitabas aprender a comprender su contexto.',
+    beat5: 'Y ahora que has visto cómo funciona, falta una última pieza.',
+    ctaLabel: 'ABRIR INFORME FINAL',
   },
 };

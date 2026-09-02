@@ -305,21 +305,26 @@ export const EXP08_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 13 — PASO FINAL
+    // SCREEN 13 — PASO FINAL (CIERRE DE LA INVESTIGACIÓN)
     screen_13_final_step: {
       id: 'screen_13_final_step',
       type: 'TRANSITION',
-      title: EXP08_CONTENT.screen13.finalQuestion,
+      title: EXP08_CONTENT.screen13.beat5,
       subtitle: `${EXP08_CONTENT.screen13.beat1} ${EXP08_CONTENT.screen13.beat2}`,
       eyebrow: EXP08_CONTENT.screen13.eyebrow,
       actions: [
         {
           type: 'COMPLETE',
           label: EXP08_CONTENT.screen13.ctaLabel,
-          payload: { action: 'complete_exp08' },
+          payload: { action: 'open_final_report' },
           memoryUpdates: [
             {
               key: 'exp08.completed',
+              value: true,
+              scope: 'global',
+            },
+            {
+              key: 'exp08.finalReportOpened',
               value: true,
               scope: 'global',
             },
