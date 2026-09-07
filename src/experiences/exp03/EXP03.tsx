@@ -196,7 +196,7 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp03',
-      payload: { asset: '/media/CTX_E03_V01_PATTERN.mp4' },
+      payload: { asset: 'https://media.manualparanovios.com/CTX_E03_V01_PATTERN.mp4' },
     });
 
     memoryManagerRef.current.applyUpdates([
@@ -280,7 +280,7 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp03',
-      payload: { asset: '/media/CTX_E03_V01_PATTERN.mp4' },
+      payload: { asset: 'https://media.manualparanovios.com/CTX_E03_V01_PATTERN.mp4' },
     });
 
     // 1. Pausar/limpiar estado audiovisual
@@ -497,7 +497,7 @@ export const EXP03: React.FC<ExperienceComponentProps> = ({
       >
         <video
           ref={videoRef}
-          src="/media/CTX_E03_V01_PATTERN.mp4"
+          src="https://media.manualparanovios.com/CTX_E03_V01_PATTERN.mp4"
           preload="auto"
           playsInline
           controls={false}

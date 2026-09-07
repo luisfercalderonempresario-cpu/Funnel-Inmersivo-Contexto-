@@ -268,21 +268,6 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
     // Transition to cinematic scene: hide CTA to prevent double clicks
     setIsCinematicActive(true);
 
-    console.log('[EXP01 VIDEO DIAGNOSTIC BEFORE PLAY]', {
-      hasVideoElement: !!videoRef.current,
-      src: videoRef.current?.getAttribute('src'),
-      currentSrc: videoRef.current?.currentSrc,
-      readyState: videoRef.current?.readyState,
-      networkState: videoRef.current?.networkState,
-      paused: videoRef.current?.paused,
-      muted: videoRef.current?.muted,
-      volume: videoRef.current?.volume,
-      videoWidth: videoRef.current?.videoWidth,
-      videoHeight: videoRef.current?.videoHeight,
-      errorCode: videoRef.current?.error?.code,
-      errorMessage: videoRef.current?.error?.message
-    });
-
     const video = videoRef.current;
     if (video) {
       video.currentTime = 0;
@@ -292,31 +277,13 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       try {
         await video.play();
       } catch (err) {
-        console.error('[EXP01 UNMUTED PLAY FAILED]', {
-          error: err,
-          name: err instanceof DOMException ? err.name : undefined,
-          message: err instanceof Error ? err.message : String(err),
-          currentSrc: video.currentSrc,
-          readyState: video.readyState,
-          networkState: video.networkState,
-          mediaErrorCode: video.error?.code,
-          mediaErrorMessage: video.error?.message
-        });
+        console.warn('[EXP01 Audio Play Rejected]', err);
 
         try {
           video.muted = true;
           await video.play();
         } catch (mutedErr) {
-          console.error('[EXP01 MUTED PLAY FAILED]', {
-            error: mutedErr,
-            name: mutedErr instanceof DOMException ? mutedErr.name : undefined,
-            message: mutedErr instanceof Error ? mutedErr.message : String(mutedErr),
-            currentSrc: video.currentSrc,
-            readyState: video.readyState,
-            networkState: video.networkState,
-            mediaErrorCode: video.error?.code,
-            mediaErrorMessage: video.error?.message
-          });
+          console.error('[EXP01 Video Play Failed Completely]', mutedErr);
 
           navigateToScreen('screen_02_first_question');
           return;
@@ -506,41 +473,12 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
           >
             <video
               ref={videoRef}
-              src="/media/p0-01-la-puerta-FINAL.mp4"
+              src="https://media.manualparanovios.com/p0-01-la-puerta-FINAL.mp4"
               preload="auto"
               playsInline
               controls={false}
               loop={false}
               onEnded={handleVideoEnded}
-              onLoadedMetadata={() => {
-                const v = videoRef.current;
-                console.log('[EXP01 VIDEO LOADED METADATA]', {
-                  currentSrc: v?.currentSrc,
-                  duration: v?.duration,
-                  videoWidth: v?.videoWidth,
-                  videoHeight: v?.videoHeight,
-                  readyState: v?.readyState,
-                  networkState: v?.networkState
-                });
-              }}
-              onCanPlay={() => {
-                const v = videoRef.current;
-                console.log('[EXP01 VIDEO CAN PLAY]', {
-                  currentSrc: v?.currentSrc,
-                  readyState: v?.readyState,
-                  networkState: v?.networkState
-                });
-              }}
-              onError={() => {
-                const v = videoRef.current;
-                console.error('[EXP01 VIDEO ELEMENT ERROR]', {
-                  currentSrc: v?.currentSrc,
-                  readyState: v?.readyState,
-                  networkState: v?.networkState,
-                  mediaErrorCode: v?.error?.code,
-                  mediaErrorMessage: v?.error?.message
-                });
-              }}
               className={`w-full h-full object-cover object-center pointer-events-none select-none transition-opacity duration-700 ${
                 isCinematicActive ? 'opacity-100' : 'opacity-0'
               }`}
