@@ -471,7 +471,7 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
           >
             <video
               ref={videoRef}
-              src="/media/p0-01-la-puerta.mp4"
+              src="/media/p0-01-la-puerta-FINAL.mp4"
               preload="auto"
               playsInline
               controls={false}
