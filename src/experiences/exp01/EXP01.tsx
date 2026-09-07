@@ -472,27 +472,15 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
             <video
               ref={videoRef}
               src="/media/p0-01-la-puerta.mp4"
-              playsInline
-              muted={false}
-              loop={false}
-              controls={false}
               preload="auto"
+              playsInline
+              controls={false}
+              loop={false}
               onEnded={handleVideoEnded}
-              className="w-full h-full object-cover object-center pointer-events-none select-none motion-reduce:transform-none"
-              aria-label="La Puerta — escena cinematográfica de introducción."
-            />
-
-            {/* Fallback textual accesible para lectores de pantalla */}
-            <span className="sr-only">
-              La Puerta — escena cinematográfica de introducción.
-            </span>
-
-            {/* DARK CINEMATIC OVERLAY - Sutil gradiente para preservar la puerta como elemento dominante */}
-            <div
-              className={`absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-transparent to-[#050505]/65 pointer-events-none transition-opacity duration-1000 ${
-                isCinematicActive ? 'opacity-40' : 'opacity-70'
+              className={`w-full h-full object-cover object-center pointer-events-none select-none transition-opacity duration-700 ${
+                isCinematicActive ? 'opacity-100' : 'opacity-0'
               }`}
-              aria-hidden="true"
+              aria-label="La Puerta — escena cinematográfica de introducción."
             />
           </div>
 
