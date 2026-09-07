@@ -73,7 +73,8 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
   // Video P0 #01 controller for SCREEN 01
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoMuted, setIsVideoMuted] = useState<boolean>(false);
+  const [isCinematicActive, setIsCinematicActive] = useState<boolean>(false);
+  const cinematicSafetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentScreenId = runtimeState.currentScreen;
 
@@ -226,57 +227,33 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
     }
   };
 
-  // Video P0 #01 Playback Controller for SCREEN 01 (Cinematographic Intro)
+  // Cleanup safety timeout on unmount
   useEffect(() => {
-    if (currentScreenId !== 'screen_01_black_entry') return;
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Reset and attempt autoplay with unmuted soundscape
-    video.currentTime = 0;
-    video.muted = false;
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Graceful fallback: If browser blocks unmuted autoplay,
-        // automatically fallback to muted autoplay without throwing errors
-        if (video) {
-          video.muted = true;
-          setIsVideoMuted(true);
-          video.play().catch(() => {
-            // Silently handled: prevents unhandled rejections
-          });
-        }
-      });
-    }
-
-    // Unmute on first user interaction if audio was blocked by autoplay policy
-    const handleUnmuteOnTouch = () => {
-      if (video && video.muted && !video.ended) {
-        video.muted = false;
-        setIsVideoMuted(false);
+    return () => {
+      if (cinematicSafetyTimeoutRef.current) {
+        clearTimeout(cinematicSafetyTimeoutRef.current);
       }
     };
+  }, []);
 
-    window.addEventListener('pointerdown', handleUnmuteOnTouch, { once: true });
-
-    return () => {
-      window.removeEventListener('pointerdown', handleUnmuteOnTouch);
-    };
-  }, [currentScreenId]);
-
+  // Final of Video P0 #01: continues existing narrative of EXP_01
   const handleVideoEnded = () => {
-    // Ensures the video plays only once, never loops, and holds its last frame
+    if (cinematicSafetyTimeoutRef.current) {
+      clearTimeout(cinematicSafetyTimeoutRef.current);
+      cinematicSafetyTimeoutRef.current = null;
+    }
     const video = videoRef.current;
     if (video) {
       video.pause();
     }
+    setIsCinematicActive(false);
+    navigateToScreen('screen_02_first_question');
   };
 
-  // SCREEN 01: Entrar
-  const handleEnterExperience = () => {
+  // SCREEN 01: Entrar — USER GESTURE that starts P0 #01 Cinematic Scene + Soundscape
+  const handleEnterExperience = async () => {
+    if (isCinematicActive) return;
+
     eventTracker.trackEvent('CTA_CLICKED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
@@ -288,7 +265,39 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       { key: 'exp01.started', value: true, scope: 'global' },
     ]);
 
-    navigateToScreen('screen_02_first_question');
+    // Transition to cinematic scene: hide CTA to prevent double clicks
+    setIsCinematicActive(true);
+
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = 0;
+      video.muted = false;
+      video.volume = 1;
+
+      try {
+        await video.play();
+      } catch (err) {
+        console.warn('[EXP01 Video User Gesture Play Error]', err);
+        // Fallback: attempt muted play if device has audio restrictions, or continue narrative
+        try {
+          video.muted = true;
+          await video.play();
+        } catch {
+          navigateToScreen('screen_02_first_question');
+          return;
+        }
+      }
+
+      // Safety guard: guarantee continuation if browser misses ended event
+      if (cinematicSafetyTimeoutRef.current) {
+        clearTimeout(cinematicSafetyTimeoutRef.current);
+      }
+      cinematicSafetyTimeoutRef.current = setTimeout(() => {
+        handleVideoEnded();
+      }, 11500);
+    } else {
+      navigateToScreen('screen_02_first_question');
+    }
   };
 
   // SCREEN 02: Pregunta 1
@@ -463,9 +472,8 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
             <video
               ref={videoRef}
               src="/media/p0-01-la-puerta.mp4"
-              autoPlay
               playsInline
-              muted={isVideoMuted}
+              muted={false}
               loop={false}
               controls={false}
               preload="auto"
@@ -481,13 +489,19 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
             {/* DARK CINEMATIC OVERLAY - Sutil gradiente para preservar la puerta como elemento dominante */}
             <div
-              className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-transparent to-[#050505]/65 pointer-events-none"
+              className={`absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-transparent to-[#050505]/65 pointer-events-none transition-opacity duration-1000 ${
+                isCinematicActive ? 'opacity-40' : 'opacity-70'
+              }`}
               aria-hidden="true"
             />
           </div>
 
           {/* NARRATIVE CONTENT LAYER */}
-          <div className="relative z-10 w-full flex flex-col items-center text-center space-y-12">
+          <div
+            className={`relative z-10 w-full flex flex-col items-center text-center space-y-12 transition-opacity duration-1000 ${
+              isCinematicActive ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}
+          >
             <div className="space-y-8 max-w-lg mx-auto pt-6 sm:pt-12 drop-shadow-[0_2px_14px_rgba(0,0,0,0.85)]">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-normal transition-opacity duration-1000">
                 {EXP01_CONTENT.screen01.leadText1}
@@ -502,8 +516,8 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               </p>
             </div>
 
-            {/* CTA LAYER */}
-            <CTAReveal isRevealed={isCTARevealed} className="pt-4 relative z-20">
+            {/* CTA LAYER — Oculto durante la escena cinematográfica para evitar doble interacción */}
+            <CTAReveal isRevealed={isCTARevealed && !isCinematicActive} className="pt-4 relative z-20">
               <PrimaryCTA
                 id="cta-enter-exp01"
                 onClick={handleEnterExperience}
