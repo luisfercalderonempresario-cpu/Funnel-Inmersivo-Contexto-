@@ -240,13 +240,13 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // Graceful fallback: If the browser blocks unmuted autoplay,
+        // Graceful fallback: If browser blocks unmuted autoplay,
         // automatically fallback to muted autoplay without throwing errors
         if (video) {
           video.muted = true;
           setIsVideoMuted(true);
           video.play().catch(() => {
-            // Silently caught: prevents unhandled rejections or crashes
+            // Silently handled: prevents unhandled rejections
           });
         }
       });
@@ -470,15 +470,9 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
               controls={false}
               preload="auto"
               onEnded={handleVideoEnded}
-              onError={() => {
-                // Graceful silent handling if asset is decoding or pending
-              }}
               className="w-full h-full object-cover object-center pointer-events-none select-none motion-reduce:transform-none"
               aria-label="La Puerta — escena cinematográfica de introducción."
-            >
-              <source src="/media/p0-01-la-puerta.mp4" type="video/mp4" />
-              <source src="/public/media/p0-01-la-puerta.mp4" type="video/mp4" />
-            </video>
+            />
 
             {/* Fallback textual accesible para lectores de pantalla */}
             <span className="sr-only">
