@@ -1,4 +1,4 @@
-// Declarative Experience Engine Definition for EXP_03 (El Error Invisible) - V1.0
+// Declarative Experience Engine Definition for EXP_03 (El Error Invisible) - P0 #02
 import { ExperienceEngineDefinition } from '../../engine/experience/types';
 import { EXP03_CONTENT } from './exp03Content';
 
@@ -7,22 +7,22 @@ export const EXP03_DEFINITION: ExperienceEngineDefinition = {
   slug: 'el-error-invisible',
   title: 'El Error Invisible',
   number: 3,
-  initialScreen: 'screen_01_record',
+  initialScreen: 'screen_01_opening',
   screens: {
-    // SCREEN 01 — EL REGISTRO
-    screen_01_record: {
-      id: 'screen_01_record',
+    // SCREEN 01 — APERTURA
+    screen_01_opening: {
+      id: 'screen_01_opening',
       type: 'INTRO',
-      title: EXP03_CONTENT.screen01.leadPiece,
-      subtitle: `${EXP03_CONTENT.screen01.leadBefore} ${EXP03_CONTENT.screen01.leadShow}`,
-      eyebrow: 'EXPEDIENTE',
-      nextScreen: 'screen_02_scene',
+      title: EXP03_CONTENT.screen01.leadTitle,
+      subtitle: EXP03_CONTENT.screen01.leadSubtitle,
+      eyebrow: EXP03_CONTENT.screen01.eyebrow,
+      nextScreen: 'screen_02_reconstruction',
       actions: [
         {
           type: 'CLICK',
           label: EXP03_CONTENT.screen01.ctaLabel,
-          targetScreen: 'screen_02_scene',
-          payload: { action: 'enter_exp03' },
+          targetScreen: 'screen_02_reconstruction',
+          payload: { action: 'view_what_happens' },
           memoryUpdates: [
             {
               key: 'exp03.started',
@@ -34,93 +34,53 @@ export const EXP03_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 02 — LA ESCENA
-    screen_02_scene: {
-      id: 'screen_02_scene',
+    // SCREEN 02 — RECONSTRUCCIÓN DEL PATRÓN
+    screen_02_reconstruction: {
+      id: 'screen_02_reconstruction',
       type: 'CONTENT',
-      title: EXP03_CONTENT.screen02.dominantQuote,
-      subtitle: `${EXP03_CONTENT.screen02.beat1} ${EXP03_CONTENT.screen02.beat2} ${EXP03_CONTENT.screen02.beat3}`,
-      eyebrow: 'SITUACIÓN',
-      nextScreen: 'screen_03_what_you_see',
+      title: EXP03_CONTENT.screen02.intro1,
+      subtitle: EXP03_CONTENT.screen02.intro2,
+      eyebrow: EXP03_CONTENT.screen02.eyebrow,
+      nextScreen: 'screen_03_distortion',
       actions: [
         {
           type: 'CONTINUE',
           label: EXP03_CONTENT.screen02.ctaLabel,
-          targetScreen: 'screen_03_what_you_see',
-          payload: { action: 'proceed_to_what_you_see' },
+          targetScreen: 'screen_03_distortion',
+          payload: { action: 'proceed_to_distortion' },
+          memoryUpdates: [
+            {
+              key: 'exp03.patternReconstructed',
+              value: true,
+              scope: 'global',
+            },
+            {
+              key: 'exp03.interpretationFocused',
+              value: true,
+              scope: 'global',
+            },
+          ],
         },
       ],
     },
 
-    // SCREEN 03 — LO QUE VES
-    screen_03_what_you_see: {
-      id: 'screen_03_what_you_see',
+    // SCREEN 03 — DISTORSIÓN
+    screen_03_distortion: {
+      id: 'screen_03_distortion',
       type: 'CONTENT',
-      title: EXP03_CONTENT.screen03.beat1,
-      subtitle: `${EXP03_CONTENT.screen03.beat2} ${EXP03_CONTENT.screen03.beat3} ${EXP03_CONTENT.screen03.beat4} ${EXP03_CONTENT.screen03.beat5}`,
-      eyebrow: 'EVIDENCIA',
-      nextScreen: 'screen_04_interpretation',
+      title: EXP03_CONTENT.screen03.punchline.dominant,
+      subtitle: EXP03_CONTENT.screen03.punchline.subtext,
+      eyebrow: EXP03_CONTENT.screen03.eyebrow,
+      nextScreen: 'screen_04_revelation',
       actions: [
         {
           type: 'CONTINUE',
           label: EXP03_CONTENT.screen03.ctaLabel,
-          targetScreen: 'screen_04_interpretation',
-          payload: { action: 'proceed_to_interpretation' },
-        },
-      ],
-    },
-
-    // SCREEN 04 — TU INTERPRETACIÓN (PREGUNTA 1)
-    screen_04_interpretation: {
-      id: 'screen_04_interpretation',
-      type: 'QUESTION',
-      title: EXP03_CONTENT.screen04.question,
-      subtitle: EXP03_CONTENT.screen04.lead,
-      eyebrow: 'INTERPRETACIÓN',
-      nextScreen: 'screen_05_hidden_info',
-      options: EXP03_CONTENT.screen04.options.map((opt) => ({
-        id: opt.id,
-        code: opt.code,
-        label: opt.label,
-        value: opt.label,
-        nextScreen: 'screen_05_hidden_info',
-        memoryUpdates: [
-          {
-            key: 'exp03.interpretation',
-            value: opt.label,
-            scope: 'global',
-          },
-          {
-            key: 'exp03.interpretationCode',
-            value: opt.code,
-            scope: 'global',
-          },
-          {
-            key: 'exp03.question01Answered',
-            value: true,
-            scope: 'global',
-          },
-        ],
-      })),
-    },
-
-    // SCREEN 05 — LA INFORMACIÓN OCULTA
-    screen_05_hidden_info: {
-      id: 'screen_05_hidden_info',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen05.imagine,
-      subtitle: EXP03_CONTENT.screen05.convergence,
-      eyebrow: 'CONVERGENCIA',
-      nextScreen: 'screen_06_the_change',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen05.ctaLabel,
-          targetScreen: 'screen_06_the_change',
-          payload: { action: 'show_hidden_context' },
+          targetScreen: 'screen_04_revelation',
+          payload: { action: 'proceed_to_revelation' },
           memoryUpdates: [
             {
-              key: 'exp03.hiddenContextViewed',
+              key: 'exp03.distortionRecognized',
               value: true,
               scope: 'global',
             },
@@ -129,170 +89,26 @@ export const EXP03_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 06 — EL CAMBIO
-    screen_06_the_change: {
-      id: 'screen_06_the_change',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen06.beat1,
-      subtitle: `${EXP03_CONTENT.screen06.beat2} ${EXP03_CONTENT.screen06.beat3} ${EXP03_CONTENT.screen06.beat4} ${EXP03_CONTENT.screen06.beat5}`,
-      eyebrow: 'CONTEXTO',
-      nextScreen: 'screen_06b_second_question',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen06.ctaLabel,
-          targetScreen: 'screen_06b_second_question',
-          payload: { action: 'proceed_to_second_question' },
-        },
-      ],
-    },
-
-    // SCREEN 06B — SEGUNDA PARTICIPACIÓN (PREGUNTA 2)
-    screen_06b_second_question: {
-      id: 'screen_06b_second_question',
-      type: 'QUESTION',
-      title: EXP03_CONTENT.screen06b.question,
-      subtitle: EXP03_CONTENT.screen06b.lead,
-      eyebrow: 'EVALUACIÓN',
-      nextScreen: 'screen_07_the_error',
-      options: EXP03_CONTENT.screen06b.options.map((opt) => ({
-        id: opt.id,
-        code: opt.code,
-        label: opt.label,
-        value: opt.label,
-        nextScreen: 'screen_07_the_error',
-        memoryUpdates: [
-          {
-            key: 'exp03.interpretationChanged',
-            value: opt.label,
-            scope: 'global',
-          },
-          {
-            key: 'exp03.interpretationChangedCode',
-            value: opt.code,
-            scope: 'global',
-          },
-          {
-            key: 'exp03.question02Answered',
-            value: true,
-            scope: 'global',
-          },
-        ],
-      })),
-    },
-
-    // SCREEN 07 — EL ERROR
-    screen_07_the_error: {
-      id: 'screen_07_the_error',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen07.dominantTitle,
-      subtitle: `${EXP03_CONTENT.screen07.beat1} ${EXP03_CONTENT.screen07.beat2}`,
-      eyebrow: 'REVELACIÓN',
-      nextScreen: 'screen_08_your_case',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen07.ctaLabel,
-          targetScreen: 'screen_08_your_case',
-          payload: { action: 'proceed_to_your_case' },
-        },
-      ],
-    },
-
-    // SCREEN 08 — TU CASO
-    screen_08_your_case: {
-      id: 'screen_08_your_case',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen08.beat1,
-      subtitle: `${EXP03_CONTENT.screen08.beat2} ${EXP03_CONTENT.screen08.beat3} ${EXP03_CONTENT.screen08.beat4} ${EXP03_CONTENT.screen08.beat5}`,
-      eyebrow: 'REGISTRO',
-      nextScreen: 'screen_09_pattern',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen08.ctaLabel,
-          targetScreen: 'screen_09_pattern',
-          payload: { action: 'proceed_to_pattern' },
-        },
-      ],
-    },
-
-    // SCREEN 09 — EL PATRÓN
-    screen_09_pattern: {
-      id: 'screen_09_pattern',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen09.dominant1,
-      subtitle: `${EXP03_CONTENT.screen09.beat1} ${EXP03_CONTENT.screen09.beat2} ${EXP03_CONTENT.screen09.dominant2}`,
-      eyebrow: 'PATRÓN',
-      nextScreen: 'screen_10_microrevelation',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen09.ctaLabel,
-          targetScreen: 'screen_10_microrevelation',
-          payload: { action: 'proceed_to_microrevelation' },
-        },
-      ],
-    },
-
-    // SCREEN 10 — MICROREVELACIÓN
-    screen_10_microrevelation: {
-      id: 'screen_10_microrevelation',
-      type: 'REVEAL',
-      title: EXP03_CONTENT.screen10.dominantPunch,
-      subtitle: `${EXP03_CONTENT.screen10.beat1} ${EXP03_CONTENT.screen10.beat2} ${EXP03_CONTENT.screen10.beat3} ${EXP03_CONTENT.screen10.beat4}`,
-      eyebrow: 'MICROREVELACIÓN',
-      nextScreen: 'screen_11_the_question',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen10.ctaLabel,
-          targetScreen: 'screen_11_the_question',
-          payload: { action: 'proceed_to_the_question' },
-          memoryUpdates: [
-            {
-              key: 'exp03.invisibleErrorRecognized',
-              value: true,
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 11 — LA PREGUNTA
-    screen_11_the_question: {
-      id: 'screen_11_the_question',
-      type: 'CONTENT',
-      title: EXP03_CONTENT.screen11.mainQuestion,
-      subtitle: `${EXP03_CONTENT.screen11.because} ${EXP03_CONTENT.screen11.before} ${EXP03_CONTENT.screen11.punchline}`,
-      eyebrow: 'PREGUNTA CLAVE',
-      nextScreen: 'screen_12_transition',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP03_CONTENT.screen11.ctaLabel,
-          targetScreen: 'screen_12_transition',
-          payload: { action: 'proceed_to_transition' },
-        },
-      ],
-    },
-
-    // SCREEN 12 — TRANSICIÓN A EXP_04
-    screen_12_transition: {
-      id: 'screen_12_transition',
+    // SCREEN 04 — REVELACIÓN CENTRAL
+    screen_04_revelation: {
+      id: 'screen_04_revelation',
       type: 'COMPLETION',
-      title: EXP03_CONTENT.screen12.beat1,
-      subtitle: EXP03_CONTENT.screen12.beat2,
-      eyebrow: 'TRANSICIÓN',
+      title: EXP03_CONTENT.screen04.mainQuestion,
+      subtitle: EXP03_CONTENT.screen04.bridge,
+      eyebrow: EXP03_CONTENT.screen04.eyebrow,
       actions: [
         {
           type: 'COMPLETE',
-          label: EXP03_CONTENT.screen12.ctaLabel,
-          payload: { action: 'complete_exp03' },
+          label: EXP03_CONTENT.screen04.ctaLabel,
+          payload: { action: 'begin_investigation' },
           memoryUpdates: [
             {
               key: 'exp03.invisibleErrorRecognized',
+              value: true,
+              scope: 'global',
+            },
+            {
+              key: 'exp03.contextGapRecognized',
               value: true,
               scope: 'global',
             },
