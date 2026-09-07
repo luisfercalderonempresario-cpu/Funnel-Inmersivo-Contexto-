@@ -71,6 +71,10 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
+  // Video P0 #01 controller for SCREEN 01
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoMuted, setIsVideoMuted] = useState<boolean>(false);
+
   const currentScreenId = runtimeState.currentScreen;
 
   // Narrative Beats Map for EXP_01
@@ -219,6 +223,55 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
 
     if (action.targetScreen) {
       navigateToScreen(action.targetScreen);
+    }
+  };
+
+  // Video P0 #01 Playback Controller for SCREEN 01 (Cinematographic Intro)
+  useEffect(() => {
+    if (currentScreenId !== 'screen_01_black_entry') return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Reset and attempt autoplay with unmuted soundscape
+    video.currentTime = 0;
+    video.muted = false;
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Graceful fallback: If the browser blocks unmuted autoplay,
+        // automatically fallback to muted autoplay without throwing errors
+        if (video) {
+          video.muted = true;
+          setIsVideoMuted(true);
+          video.play().catch(() => {
+            // Silently caught: prevents unhandled rejections or crashes
+          });
+        }
+      });
+    }
+
+    // Unmute on first user interaction if audio was blocked by autoplay policy
+    const handleUnmuteOnTouch = () => {
+      if (video && video.muted && !video.ended) {
+        video.muted = false;
+        setIsVideoMuted(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handleUnmuteOnTouch, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handleUnmuteOnTouch);
+    };
+  }, [currentScreenId]);
+
+  const handleVideoEnded = () => {
+    // Ensures the video plays only once, never loops, and holds its last frame
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
     }
   };
 
@@ -400,32 +453,73 @@ export const EXP01: React.FC<ExperienceComponentProps> = ({
       {currentScreenId === 'screen_01_black_entry' && (
         <div
           id="screen-01-black-entry"
-          className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in py-6"
+          className="w-full flex flex-col items-center text-center justify-center min-h-[65vh] animate-fade-in py-6 relative"
         >
-          <div className="space-y-8 max-w-lg mx-auto pt-6 sm:pt-12">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-normal transition-opacity duration-1000">
-              {EXP01_CONTENT.screen01.leadText1}
-            </h1>
-
-            <p
-              className={`text-sm sm:text-base text-neutral-400 font-body tracking-wider transition-all duration-1000 ${
-                screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
+          {/* SCREEN BACKGROUND & VIDEO P0 #01 LAYER */}
+          <div
+            className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#050505]"
+            aria-hidden="true"
+          >
+            <video
+              ref={videoRef}
+              src="/media/p0-01-la-puerta.mp4"
+              autoPlay
+              playsInline
+              muted={isVideoMuted}
+              loop={false}
+              controls={false}
+              preload="auto"
+              onEnded={handleVideoEnded}
+              onError={() => {
+                // Graceful silent handling if asset is decoding or pending
+              }}
+              className="w-full h-full object-cover object-center pointer-events-none select-none motion-reduce:transform-none"
+              aria-label="La Puerta — escena cinematográfica de introducción."
             >
-              {EXP01_CONTENT.screen01.leadText2}
-            </p>
+              <source src="/media/p0-01-la-puerta.mp4" type="video/mp4" />
+              <source src="/public/media/p0-01-la-puerta.mp4" type="video/mp4" />
+            </video>
+
+            {/* Fallback textual accesible para lectores de pantalla */}
+            <span className="sr-only">
+              La Puerta — escena cinematográfica de introducción.
+            </span>
+
+            {/* DARK CINEMATIC OVERLAY - Sutil gradiente para preservar la puerta como elemento dominante */}
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-transparent to-[#050505]/65 pointer-events-none"
+              aria-hidden="true"
+            />
           </div>
 
-          <CTAReveal isRevealed={isCTARevealed} className="pt-4">
-            <PrimaryCTA
-              id="cta-enter-exp01"
-              onClick={handleEnterExperience}
-              variant="accent"
-              showIcon={true}
-            >
-              {EXP01_CONTENT.screen01.ctaLabel}
-            </PrimaryCTA>
-          </CTAReveal>
+          {/* NARRATIVE CONTENT LAYER */}
+          <div className="relative z-10 w-full flex flex-col items-center text-center space-y-12">
+            <div className="space-y-8 max-w-lg mx-auto pt-6 sm:pt-12 drop-shadow-[0_2px_14px_rgba(0,0,0,0.85)]">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white tracking-wide leading-relaxed font-normal transition-opacity duration-1000">
+                {EXP01_CONTENT.screen01.leadText1}
+              </h1>
+
+              <p
+                className={`text-sm sm:text-base text-neutral-300 font-body tracking-wider transition-all duration-1000 ${
+                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                }`}
+              >
+                {EXP01_CONTENT.screen01.leadText2}
+              </p>
+            </div>
+
+            {/* CTA LAYER */}
+            <CTAReveal isRevealed={isCTARevealed} className="pt-4 relative z-20">
+              <PrimaryCTA
+                id="cta-enter-exp01"
+                onClick={handleEnterExperience}
+                variant="accent"
+                showIcon={true}
+              >
+                {EXP01_CONTENT.screen01.ctaLabel}
+              </PrimaryCTA>
+            </CTAReveal>
+          </div>
         </div>
       )}
 
