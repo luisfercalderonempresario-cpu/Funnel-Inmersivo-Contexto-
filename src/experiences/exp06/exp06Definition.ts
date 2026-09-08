@@ -1,4 +1,4 @@
-// Declarative Experience Engine Definition for EXP_06 (Contexto™) - Contexto™ Narrative Experience V1.0
+// Declarative Experience Engine Definition for EXP_06 (Contexto™) — P0 #05 CTX_E06_V01_SAME_SIGNAL
 import { ExperienceEngineDefinition } from '../../engine/experience/types';
 import { EXP06_CONTENT } from './exp06Content';
 
@@ -7,22 +7,22 @@ export const EXP06_DEFINITION: ExperienceEngineDefinition = {
   slug: 'contexto',
   title: 'Contexto™',
   number: 6,
-  initialScreen: 'screen_01_question',
+  initialScreen: 'screen_01_opening',
   screens: {
-    // SCREEN 01 — LA PREGUNTA
-    screen_01_question: {
-      id: 'screen_01_question',
+    // 1. APERTURA
+    screen_01_opening: {
+      id: 'screen_01_opening',
       type: 'INTRO',
-      title: EXP06_CONTENT.screen01.beat1,
-      subtitle: `${EXP06_CONTENT.screen01.beat2} ${EXP06_CONTENT.screen01.beat3}`,
-      eyebrow: EXP06_CONTENT.screen01.eyebrow,
-      nextScreen: 'screen_02_information',
+      title: EXP06_CONTENT.opening.lead,
+      subtitle: EXP06_CONTENT.opening.subLead,
+      eyebrow: 'EXPEDIENTE #06',
+      nextScreen: 'screen_02_cinematic',
       actions: [
         {
           type: 'CLICK',
-          label: EXP06_CONTENT.screen01.ctaLabel,
-          targetScreen: 'screen_02_information',
-          payload: { action: 'start_exp06' },
+          label: EXP06_CONTENT.opening.ctaLabel,
+          targetScreen: 'screen_02_cinematic',
+          payload: { action: 'see_difference' },
           memoryUpdates: [
             {
               key: 'exp06.started',
@@ -34,311 +34,171 @@ export const EXP06_DEFINITION: ExperienceEngineDefinition = {
       ],
     },
 
-    // SCREEN 02 — LA INFORMACIÓN
-    screen_02_information: {
-      id: 'screen_02_information',
+    // 2. MODO CINEMATOGRÁFICO
+    screen_02_cinematic: {
+      id: 'screen_02_cinematic',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen02.beat3,
-      subtitle: `${EXP06_CONTENT.screen02.beat1} ${EXP06_CONTENT.screen02.beat2}`,
-      eyebrow: EXP06_CONTENT.screen02.eyebrow,
-      nextScreen: 'screen_03_practical_problem',
+      title: 'Misma Señal',
+      eyebrow: 'DEMOSTRACIÓN CINEMATOGRÁFICA',
+      nextScreen: 'screen_03_same_signal',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen02.ctaLabel,
-          targetScreen: 'screen_03_practical_problem',
-          payload: { action: 'proceed_to_practical_problem' },
+          label: 'CONTINUAR',
+          targetScreen: 'screen_03_same_signal',
         },
       ],
     },
 
-    // SCREEN 03 — EL PROBLEMA PRÁCTICO
-    screen_03_practical_problem: {
-      id: 'screen_03_practical_problem',
+    // 3. CONTINUIDAD DEL ÚLTIMO FRAME & PRINCIPIO
+    screen_03_same_signal: {
+      id: 'screen_03_same_signal',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen03.resolution,
-      subtitle: `${EXP06_CONTENT.screen03.lead} ${EXP06_CONTENT.screen03.verdict}`,
-      eyebrow: EXP06_CONTENT.screen03.eyebrow,
-      nextScreen: 'screen_04_idea',
+      title: EXP06_CONTENT.signal.principleTitle,
+      subtitle: EXP06_CONTENT.signal.principleSubtitle,
+      eyebrow: 'SEÑAL OBSERVABLE',
+      nextScreen: 'screen_04_automatic_interpretation',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen03.ctaLabel,
-          targetScreen: 'screen_04_idea',
-          payload: { action: 'proceed_to_idea' },
+          label: 'CONTINUAR',
+          targetScreen: 'screen_04_automatic_interpretation',
         },
       ],
     },
 
-    // SCREEN 04 — LA IDEA
-    screen_04_idea: {
-      id: 'screen_04_idea',
+    // 4. INTERPRETACIÓN AUTOMÁTICA
+    screen_04_automatic_interpretation: {
+      id: 'screen_04_automatic_interpretation',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen04.question,
-      subtitle: `${EXP06_CONTENT.screen04.lead} ${EXP06_CONTENT.screen04.hypothesis}`,
-      eyebrow: EXP06_CONTENT.screen04.eyebrow,
-      nextScreen: 'screen_05_first_revelation',
+      title: EXP06_CONTENT.automaticInterpretation.eyebrowInterpretation,
+      subtitle: EXP06_CONTENT.automaticInterpretation.interpretationText,
+      eyebrow: 'REACCIÓN RÁPIDA',
+      nextScreen: 'screen_05_pause_and_context',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen04.ctaLabel,
-          targetScreen: 'screen_05_first_revelation',
-          payload: { action: 'proceed_to_first_revelation' },
+          label: 'CONTINUAR',
+          targetScreen: 'screen_05_pause_and_context',
         },
       ],
     },
 
-    // SCREEN 05 — MICRO-INTERACCIÓN & PRIMERA REVELACIÓN
-    screen_05_first_revelation: {
-      id: 'screen_05_first_revelation',
-      type: 'QUESTION',
-      title: EXP06_CONTENT.screen05.question,
-      subtitle: EXP06_CONTENT.screen05.beat3,
-      eyebrow: EXP06_CONTENT.screen05.eyebrow,
-      nextScreen: 'screen_06_contexto_born',
-      options: EXP06_CONTENT.screen05.options.map((opt) => ({
-        id: opt.id,
-        code: opt.code,
-        label: opt.label,
-        value: opt.label,
-        nextScreen: 'screen_06_contexto_born',
-        memoryUpdates: [
-          {
-            key: 'exp06.toolValueReaction',
-            value: opt.label,
-            scope: 'global',
-          },
-          {
-            key: 'exp06.toolValueReactionCode',
-            value: opt.code,
-            scope: 'global',
-          },
-          {
-            key: 'exp06.questionAnswered',
-            value: true,
-            scope: 'global',
-          },
-        ],
-      })),
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP06_CONTENT.screen05.ctaLabel,
-          targetScreen: 'screen_06_contexto_born',
-          payload: { action: 'proceed_to_contexto_born' },
-        },
-      ],
-    },
-
-    // SCREEN 06 — NACE CONTEXTO™
-    screen_06_contexto_born: {
-      id: 'screen_06_contexto_born',
+    // 5. DETENER LA INTERPRETACIÓN (PAUSA) Y ENTRA CONTEXTO™
+    screen_05_pause_and_context: {
+      id: 'screen_05_pause_and_context',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen06.brandName,
-      subtitle: `${EXP06_CONTENT.screen06.lead} ${EXP06_CONTENT.screen06.tagline}`,
-      eyebrow: EXP06_CONTENT.screen06.eyebrow,
-      nextScreen: 'screen_07_how_it_works',
+      title: 'PAUSA',
+      subtitle: EXP06_CONTENT.pauseInterruption.question,
+      eyebrow: 'INTERRUPCIÓN CONSCIENTE',
+      nextScreen: 'screen_06_perspective_shift',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen06.ctaLabel,
-          targetScreen: 'screen_07_how_it_works',
-          payload: { action: 'proceed_to_how_it_works' },
-          memoryUpdates: [
-            {
-              key: 'exp06.productRecognized',
-              value: true,
-              scope: 'global',
-            },
-            {
-              key: 'exp06.productNameRecognized',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          label: 'CONTINUAR',
+          targetScreen: 'screen_06_perspective_shift',
         },
       ],
     },
 
-    // SCREEN 07 — CÓMO FUNCIONA
-    screen_07_how_it_works: {
-      id: 'screen_07_how_it_works',
+    // 6. CAMBIO DE PERSPECTIVA
+    screen_06_perspective_shift: {
+      id: 'screen_06_perspective_shift',
       type: 'CONTENT',
-      title: 'Cuatro Pasos Fundamentales',
-      subtitle: EXP06_CONTENT.screen07.closingNote,
-      eyebrow: EXP06_CONTENT.screen07.eyebrow,
-      nextScreen: 'screen_08_input_data',
+      title: EXP06_CONTENT.perspectiveShift.eyebrow,
+      subtitle: `${EXP06_CONTENT.perspectiveShift.thought1} ${EXP06_CONTENT.perspectiveShift.thought2}`,
+      eyebrow: 'NUEVA PERSPECTIVA',
+      nextScreen: 'screen_07_wow_comparison',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen07.ctaLabel,
-          targetScreen: 'screen_08_input_data',
-          payload: { action: 'proceed_to_input_data' },
-          memoryUpdates: [
-            {
-              key: 'exp06.mechanismUnderstood',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          label: 'CONTINUAR',
+          targetScreen: 'screen_07_wow_comparison',
         },
       ],
     },
 
-    // SCREEN 08 — EL DATO QUE NECESITAS
-    screen_08_input_data: {
-      id: 'screen_08_input_data',
+    // 7. MOMENTO WOW: ANTES VS AHORA
+    screen_07_wow_comparison: {
+      id: 'screen_07_wow_comparison',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen08.dominantData,
-      subtitle: `${EXP06_CONTENT.screen08.beat1} ${EXP06_CONTENT.screen08.beat3}`,
-      eyebrow: EXP06_CONTENT.screen08.eyebrow,
-      nextScreen: 'screen_09_daily_index',
+      title: EXP06_CONTENT.wowComparison.coreInsight1,
+      subtitle: EXP06_CONTENT.wowComparison.coreInsight2,
+      eyebrow: 'DEMOSTRACIÓN',
+      nextScreen: 'screen_08_conversation_question',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen08.ctaLabel,
-          targetScreen: 'screen_09_daily_index',
-          payload: { action: 'proceed_to_daily_index' },
-          memoryUpdates: [
-            {
-              key: 'exp06.cycleStartInputUnderstood',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          label: 'CONTINUAR',
+          targetScreen: 'screen_08_conversation_question',
         },
       ],
     },
 
-    // SCREEN 09 — EL ÍNDICE DE CONEXIÓN DIARIA™
-    screen_09_daily_index: {
-      id: 'screen_09_daily_index',
+    // 8. DE INTERPRETACIÓN A CONVERSACIÓN
+    screen_08_conversation_question: {
+      id: 'screen_08_conversation_question',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen09.dominantConcept,
-      subtitle: `${EXP06_CONTENT.screen09.lead1} ${EXP06_CONTENT.screen09.conceptSubtitle}`,
-      eyebrow: EXP06_CONTENT.screen09.eyebrow,
-      nextScreen: 'screen_10_real_situation',
+      title: EXP06_CONTENT.conversation.question,
+      subtitle: EXP06_CONTENT.conversation.transitionBeat2,
+      eyebrow: 'ACERCAMIENTO',
+      nextScreen: 'screen_09_mechanism',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen09.ctaLabel,
-          targetScreen: 'screen_10_real_situation',
-          payload: { action: 'proceed_to_real_situation' },
-          memoryUpdates: [
-            {
-              key: 'exp06.dailyIndexUnderstood',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          label: 'CONTINUAR',
+          targetScreen: 'screen_09_mechanism',
         },
       ],
     },
 
-    // SCREEN 10 — UNA SITUACIÓN REAL
-    screen_10_real_situation: {
-      id: 'screen_10_real_situation',
+    // 9. MECANISMO VISUAL (5 PASOS)
+    screen_09_mechanism: {
+      id: 'screen_09_mechanism',
       type: 'CONTENT',
-      title: EXP06_CONTENT.screen10.resolutionDominant,
-      subtitle: EXP06_CONTENT.screen10.pivotQuestion,
-      eyebrow: EXP06_CONTENT.screen10.eyebrow,
-      nextScreen: 'screen_11_before_after',
+      title: 'Mecanismo Contexto™',
+      eyebrow: 'ARQUITECTURA DE RESPUESTA',
+      nextScreen: 'screen_10_definition_and_categories',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen10.ctaLabel,
-          targetScreen: 'screen_11_before_after',
-          payload: { action: 'proceed_to_before_after' },
-          memoryUpdates: [
-            {
-              key: 'exp06.contextValueRecognized',
-              value: true,
-              scope: 'global',
-            },
-          ],
+          label: 'CONTINUAR',
+          targetScreen: 'screen_10_definition_and_categories',
         },
       ],
     },
 
-    // SCREEN 11 — ANTES / DESPUÉS
-    screen_11_before_after: {
-      id: 'screen_11_before_after',
+    // 10. DEFINICIÓN DE CONTEXTO™ & CATEGORÍAS
+    screen_10_definition_and_categories: {
+      id: 'screen_10_definition_and_categories',
       type: 'CONTENT',
-      title: 'Transformación de Respuesta',
-      subtitle: EXP06_CONTENT.screen11.dialogueNote,
-      eyebrow: EXP06_CONTENT.screen11.eyebrow,
-      nextScreen: 'screen_12_what_it_does_not_do',
+      title: EXP06_CONTENT.definition.brand,
+      subtitle: EXP06_CONTENT.definition.tagline,
+      eyebrow: 'HERRAMIENTA COTIDIANA',
+      nextScreen: 'screen_11_bridge_and_cta',
       actions: [
         {
           type: 'CONTINUE',
-          label: EXP06_CONTENT.screen11.ctaLabel,
-          targetScreen: 'screen_12_what_it_does_not_do',
-          payload: { action: 'proceed_to_what_it_does_not_do' },
+          label: 'CONTINUAR',
+          targetScreen: 'screen_11_bridge_and_cta',
         },
       ],
     },
 
-    // SCREEN 12 — LO QUE CONTEXTO™ NO HACE
-    screen_12_what_it_does_not_do: {
-      id: 'screen_12_what_it_does_not_do',
-      type: 'CONTENT',
-      title: EXP06_CONTENT.screen12.closurePrinciple,
-      subtitle: EXP06_CONTENT.screen12.warningLead,
-      eyebrow: EXP06_CONTENT.screen12.eyebrow,
-      nextScreen: 'screen_13_what_it_can_do',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP06_CONTENT.screen12.ctaLabel,
-          targetScreen: 'screen_13_what_it_can_do',
-          payload: { action: 'proceed_to_what_it_can_do' },
-          memoryUpdates: [
-            {
-              key: 'exp06.limitationsUnderstood',
-              value: true,
-              scope: 'global',
-            },
-          ],
-        },
-      ],
-    },
-
-    // SCREEN 13 — LO QUE SÍ PUEDE HACER
-    screen_13_what_it_can_do: {
-      id: 'screen_13_what_it_can_do',
-      type: 'CONTENT',
-      title: EXP06_CONTENT.screen13.centralPromise,
-      subtitle: `${EXP06_CONTENT.screen13.lead1} ${EXP06_CONTENT.screen13.lead2}`,
-      eyebrow: EXP06_CONTENT.screen13.eyebrow,
-      nextScreen: 'screen_14_transition_future',
-      actions: [
-        {
-          type: 'CONTINUE',
-          label: EXP06_CONTENT.screen13.ctaLabel,
-          targetScreen: 'screen_14_transition_future',
-          payload: { action: 'proceed_to_transition_future' },
-        },
-      ],
-    },
-
-    // SCREEN 14 — TRANSICIÓN A EL FUTURO
-    screen_14_transition_future: {
-      id: 'screen_14_transition_future',
+    // 11. PUENTE HACIA LA PRUEBA & CTA FINAL
+    screen_11_bridge_and_cta: {
+      id: 'screen_11_bridge_and_cta',
       type: 'TRANSITION',
-      title: EXP06_CONTENT.screen14.dominantQuestion,
-      subtitle: `${EXP06_CONTENT.screen14.lead1} ${EXP06_CONTENT.screen14.lead3}`,
-      eyebrow: EXP06_CONTENT.screen14.eyebrow,
+      title: EXP06_CONTENT.bridge.beat1,
+      subtitle: EXP06_CONTENT.bridge.beat2,
+      eyebrow: 'EL SIGUIENTE PASO',
       actions: [
         {
-          type: 'COMPLETE',
-          label: EXP06_CONTENT.screen14.ctaLabel,
-          payload: { action: 'complete_exp06' },
+          type: 'CONTINUE',
+          label: EXP06_CONTENT.bridge.ctaLabel,
+          targetScreen: 'complete',
+          payload: { action: 'try_contexto' },
           memoryUpdates: [
-            {
-              key: 'exp06.futureCuriosity',
-              value: true,
-              scope: 'global',
-            },
             {
               key: 'exp06.completed',
               value: true,
