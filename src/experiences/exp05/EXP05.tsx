@@ -1,8 +1,8 @@
-// EXP_05 — LA PIEZA FALTANTE (Narrative Experience V1.0 Integration)
-import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
+// EXP_05 — LA PIEZA FALTANTE (P0 #04 CTX_E05_V01_MISSING_PIECE)
+// Contexto™ Narrative Experience
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
-import { ExperienceId } from '../../engine/state/types';
 import { EXP05_CONTENT } from './exp05Content';
 import { EXP05_DEFINITION } from './exp05Definition';
 import { ExperienceMemoryManager } from '../../engine/experience/experienceMemory';
@@ -13,10 +13,8 @@ import {
 } from '../../engine/experience/experienceState';
 import { ExperienceRuntimeState } from '../../engine/experience/types';
 import { eventTracker } from '../../engine/events/eventTracker';
-import { ChoiceButton } from '../../components/ui/ChoiceButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
-import { Volume2, VolumeX, Moon, Sparkles, Sun, Compass } from 'lucide-react';
-import { useNarrativePacing, CTAReveal, NarrativeBeat } from '../../engine/pacing';
+import { Volume2, VolumeX, ArrowRight, ArrowDown } from 'lucide-react';
 
 export const EXP05: React.FC<ExperienceComponentProps> = ({
   caseId,
@@ -24,7 +22,7 @@ export const EXP05: React.FC<ExperienceComponentProps> = ({
 }) => {
   const { state, updateState } = useFunnel();
 
-  // Audio preference state (technical integration hook)
+  // Audio preference state
   const [isAudioActive, setIsAudioActive] = useState<boolean>(
     () => state.preferences.audioEnabled || false
   );
@@ -79,7 +77,7 @@ export const EXP05: React.FC<ExperienceComponentProps> = ({
     }
     return {
       experienceId: 'exp05',
-      currentScreen: 'screen_01_clue',
+      currentScreen: 'screen_01_opening',
       status: 'ACTIVE',
       localData: {},
       localMemory: {},
@@ -90,353 +88,444 @@ export const EXP05: React.FC<ExperienceComponentProps> = ({
   });
 
   const [, startTransition] = useTransition();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
+  // Cinematic video state
+  const [isCinematicActive, setIsCinematicActive] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasEndedRef = useRef<boolean>(false);
+  const safetyTimeoutRef = useRef<number | null>(null);
+
+  // Pacing stages per phase
+  // Phase 1 (Apertura): stages 1 -> 3
+  const [openingPacing, setOpeningPacing] = useState<number>(1);
+  // Phase 3 (Continuidad + Variable): stages 1 -> 4
+  const [variablePacing, setVariablePacing] = useState<number>(0);
+  // Phase 4 (Gran Reveal & Guardrails): stages 1 -> 5
+  const [revealPacing, setRevealPacing] = useState<number>(0);
+  // Phase 5 (Fases & Frase de Seguridad): stages 1 -> 4
+  const [phasesPacing, setPhasesPacing] = useState<number>(0);
+  // Phase 6 (Demostración — Misma Señal): stages 1 -> 5
+  const [demoPacing, setDemoPacing] = useState<number>(0);
+  // Phase 7 (Mecanismo & Contexto™): stages 1 -> 3
+  const [contextoPacing, setContextoPacing] = useState<number>(0);
+
   const currentScreenId = runtimeState.currentScreen;
-
-  // Narrative Beats Map for EXP_05
-  const currentBeats: NarrativeBeat[] = useMemo(() => {
-    switch (currentScreenId) {
-      case 'screen_01_clue':
-        return [
-          { id: 'caseId', stage: 1, pacing: 'SHORT', label: 'Caso ID Eyebrow' },
-          { id: 'beat1', stage: 2, pacing: 'LONG', label: 'Encontramos una pista' },
-          { id: 'beat2', stage: 3, pacing: 'MEDIUM', label: 'No explica todo' },
-          { id: 'beat3', stage: 4, pacing: 'REVELATION', label: 'Pero explica algo' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Ver la Pista', isCTA: true },
-        ];
-      case 'screen_02_different_variable':
-        return [
-          { id: 'lead1', stage: 1, pacing: 'MEDIUM', label: 'En una investigación' },
-          { id: 'lead2', stage: 2, pacing: 'MEDIUM', label: 'Cuando un patrón se repite' },
-          { id: 'lead3', stage: 3, pacing: 'LONG', label: 'Buscas qué variable cambia' },
-          { id: 'recap', stage: 4, pacing: 'LONG', label: 'Qué ocurre / Cuándo ocurre' },
-          { id: 'questionIntro', stage: 5, pacing: 'MEDIUM', label: 'Ahora falta una pregunta' },
-          { id: 'dominantQuestion', stage: 6, pacing: 'REVELATION', label: '¿Qué más está cambiando?' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_03_body_changes':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Hay algo que normalmente no ves' },
-          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'El cuerpo también atraviesa cambios' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'No de un día para otro' },
-          { id: 'beat4', stage: 4, pacing: 'MEDIUM', label: 'Sino a lo largo del tiempo' },
-          { id: 'beat5', stage: 5, pacing: 'REVELATION', label: 'En ciclos' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_04_cycle':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'El ciclo menstrual' },
-          { id: 'beat2', stage: 2, pacing: 'LONG', label: 'No es solo el momento de la regla' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Es un proceso en el tiempo' },
-          { id: 'beat4', stage: 4, pacing: 'MEDIUM', label: 'Atraviesa diferentes etapas' },
-          { id: 'cycleVisual', stage: 5, pacing: 'LONG', label: 'Diagrama Editorial de Ciclo' },
-          { id: 'beat5', stage: 6, pacing: 'REVELATION', label: 'Características biológicas distintas' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Observar las Etapas', isCTA: true },
-        ];
-      case 'screen_05_four_moments':
-        return [
-          { id: 'phase1', stage: 1, pacing: 'MEDIUM', label: 'Etapa 01 Menstruación' },
-          { id: 'phase2', stage: 2, pacing: 'MEDIUM', label: 'Etapa 02 Fase Folicular' },
-          { id: 'phase3', stage: 3, pacing: 'MEDIUM', label: 'Etapa 03 Ovulación' },
-          { id: 'phase4', stage: 4, pacing: 'MEDIUM', label: 'Etapa 04 Fase Lútea' },
-          { id: 'closure1', stage: 5, pacing: 'MEDIUM', label: 'Cuatro momentos' },
-          { id: 'closure2', stage: 6, pacing: 'MEDIUM', label: 'Un mismo ciclo' },
-          { id: 'closure3', stage: 7, pacing: 'REVELATION', label: 'Un cuerpo que atraviesa cambios' },
-          { id: 'cta', stage: 8, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_06_first_connection':
-        return [
-          { id: 'lead1', stage: 1, pacing: 'MEDIUM', label: 'Entonces...' },
-          { id: 'lead2', stage: 2, pacing: 'LONG', label: '¿Podría el ciclo ser información?' },
-          { id: 'question', stage: 3, pacing: 'MEDIUM', label: 'Pregunta Contexto' },
-          { id: 'options', stage: 4, pacing: 'MANUAL', label: 'Opciones Pregunta 1', isOptions: true },
-          { id: 'feedback', stage: 5, pacing: 'MEDIUM', label: 'Feedback Adaptativo' },
-          { id: 'convergenceLead', stage: 6, pacing: 'REVELATION', label: 'Algo que sí podemos comprobar' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Volver al Caso', isCTA: true },
-        ];
-      case 'screen_07_comparison':
-        return [
-          { id: 'moment1', stage: 1, pacing: 'LONG', label: 'Momento 01 Registro' },
-          { id: 'moment2', stage: 2, pacing: 'LONG', label: 'Momento 02 Registro' },
-          { id: 'moment3', stage: 3, pacing: 'LONG', label: 'Momento 03 Registro' },
-          { id: 'reflection1', stage: 4, pacing: 'MEDIUM', label: '¿Y si no fueran aisladas?' },
-          { id: 'reflection2', stage: 5, pacing: 'REVELATION', label: '¿Y si fueran un patrón?' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_08_limits':
-        return [
-          { id: 'warningLead', stage: 1, pacing: 'MEDIUM', label: 'Pero cuidado' },
-          { id: 'point1', stage: 2, pacing: 'LONG', label: 'No dicta cómo se comportará' },
-          { id: 'point2', stage: 3, pacing: 'LONG', label: 'No permite saber exacto cómo sentirá' },
-          { id: 'point3', stage: 4, pacing: 'LONG', label: 'No todo es hormonal' },
-          { id: 'transitionLead', stage: 5, pacing: 'MEDIUM', label: 'Significa algo más sencillo' },
-          { id: 'dominantReveal', stage: 6, pacing: 'REVELATION', label: 'Una pieza más de información' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_09_hidden_variable':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Antes...' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Veías solo el comportamiento' },
-          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'Ahora puedes considerar...' },
-          { id: 'dominantReveal', stage: 4, pacing: 'REVELATION', label: 'EL MOMENTO DEL CICLO' },
-          { id: 'closure', stage: 5, pacing: 'LONG', label: 'Variable que no estaba en tu mapa' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Ver el Calendario', isCTA: true },
-        ];
-      case 'screen_10_calendar':
-        return [
-          { id: 'calendarVisual', stage: 1, pacing: 'LONG', label: 'Línea de Tiempo Editorial' },
-          { id: 'timelineLeads', stage: 2, pacing: 'LONG', label: 'Registrarse, observarse, contextualizarse' },
-          { id: 'question', stage: 3, pacing: 'MEDIUM', label: 'Pregunta Preferencia' },
-          { id: 'options', stage: 4, pacing: 'MANUAL', label: 'Opciones Pregunta 2', isOptions: true },
-          { id: 'feedback', stage: 5, pacing: 'MEDIUM', label: 'Feedback Preferencia' },
-          { id: 'micro1', stage: 6, pacing: 'MEDIUM', label: 'Porque quizá...' },
-          { id: 'micro2', stage: 7, pacing: 'LONG', label: 'No en reaccionar mejor después' },
-          { id: 'microDominant', stage: 8, pacing: 'REVELATION', label: 'Comprender mejor antes' },
-          { id: 'cta', stage: 9, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_11_new_question':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Nueva posibilidad' },
-          { id: 'beat2_3', stage: 2, pacing: 'MEDIUM', label: 'Conocer ciclo -> Conocer momento' },
-          { id: 'beat4_5', stage: 3, pacing: 'LONG', label: 'Conocer momento -> Añadir contexto' },
-          { id: 'pauseLead', stage: 4, pacing: 'LONG', label: 'Pero queda una pregunta' },
-          { id: 'dominantQuestion', stage: 5, pacing: 'REVELATION', label: '¿Cómo utilizar esa información?' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_12_missing_piece':
-        return [
-          { id: 'beat1_4', stage: 1, pacing: 'LONG', label: 'Eso era lo que faltaba' },
-          { id: 'dominantReveal', stage: 2, pacing: 'REVELATION', label: 'Una forma de tener contexto' },
-          { id: 'beat5_7', stage: 3, pacing: 'LONG', label: 'Antes de reaccionar / asumir / preguntar' },
-          { id: 'beat8', stage: 4, pacing: 'LONG', label: 'Podrías saber algo más' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_13_transition_contexto':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'LONG', label: 'Encontramos la pieza' },
-          { id: 'beat2_3', stage: 2, pacing: 'LONG', label: 'Convertir esa información en algo útil' },
-          { id: 'dominantReveal', stage: 3, pacing: 'REVELATION', label: 'Eso es lo siguiente' },
-          { id: 'cta', stage: 4, pacing: 'MANUAL', label: 'Botón Descubrir Cómo Funciona', isCTA: true },
-        ];
-      default:
-        return [];
-    }
-  }, [currentScreenId]);
-
-  // Hook into Narrative Pacing System
-  const { stage: screenStage, isCTARevealed, isOptionsRevealed, advanceStage } = useNarrativePacing({
-    experienceId: 'exp05',
-    screenId: currentScreenId,
-    beats: currentBeats,
-  });
 
   // Synchronize runtime persistence
   useEffect(() => {
     persistExperienceRuntimeState(runtimeState);
   }, [runtimeState]);
 
-  // Sync with funnel progress & track screen views
+  // Track initial screen view and EXP05_STARTED
   useEffect(() => {
-    updateState((prev) => ({
-      ...prev,
-      progress: {
-        ...prev.progress,
-        currentExperience: 'exp05',
-        currentScreen: currentScreenId,
-      },
-    }));
+    const screen = runtimeState.currentScreen;
+
+    if (screen === 'screen_01_opening') {
+      eventTracker.trackEvent('EXP05_STARTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+        payload: { screen: 'screen_01_opening' },
+      });
+    }
 
     eventTracker.trackEvent('SCREEN_VIEWED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp05',
-      payload: { screenId: currentScreenId },
+      payload: { screenId: screen },
     });
+  }, [runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
 
-    if (
-      currentScreenId === 'screen_06_first_connection' ||
-      currentScreenId === 'screen_10_calendar'
-    ) {
-      eventTracker.trackEvent('QUESTION_SHOWN', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp05',
-        payload: { screenId: currentScreenId },
-      });
-    }
-  }, [currentScreenId, state.session.sessionId, state.session.caseId, updateState]);
-
-  // Initial event tracker on mount
-  useEffect(() => {
-    eventTracker.trackEvent('EXP05_STARTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-    });
-    memoryManagerRef.current.setMemory('exp05.started', true, 'global');
-  }, [state.session.sessionId, state.session.caseId]);
-
-  // Read saved responses from funnel state for adaptive display
-  const savedResponses = (state.responses.exp05 || {}) as Record<string, unknown>;
-  const cycleHypothesisCode = (savedResponses['exp05.cycleContextHypothesisCode'] ||
-    savedResponses['cycleContextHypothesisCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-  const infoPrefCode = (savedResponses['exp05.informationPreferenceCode'] ||
-    savedResponses['informationPreferenceCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-
-  // Selected feedback calculations
-  const cycleHypothesisFeedback = useMemo(() => {
-    const opt = EXP05_CONTENT.screen06.options.find((o) => o.code === cycleHypothesisCode);
-    return opt?.feedback || EXP05_CONTENT.screen06.options[0].feedback;
-  }, [cycleHypothesisCode]);
-
-  const infoPrefFeedback = useMemo(() => {
-    const opt = EXP05_CONTENT.screen10.options.find((o) => o.code === infoPrefCode);
-    return opt?.feedback || EXP05_CONTENT.screen10.options[3].feedback;
-  }, [infoPrefCode]);
-
-  // Generic transition forward between screens
-  const advanceToScreen = (targetScreenId: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    const nextState = transitionScreenState(runtimeState, targetScreenId);
-    persistExperienceRuntimeState(nextState);
-
+  // Navigate screen handler
+  const navigateToScreen = (nextScreenId: string) => {
     startTransition(() => {
-      setRuntimeState(nextState);
-      setSelectedOption(null);
       setIsProcessing(false);
+      setRuntimeState((prev) => {
+        const next = transitionScreenState(prev, nextScreenId, 'ACTIVE');
+        persistExperienceRuntimeState(next);
+        return next;
+      });
     });
   };
 
-  // Handler for Question 1 (Screen 06: Hipótesis de Contexto del Ciclo)
-  const handleSelectCycleHypothesis = (code: 'A' | 'B' | 'C' | 'D', label: string) => {
-    if (cycleHypothesisCode || isProcessing) return;
-    setIsProcessing(true);
-    setSelectedOption(code);
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { questionId: 'exp05_q1_cycle_hypothesis', choiceCode: code, choiceLabel: label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp05.cycleContextHypothesis', value: label, scope: 'global' },
-      { key: 'exp05.cycleContextHypothesisCode', value: code, scope: 'global' },
-      { key: 'exp05.question01Answered', value: true, scope: 'global' },
-    ]);
-
-    eventTracker.trackEvent('QUESTION_ANSWERED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { questionId: 'exp05_q1_cycle_hypothesis', answer: label, code },
-    });
-
-    eventTracker.trackEvent('MEMORY_UPDATED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { key: 'exp05.cycleContextHypothesis', value: label },
-    });
-
-    advanceStage();
-    setIsProcessing(false);
+  const clearSafetyTimeout = () => {
+    if (safetyTimeoutRef.current !== null) {
+      window.clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
   };
 
-  // Handler for Question 2 (Screen 10: Preferencia de Información)
-  const handleSelectInformationPreference = (code: 'A' | 'B' | 'C' | 'D', label: string) => {
-    if (infoPrefCode || isProcessing) return;
-    setIsProcessing(true);
-    setSelectedOption(code);
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { questionId: 'exp05_q2_info_preference', choiceCode: code, choiceLabel: label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp05.informationPreference', value: label, scope: 'global' },
-      { key: 'exp05.informationPreferenceCode', value: code, scope: 'global' },
-      { key: 'exp05.question02Answered', value: true, scope: 'global' },
-      { key: 'exp05.contextNeedRecognized', value: true, scope: 'global' },
-    ]);
-
-    eventTracker.trackEvent('QUESTION_ANSWERED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { questionId: 'exp05_q2_info_preference', answer: label, code },
-    });
-
-    eventTracker.trackEvent('MEMORY_UPDATED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { key: 'exp05.informationPreference', value: label },
-    });
-
-    advanceStage();
-    setIsProcessing(false);
-  };
-
-  // Record scientific / narrative insights on screen progression
   useEffect(() => {
-    if (currentScreenId === 'screen_08_limits' && screenStage >= 6) {
-      memoryManagerRef.current.setMemory('exp05.cycleRecognizedAsContext', true, 'global');
-      eventTracker.trackEvent('INSIGHT_REVEALED', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp05',
-        payload: { insight: 'cycle_recognized_as_context', screen: 'screen_08_limits' },
-      });
-    }
-    if (currentScreenId === 'screen_12_missing_piece' && screenStage >= 2) {
-      memoryManagerRef.current.setMemory('exp05.contextNeedRecognized', true, 'global');
-      eventTracker.trackEvent('INSIGHT_REVEALED', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp05',
-        payload: { insight: 'context_need_recognized', screen: 'screen_12_missing_piece' },
-      });
-    }
-  }, [currentScreenId, screenStage, state.session.sessionId, state.session.caseId]);
+    return () => {
+      clearSafetyTimeout();
+    };
+  }, []);
 
-  // Complete EXP_05 and transition to EXP_06
-  const handleCompleteExp05 = () => {
-    if (isCompletedGuard || completingRef.current) return;
+  // ---------------------------------------------------------------------------
+  // 1. APERTURA PACING
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_01_opening') return;
+
+    // Stage 1: "ENCONTRASTE UN PATRÓN." (t=0ms)
+    // Stage 2: "Pero un patrón no explica por sí solo lo que ocurre." (t=1400ms)
+    // Stage 3: CTA "REVELAR LA PIEZA" (t=2800ms)
+    const timer1 = window.setTimeout(() => setOpeningPacing(2), 1400);
+    const timer2 = window.setTimeout(() => setOpeningPacing(3), 2800);
+
+    return () => {
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 2. CTA -> VIDEO PLAYBACK (DIRECT USER GESTURE)
+  // ---------------------------------------------------------------------------
+  const handleRevealPiece = async () => {
+    if (isProcessing || isCinematicActive) return;
+    setIsProcessing(true);
+
+    // Track CTA click
+    eventTracker.trackEvent('CTA_CLICKED_REVEAL_PIECE', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp05',
+      payload: { label: EXP05_CONTENT.opening.ctaLabel },
+    });
+
+    eventTracker.trackEvent('CINEMATIC_STARTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp05',
+      payload: { asset: EXP05_CONTENT.cinematic.assetUrl },
+    });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp05.started', value: true, scope: 'global' },
+      { key: 'exp05.cinematicStarted', value: true, scope: 'global' },
+    ]);
+
+    // Activate fullscreen cinematic layer
+    setIsCinematicActive(true);
+    hasEndedRef.current = false;
+
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = 0;
+      video.muted = false;
+      video.volume = 1;
+
+      // Arm safety timeout (video duration + 3s, or 20s fallback)
+      clearSafetyTimeout();
+      const durationMs =
+        video.duration && !isNaN(video.duration) && video.duration > 0
+          ? (video.duration + 3) * 1000
+          : 20000;
+
+      safetyTimeoutRef.current = window.setTimeout(() => {
+        if (!hasEndedRef.current) {
+          handleVideoEnded();
+        }
+      }, durationMs);
+
+      // Play directly via user gesture
+      try {
+        await video.play();
+      } catch (err) {
+        console.warn('[EXP05 Audio Play Blocked - Retrying Muted]', err);
+        try {
+          video.muted = true;
+          await video.play();
+        } catch (mutedErr) {
+          console.warn('[EXP05 Fallback - Direct Interactive Reveal]', mutedErr);
+          clearSafetyTimeout();
+          setIsCinematicActive(false);
+          setIsProcessing(false);
+          // Fallback: avanzar directamente a la revelación interactiva
+          navigateToScreen('screen_03_revelation');
+        }
+      }
+    } else {
+      setIsCinematicActive(false);
+      setIsProcessing(false);
+      navigateToScreen('screen_03_revelation');
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 3. TRANSICIÓN VIDEO -> REVELACIÓN (CONTINUIDAD DEL ÚLTIMO FRAME)
+  // ---------------------------------------------------------------------------
+  const handleVideoEnded = () => {
+    if (hasEndedRef.current) return;
+    hasEndedRef.current = true;
+    clearSafetyTimeout();
+
+    const video = videoRef.current;
+    if (video) {
+      try {
+        video.pause();
+      } catch {}
+    }
+
+    eventTracker.trackEvent('CINEMATIC_COMPLETED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp05',
+      payload: { asset: EXP05_CONTENT.cinematic.assetUrl },
+    });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp05.cinematicCompleted', value: true, scope: 'global' },
+    ]);
+
+    // NO cortar a negro. NO fade largo a negro.
+    // Sustituir el video inmediatamente por la reconstrucción visual ligera
+    setIsCinematicActive(false);
+    setIsProcessing(false);
+    navigateToScreen('screen_03_revelation');
+  };
+
+  // ---------------------------------------------------------------------------
+  // 4. PRIMERA REVELACIÓN (SOBRE LA COMPOSICIÓN)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_03_revelation') return;
+
+    // Reset variable pacing
+    setVariablePacing(0);
+
+    // Mantener 700-1000ms de quietud inicial tras video
+    // Stage 1: "LA PIEZA QUE FALTABA…" (t=900ms)
+    const t1 = window.setTimeout(() => {
+      setVariablePacing(1);
+    }, 900);
+
+    // Stage 2: "NO ERA UNA RESPUESTA." (t=2300ms)
+    const t2 = window.setTimeout(() => {
+      setVariablePacing(2);
+    }, 2300);
+
+    // Stage 3: "ERA UNA VARIABLE." (t=3800ms)
+    const t3 = window.setTimeout(() => {
+      setVariablePacing(3);
+      eventTracker.trackEvent('MISSING_VARIABLE_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+      });
+    }, 3800);
+
+    // Silencio visual breve y auto-avance suave al Gran Reveal
+    const t4 = window.setTimeout(() => {
+      setVariablePacing(4);
+      navigateToScreen('screen_04_reveal_guardrails');
+    }, 5800);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 5. GRAN REVEAL ("EL CICLO MENSTRUAL") & GUARDRAIL INMEDIATO
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_04_reveal_guardrails') return;
+
+    setRevealPacing(1); // Muestra únicamente "EL CICLO MENSTRUAL" centrado
+    eventTracker.trackEvent('MENSTRUAL_CYCLE_REVEALED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp05',
+    });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp05.cycleRevealed', value: true, scope: 'global' },
+    ]);
+
+    // Mantener la gran revelación aprox. 2.5s antes de continuar con los guardrails
+    // Stage 2: Intro guardrail "El ciclo menstrual puede aportar contexto…" (t=2600ms)
+    const t1 = window.setTimeout(() => {
+      setRevealPacing(2);
+      eventTracker.trackEvent('GUARDRAIL_PRESENTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+      });
+    }, 2600);
+
+    // Stage 3: Guardrails secuenciales "NO determina...", "NO explica...", "Y NO sustituye..." (t=4000ms)
+    const t2 = window.setTimeout(() => {
+      setRevealPacing(3);
+    }, 4000);
+
+    // Stage 4: Explicación mínima (t=6200ms)
+    const t3 = window.setTimeout(() => {
+      setRevealPacing(4);
+    }, 6200);
+
+    // Stage 5: Botón continuar a Fases (t=8200ms)
+    const t4 = window.setTimeout(() => {
+      setRevealPacing(5);
+    }, 8200);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 6. VISUALIZACIÓN DE LAS CUATRO FASES & SEGURIDAD CONCEPTUAL
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_05_phases') return;
+
+    setPhasesPacing(1); // Rueda 4 fases activa
+    eventTracker.trackEvent('PHASES_PRESENTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp05',
+    });
+
+    // Stage 2: Oscurecer la rueda ligeramente y mostrar "EL CICLO NO ES UN GUION." (t=2400ms)
+    const t1 = window.setTimeout(() => {
+      setPhasesPacing(2);
+    }, 2400);
+
+    // Stage 3: "No te dice exactamente cómo se sentirá." (t=3800ms)
+    const t2 = window.setTimeout(() => {
+      setPhasesPacing(3);
+    }, 3800);
+
+    // Stage 4: "Te da una variable más para interpretar con menos prisa." + Botón (t=5200ms)
+    const t3 = window.setTimeout(() => {
+      setPhasesPacing(4);
+    }, 5200);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 7. DEMOSTRACIÓN — MISMA SEÑAL (“Sí.”) & NUEVA PERSPECTIVA
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_06_demonstration') return;
+
+    setDemoPacing(1); // ANTES DE CONSIDERAR EL CONTEXTO -> ELLA: "Sí." -> TU INTERPRETACIÓN: "Está molesta conmigo."
+
+    // Stage 2: CON UNA VARIABLE MÁS DE CONTEXTO -> ELLA: "Sí." permanece idéntico! (t=3000ms)
+    const t1 = window.setTimeout(() => {
+      setDemoPacing(2);
+    }, 3000);
+
+    // Stage 3: TU NUEVA PERSPECTIVA: "Puede haber varias razones." / "No voy a asumir." (t=4400ms)
+    const t2 = window.setTimeout(() => {
+      setDemoPacing(3);
+      eventTracker.trackEvent('SAME_SIGNAL_REINTERPRETED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+        payload: { signal: 'Sí.' },
+      });
+      memoryManagerRef.current.applyUpdates([
+        { key: 'exp05.perspectiveShifted', value: true, scope: 'global' },
+      ]);
+    }, 4400);
+
+    // Stage 4: INSIGHT PRINCIPAL: MISMA SEÑAL -> MÁS CONTEXTO -> MENOS SUPOSICIÓN (t=6200ms)
+    const t3 = window.setTimeout(() => {
+      setDemoPacing(4);
+      eventTracker.trackEvent('CONTEXT_INSIGHT_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+      });
+    }, 6200);
+
+    // Stage 5: Botón continuar a Mecanismo (t=8200ms)
+    const t4 = window.setTimeout(() => {
+      setDemoPacing(5);
+    }, 8200);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 8. CONEXIÓN CON EL MECANISMO & CONTEXTO™
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_07_mechanism_contexto') return;
+
+    setContextoPacing(1); // SEÑAL -> CONTEXTO -> PREGUNTA -> DECISIÓN -> CONEXIÓN
+
+    // Stage 2: CONTEXTO™ reveal (t=2800ms)
+    const t1 = window.setTimeout(() => {
+      setContextoPacing(2);
+      eventTracker.trackEvent('CONTEXTO_INTRODUCED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp05',
+      });
+    }, 2800);
+
+    // Stage 3: CTA Final "ENTENDER CONTEXTO™" (t=4400ms)
+    const t2 = window.setTimeout(() => {
+      setContextoPacing(3);
+    }, 4400);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 9. CTA FINAL -> ENTENDER CONTEXTO™ (COMPLETION -> EXP_06)
+  // ---------------------------------------------------------------------------
+  const handleCompleteExperience = () => {
+    if (completingRef.current || isCompletedGuard) return;
     completingRef.current = true;
     setIsCompletedGuard(true);
 
-    eventTracker.trackEvent('CTA_CLICKED', {
+    eventTracker.trackEvent('CTA_CLICKED_UNDERSTAND_CONTEXTO', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp05',
-      payload: { action: 'complete_exp05', label: EXP05_CONTENT.screen13.ctaLabel },
+      payload: { label: EXP05_CONTENT.finalCta.label },
     });
 
-    const now = new Date().toISOString();
     const finalMemory = {
       ...memoryManagerRef.current.getExperienceMemory(),
-      cycleRecognizedAsContext: true,
-      contextNeedRecognized: true,
-      completed: true,
-      completedAt: now,
+      missingPieceFound: true,
+      menstrualCycleContextUnderstood: true,
+      perspectiveShiftAdopted: true,
+      contextoFrameworkIntroduced: true,
+      completedAt: new Date().toISOString(),
     };
 
     memoryManagerRef.current.applyUpdates([
-      { key: 'exp05.cycleRecognizedAsContext', value: true, scope: 'global' },
-      { key: 'exp05.contextNeedRecognized', value: true, scope: 'global' },
       { key: 'exp05.completed', value: true, scope: 'global' },
-      { key: 'exp05.completedAt', value: now, scope: 'global' },
+      { key: 'exp05.completedAt', value: new Date().toISOString(), scope: 'global' },
     ]);
 
     setRuntimeState((prev) => {
@@ -444,7 +533,7 @@ export const EXP05: React.FC<ExperienceComponentProps> = ({
         ...prev,
         status: 'COMPLETED',
         completedScreens: Array.from(new Set([...prev.completedScreens, prev.currentScreen])),
-        lastActivityAt: now,
+        lastActivityAt: new Date().toISOString(),
       };
       persistExperienceRuntimeState(next);
       return next;
@@ -457,1200 +546,577 @@ export const EXP05: React.FC<ExperienceComponentProps> = ({
       payload: { memory: finalMemory },
     });
 
-    eventTracker.trackEvent('EXPERIENCE_COMPLETED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp05',
-      payload: { experienceId: 'exp05' },
-    });
-
-    // Update FunnelState completed experiences
-    updateState((prev) => {
-      const alreadyCompleted = prev.progress.completedExperiences.includes('exp05');
-      const updatedList: ExperienceId[] = alreadyCompleted
-        ? prev.progress.completedExperiences
-        : [...prev.progress.completedExperiences, 'exp05'];
-
-      return {
-        ...prev,
-        progress: {
-          ...prev.progress,
-          completedExperiences: updatedList,
-          completionPercentage: Math.max(prev.progress.completionPercentage, 62),
-        },
-      };
-    });
-
-    // Invoke parent completion handler to navigate to EXP_06
+    // Advance to EXP_06
     onComplete(finalMemory);
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER COMPONENT
+  // ---------------------------------------------------------------------------
   return (
     <div
-      id="exp05-root-container"
-      className="relative min-h-[90vh] flex flex-col justify-between items-center bg-[#050505] text-neutral-100 px-4 sm:px-6 py-6 sm:py-10 selection:bg-orange-500/20 selection:text-orange-200"
+      id="exp05-container"
+      className="relative min-h-[92vh] sm:min-h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 md:px-8 py-10 sm:py-16 bg-[#050505] text-neutral-100 font-sans selection:bg-neutral-800 selection:text-white"
     >
-      {/* Top Bar with Minimal Case Reference & Audio Control */}
-      <header
-        id="exp05-header"
-        className="w-full max-w-xl flex items-center justify-between py-2 mb-4 border-b border-[#141414]"
+      {/* ========================================================================= */}
+      {/* CAPA CINEMATOGRÁFICA FULLSCREEN (ASSET CTX_E05_V01_MISSING_PIECE.mp4)      */}
+      {/* Montado en el DOM desde el inicio con preload="auto", controls={false}    */}
+      {/* Durante reproducción: fullscreen absoluto, object-fit: cover, sin textos, */}
+      {/* sin navegación, sin CTA, sin progreso, sin Case ID, sin overlays          */}
+      {/* ========================================================================= */}
+      <div
+        id="exp05-cinematic-layer"
+        aria-hidden={!isCinematicActive}
+        className={`fixed inset-0 z-50 bg-black flex items-center justify-center transition-opacity duration-300 ${
+          isCinematicActive
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
       >
-        <div className="flex items-center space-x-3">
-          <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
-            CASO #{caseId}
-          </span>
-          <span className="text-[10px] text-neutral-700 font-mono">/</span>
-          <span className="text-[10px] font-mono tracking-wider text-neutral-400 uppercase">
-            EXP_05
-          </span>
-        </div>
+        <video
+          ref={videoRef}
+          src={EXP05_CONTENT.cinematic.assetUrl}
+          preload="auto"
+          playsInline
+          controls={false}
+          loop={false}
+          onEnded={handleVideoEnded}
+          className={`w-full h-full object-cover object-center pointer-events-none select-none ${
+            isCinematicActive ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
 
-        <div className="flex items-center space-x-4">
+      {/* ========================================================================= */}
+      {/* HEADER AMBIENTAL DISCRETO (Oculto en modo cinematográfico)                 */}
+      {/* ========================================================================= */}
+      {!isCinematicActive && (
+        <header
+          id="exp05-header"
+          className="absolute top-6 left-0 right-0 px-6 sm:px-10 flex items-center justify-between pointer-events-auto z-20"
+        >
+          <div className="flex items-center gap-2 font-mono text-[11px] sm:text-xs text-neutral-500 uppercase tracking-[0.25em]">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-400/80 animate-pulse" />
+            <span>LA PIEZA FALTANTE</span>
+            <span className="text-neutral-700">|</span>
+            <span className="text-neutral-400">EXPEDIENTE #{caseId}</span>
+          </div>
+
           <button
             id="exp05-audio-toggle"
+            type="button"
             onClick={toggleAudio}
-            className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-300 hover:bg-[#141414] transition-colors focus:outline-none focus:ring-1 focus:ring-neutral-600"
-            title={isAudioActive ? 'Silenciar ambiente' : 'Activar audio'}
-            aria-label={isAudioActive ? 'Silenciar audio ambiental' : 'Activar audio ambiental'}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-800 bg-[#0d0d0f] hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-200 transition-colors font-mono text-[10px] sm:text-[11px] uppercase tracking-widest cursor-pointer"
+            title={isAudioActive ? 'Silenciar audio' : 'Activar audio'}
+            aria-label="Control de audio"
           >
-            {isAudioActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            {isAudioActive ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-neutral-300" />
+                <span className="hidden sm:inline">AUDIO ON</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-neutral-500" />
+                <span className="hidden sm:inline">AUDIO OFF</span>
+              </>
+            )}
           </button>
-        </div>
-      </header>
+        </header>
+      )}
 
-      {/* Main Narrative Area */}
-      <main id="exp05-main-stage" className="w-full max-w-xl flex-1 flex flex-col justify-center my-auto">
-        {/* ========================================================================= */}
-        {/* SCREEN 01 — LA PISTA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_01_clue' && (
+      {/* ========================================================================= */}
+      {/* PANTALLA 1: APERTURA CINEMATOGRÁFICA                                      */}
+      {/* "ENCONTRASTE UN PATRÓN." -> CTA "REVELAR LA PIEZA"                        */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_01_opening' && !isCinematicActive && (
+        <main
+          id="exp05-screen-opening"
+          className="w-full max-w-2xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          {/* Eyebrow */}
+          <div className="mb-6 font-mono text-xs sm:text-sm tracking-[0.3em] uppercase text-neutral-500">
+            CONTINUIDAD DE INVESTIGACIÓN
+          </div>
+
+          {/* Lead: "ENCONTRASTE UN PATRÓN." */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-neutral-100 uppercase leading-snug sm:leading-tight mb-8">
+            {EXP05_CONTENT.opening.lead}
+          </h1>
+
+          {/* SubLead: "Pero un patrón no explica por sí solo lo que ocurre." */}
+          <div className="min-h-[48px] flex items-center justify-center mb-10">
+            {openingPacing >= 2 && (
+              <p className="text-base sm:text-lg md:text-xl font-light text-neutral-400 tracking-wide transition-opacity duration-700 opacity-100">
+                {EXP05_CONTENT.opening.subLead}
+              </p>
+            )}
+          </div>
+
+          {/* CTA: REVELAR LA PIEZA */}
           <div
-            id="screen-01-clue"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
+            className={`transition-all duration-700 transform ${
+              openingPacing >= 3
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
           >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen01.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
+            <PrimaryCTA
+              id="exp05-cta-reveal-piece"
+              onClick={handleRevealPiece}
+              disabled={isProcessing}
+              variant="primary"
+              className="bg-[#141417] border-neutral-700/80 hover:border-neutral-400 hover:bg-[#1c1c20] text-neutral-100 font-medium"
+            >
+              {EXP05_CONTENT.opening.ctaLabel}
+            </PrimaryCTA>
+          </div>
+        </main>
+      )}
 
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed">
-                  {EXP05_CONTENT.screen01.beat1}
-                </h1>
-              </div>
-
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                  {EXP05_CONTENT.screen01.beat2}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 leading-snug">
-                    {EXP05_CONTENT.screen01.beat3}
-                  </p>
-                </div>
-              </div>
+      {/* ========================================================================= */}
+      {/* PANTALLA 3: PRIMERA REVELACIÓN (CONTINUIDAD DEL ÚLTIMO FRAME)             */}
+      {/* Reconstrucción visual: Tiempo Lineal + Estructura Cíclica                 */}
+      {/* "LA PIEZA QUE FALTABA…" -> "NO ERA UNA RESPUESTA." -> "ERA UNA VARIABLE." */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_03_revelation' && !isCinematicActive && (
+        <main
+          id="exp05-screen-revelation"
+          className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center z-10 animate-fade-in text-center"
+        >
+          {/* Reconstrucción visual ligera del último frame: Tiempo Lineal + Estructura Cíclica */}
+          <section
+            id="exp05-visual-reconstruction"
+            aria-label="Reconstrucción visual: tiempo lineal y estructura cíclica"
+            className="w-full max-w-lg mb-10 relative bg-[#0a0a0c] border border-[#202024] rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center shadow-2xl transition-opacity duration-700"
+          >
+            <div className="w-full flex items-center justify-between border-b border-[#1b1b20] pb-3 mb-6 font-mono text-[10px] tracking-[0.25em] text-neutral-500 uppercase">
+              <span>ESTRUCTURA OBSERVADA</span>
+              <span>LÍNEA & CÍRCULO</span>
             </div>
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-01-cta-ver-pista"
-                onClick={() => advanceToScreen('screen_02_different_variable')}
-                disabled={isProcessing}
+            {/* SVG compositing linear axis and circular orbit */}
+            <div className="relative w-64 h-48 sm:w-80 sm:h-56 flex items-center justify-center">
+              <svg
+                className="w-full h-full"
+                viewBox="0 0 320 220"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                {EXP05_CONTENT.screen01.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
+                {/* Horizontal Linear Timeline Axis */}
+                <line
+                  x1="20"
+                  y1="110"
+                  x2="300"
+                  y2="110"
+                  stroke="#3f3f46"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                />
 
-        {/* ========================================================================= */}
-        {/* SCREEN 02 — UNA VARIABLE DIFERENTE */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_02_different_variable' && (
-          <div
-            id="screen-02-different-variable"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen02.eyebrow}
-                </span>
-              </div>
+                {/* Linear markers */}
+                <circle cx="50" cy="110" r="3.5" fill="#71717a" />
+                <circle cx="110" cy="110" r="3.5" fill="#71717a" />
+                <circle cx="210" cy="110" r="3.5" fill="#71717a" />
+                <circle cx="270" cy="110" r="3.5" fill="#71717a" />
 
-              {/* Research Methodology */}
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-400 font-body">
-                    {EXP05_CONTENT.screen02.lead1}
-                  </p>
-                </div>
+                {/* Concentric Cyclic Orbit connecting the timeline */}
+                <circle
+                  cx="160"
+                  cy="110"
+                  r="62"
+                  stroke="#a1a1aa"
+                  strokeWidth="2"
+                  className="opacity-90"
+                />
 
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl font-serif italic text-neutral-200">
-                    {EXP05_CONTENT.screen02.lead2}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-300 font-body">
-                    {EXP05_CONTENT.screen02.lead3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Recap of EXP_04 Findings */}
-              <div
-                className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
-                  {EXP05_CONTENT.screen02.recapIntro}
-                </p>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-1 sm:space-y-0 text-sm text-neutral-300">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-                    <span>{EXP05_CONTENT.screen02.recapWhat}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-                    <span>{EXP05_CONTENT.screen02.recapWhen}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Missing Question Setup */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-wider text-neutral-400 uppercase">
-                  {EXP05_CONTENT.screen02.questionIntro}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 leading-snug">
-                    {EXP05_CONTENT.screen02.dominantQuestion}
-                  </h3>
-                </div>
-              </div>
+                {/* 4 Cyclic Nodes */}
+                <circle cx="160" cy="48" r="5" fill="#f4f4f5" stroke="#18181b" strokeWidth="2" />
+                <circle cx="222" cy="110" r="5" fill="#f4f4f5" stroke="#18181b" strokeWidth="2" />
+                <circle cx="160" cy="172" r="5" fill="#f4f4f5" stroke="#18181b" strokeWidth="2" />
+                <circle cx="98" cy="110" r="5" fill="#f4f4f5" stroke="#18181b" strokeWidth="2" />
+              </svg>
             </div>
+          </section>
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-02-cta"
-                onClick={() => advanceToScreen('screen_03_body_changes')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen02.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
+          {/* Textos progresivos de la revelación */}
+          <div className="min-h-[110px] flex flex-col items-center justify-center space-y-3">
+            {variablePacing >= 1 && (
+              <p className="font-mono text-sm sm:text-base tracking-[0.25em] text-neutral-400 uppercase font-semibold transition-opacity duration-700">
+                {EXP05_CONTENT.variableReveal.beat1}
+              </p>
+            )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 03 — EL CUERPO TAMBIÉN CAMBIA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_03_body_changes' && (
-          <div
-            id="screen-03-body-changes"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen03.eyebrow}
+            {variablePacing >= 2 && (
+              <p className="font-mono text-sm sm:text-base tracking-[0.25em] text-neutral-300 uppercase font-semibold transition-opacity duration-700">
+                {EXP05_CONTENT.variableReveal.beat2}
+              </p>
+            )}
+
+            {variablePacing >= 3 && (
+              <p className="text-xl sm:text-2xl md:text-3xl tracking-wider text-neutral-100 uppercase font-bold transition-all duration-700">
+                ERA UNA{' '}
+                <span className="text-white underline decoration-neutral-500 underline-offset-8">
+                  {EXP05_CONTENT.variableReveal.keyword}
                 </span>
-              </div>
-
-              <div className="space-y-4">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-400 font-body">
-                    {EXP05_CONTENT.screen03.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-2xl sm:text-3xl font-serif italic text-white leading-relaxed">
-                    {EXP05_CONTENT.screen03.beat2}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen03.beat3}
-                </p>
-
-                {screenStage >= 4 && (
-                  <p className="text-lg sm:text-xl font-serif italic text-neutral-300 animate-fade-in">
-                    {EXP05_CONTENT.screen03.beat4}
-                  </p>
-                )}
-
-                {screenStage >= 5 && (
-                  <div className="pt-2 animate-fade-in">
-                    <p className="text-2xl sm:text-3xl font-serif italic text-orange-400">
-                      {EXP05_CONTENT.screen03.beat5}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-03-cta"
-                onClick={() => advanceToScreen('screen_04_cycle')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen03.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+                .
+              </p>
+            )}
           </div>
-        )}
+        </main>
+      )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 04 — EL CICLO */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_04_cycle' && (
-          <div
-            id="screen-04-cycle"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen04.eyebrow}
-                </span>
-              </div>
+      {/* ========================================================================= */}
+      {/* PANTALLA 4: GRAN REVEAL ("EL CICLO MENSTRUAL") & GUARDRAIL INMEDIATO       */}
+      {/* Sin iconografía médica, sin rojo, sin rosa. Presencia de 2.5s              */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_04_reveal_guardrails' && !isCinematicActive && (
+        <main
+          id="exp05-screen-reveal-guardrails"
+          className="w-full max-w-2xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          {/* GRAN REVEAL: EL CICLO MENSTRUAL */}
+          <div className="mb-10">
+            <span className="font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-neutral-500 block mb-4">
+              VARIABLE IDENTIFICADA
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[0.15em] uppercase text-neutral-100 leading-tight transition-all duration-700">
+              {EXP05_CONTENT.greatReveal.titleLine1}
+              <br />
+              {EXP05_CONTENT.greatReveal.titleLine2}
+            </h2>
+          </div>
 
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-2xl sm:text-3xl font-serif italic text-white">
-                    {EXP05_CONTENT.screen04.beat1}
-                  </p>
-                </div>
+          {/* GUARDRAILS INMEDIATOS */}
+          {revealPacing >= 2 && (
+            <div
+              id="exp05-guardrails-container"
+              className="w-full bg-[#0d0d10] border border-[#222228] rounded-xl p-6 sm:p-8 space-y-4 shadow-xl transition-all duration-700 animate-fade-in text-left mb-6"
+            >
+              <p className="text-sm sm:text-base font-medium text-neutral-300 border-b border-[#1c1c22] pb-3">
+                {EXP05_CONTENT.guardrails.intro}
+              </p>
 
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-400 font-serif italic">
-                    {EXP05_CONTENT.screen04.beat2}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP05_CONTENT.screen04.beat3}
-                </p>
-
-                {screenStage >= 4 && (
-                  <p className="text-base text-neutral-300 font-body animate-fade-in">
-                    {EXP05_CONTENT.screen04.beat4}
-                  </p>
-                )}
-              </div>
-
-              {/* Minimalist Editorial Cycle Diagram */}
-              {screenStage >= 5 && (
-                <div className="py-6 px-4 rounded-xl bg-[#080808] border border-[#1C1C1C] flex flex-col items-center justify-center space-y-4 animate-fade-in">
-                  <div className="relative w-36 h-36 flex items-center justify-center">
-                    {/* Subtle outer continuous orbital ring */}
-                    <div className="absolute inset-0 rounded-full border border-dashed border-neutral-700/80 animate-[spin_60s_linear_infinite]" />
-                    {/* Inner glowing core */}
-                    <div className="w-24 h-24 rounded-full border border-[#282828] bg-[#0A0A0A] flex flex-col items-center justify-center text-center p-2">
-                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
-                        SISTEMA
+              {revealPacing >= 3 && (
+                <ul className="space-y-2.5 pt-1">
+                  {EXP05_CONTENT.guardrails.items.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-300 font-light"
+                    >
+                      <span className="font-mono font-semibold text-neutral-100 tracking-wider">
+                        {item.prefix}
                       </span>
-                      <span className="text-xs font-serif italic text-orange-400 font-semibold mt-0.5">
-                        {EXP05_CONTENT.screen04.conceptLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono text-neutral-500 tracking-wider">
-                    {EXP05_CONTENT.screen04.conceptSub}
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* EXPLICACIÓN MÍNIMA */}
+          {revealPacing >= 4 && (
+            <div className="w-full max-w-xl space-y-2 text-xs sm:text-sm text-neutral-400 font-light leading-relaxed mb-8 transition-opacity duration-700">
+              <p>{EXP05_CONTENT.explanation.beat1}</p>
+              <p>{EXP05_CONTENT.explanation.beat2}</p>
+              <p className="text-neutral-200 font-normal pt-1">
+                {EXP05_CONTENT.explanation.beat4}
+              </p>
+            </div>
+          )}
+
+          {/* CTA AVANZAR A FASES */}
+          {revealPacing >= 5 && (
+            <div className="transition-all duration-700 animate-fade-in">
+              <PrimaryCTA
+                id="exp05-cta-to-phases"
+                onClick={() => navigateToScreen('screen_05_phases')}
+                variant="primary"
+                className="bg-[#141417] border-neutral-700 hover:border-neutral-400 text-neutral-100 text-xs sm:text-sm uppercase tracking-wider"
+              >
+                OBSERVAR LAS CUATRO FASES
+              </PrimaryCTA>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PANTALLA 5: VISUALIZACIÓN DE LAS CUATRO FASES & SEGURIDAD CONCEPTUAL       */}
+      {/* Rueda en grafito / gris neutro. "EL CICLO NO ES UN GUION."                 */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_05_phases' && !isCinematicActive && (
+        <main
+          id="exp05-screen-phases"
+          className="w-full max-w-2xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          {/* Header */}
+          <div className="mb-6 font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-neutral-500">
+            ESTRUCTURA CÍCLICA
+          </div>
+
+          {/* 4 PHASES CIRCULAR VISUALIZATION */}
+          <div
+            id="exp05-phases-wheel"
+            className={`w-full max-w-md grid grid-cols-2 gap-3 mb-8 transition-opacity duration-700 ${
+              phasesPacing >= 2 ? 'opacity-40' : 'opacity-100'
+            }`}
+          >
+            {EXP05_CONTENT.phases.map((phase) => (
+              <div
+                key={phase.id}
+                className="flex flex-col items-center justify-center p-4 rounded-xl bg-[#111114] border border-[#24242a] text-center"
+              >
+                <span className="font-mono text-[10px] tracking-widest text-neutral-500 mb-1">
+                  FASE {phase.roman}
+                </span>
+                <span className="font-mono text-xs sm:text-sm font-semibold tracking-wider text-neutral-200 uppercase">
+                  {phase.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* FRASE DE SEGURIDAD CONCEPTUAL */}
+          {phasesPacing >= 2 && (
+            <div
+              id="exp05-safety-phrase"
+              className="w-full max-w-lg space-y-4 animate-fade-in mb-8"
+            >
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-[0.15em] uppercase text-neutral-100">
+                {EXP05_CONTENT.safetyPhrase.title}
+              </h3>
+
+              {phasesPacing >= 3 && (
+                <p className="text-sm sm:text-base text-neutral-300 font-light transition-opacity duration-700">
+                  {EXP05_CONTENT.safetyPhrase.beat1}
+                </p>
+              )}
+
+              {phasesPacing >= 4 && (
+                <p className="text-sm sm:text-base text-neutral-200 font-medium tracking-wide transition-opacity duration-700">
+                  {EXP05_CONTENT.safetyPhrase.beat2}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* CTA AVANZAR A DEMOSTRACIÓN */}
+          {phasesPacing >= 4 && (
+            <div className="transition-all duration-700 animate-fade-in">
+              <PrimaryCTA
+                id="exp05-cta-to-demonstration"
+                onClick={() => navigateToScreen('screen_06_demonstration')}
+                variant="primary"
+                className="bg-[#141417] border-neutral-700 hover:border-neutral-400 text-neutral-100 text-xs sm:text-sm uppercase tracking-wider"
+              >
+                VER DEMOSTRACIÓN DE SEÑAL
+              </PrimaryCTA>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PANTALLA 6: DEMOSTRACIÓN — MISMA SEÑAL (“Sí.”) & NUEVA PERSPECTIVA         */}
+      {/* "EL CONTEXTO NO TE DA LA RESPUESTA. TE AYUDA A NO INVENTARLA."             */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_06_demonstration' && !isCinematicActive && (
+        <main
+          id="exp05-screen-demonstration"
+          className="w-full max-w-2xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          <div className="mb-6 font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-neutral-500">
+            DEMOSTRACIÓN DE CASO
+          </div>
+
+          {/* SECCIÓN COMPARATIVA: ANTES VS CON CONTEXTO */}
+          <div className="w-full max-w-lg grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-left">
+            {/* ANTES DE CONSIDERAR EL CONTEXTO */}
+            <div className="p-5 rounded-xl bg-[#0e0e11] border border-[#222227] flex flex-col justify-between">
+              <div>
+                <span className="font-mono text-[10px] tracking-wider text-neutral-500 uppercase block mb-3">
+                  {EXP05_CONTENT.demonstration.before.eyebrow}
+                </span>
+
+                <div className="mb-4">
+                  <span className="font-mono text-[11px] text-neutral-400 block mb-1">
+                    {EXP05_CONTENT.demonstration.actor}:
                   </span>
+                  <p className="text-base sm:text-lg font-mono font-semibold text-neutral-100">
+                    {EXP05_CONTENT.demonstration.signal}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              <div
-                className={`pt-2 transition-all duration-1000 ${
-                  screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg font-serif italic text-neutral-300">
-                  {EXP05_CONTENT.screen04.beat5}
+              <div className="pt-3 border-t border-[#1c1c21]">
+                <span className="font-mono text-[10px] text-neutral-500 uppercase block mb-1">
+                  TU INTERPRETACIÓN:
+                </span>
+                <p className="text-xs sm:text-sm text-neutral-300 font-light">
+                  {EXP05_CONTENT.demonstration.before.interpretation}
                 </p>
               </div>
             </div>
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-04-cta"
-                onClick={() => advanceToScreen('screen_05_four_moments')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen04.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 05 — CUATRO MOMENTOS */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_05_four_moments' && (
-          <div
-            id="screen-05-four-moments"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen05.eyebrow}
+            {/* CON UNA VARIABLE MÁS DE CONTEXTO */}
+            <div
+              className={`p-5 rounded-xl border transition-all duration-700 flex flex-col justify-between ${
+                demoPacing >= 2
+                  ? 'bg-[#121216] border-neutral-700 opacity-100'
+                  : 'bg-[#0a0a0c] border-[#18181c] opacity-30'
+              }`}
+            >
+              <div>
+                <span className="font-mono text-[10px] tracking-wider text-neutral-400 uppercase block mb-3">
+                  {EXP05_CONTENT.demonstration.after.eyebrow}
                 </span>
-              </div>
 
-              {/* Four Phases Editorial Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {EXP05_CONTENT.screen05.phases.map((phase, idx) => {
-                  const stageThreshold = idx + 1;
-                  const isVisible = screenStage >= stageThreshold;
-                  return (
-                    <div
-                      key={phase.id}
-                      className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-700 ${
-                        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between border-b border-[#161616] pb-1.5">
-                        <span className="text-[10px] font-mono tracking-widest text-neutral-500">
-                          FASE {phase.stageCode}
-                        </span>
-                        {idx === 0 && <Moon className="w-3.5 h-3.5 text-neutral-500" />}
-                        {idx === 1 && <Sparkles className="w-3.5 h-3.5 text-neutral-500" />}
-                        {idx === 2 && <Sun className="w-3.5 h-3.5 text-orange-400" />}
-                        {idx === 3 && <Compass className="w-3.5 h-3.5 text-neutral-500" />}
-                      </div>
-                      <p className="text-base font-serif italic text-white font-medium">
-                        {phase.name}
-                      </p>
-                      <p className="text-xs text-neutral-400 font-body">
-                        {phase.subtitle}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Editorial Closures */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP05_CONTENT.screen05.closure1}
-                </p>
-
-                {screenStage >= 6 && (
-                  <p className="text-base text-neutral-300 font-body animate-fade-in">
-                    {EXP05_CONTENT.screen05.closure2}
-                  </p>
-                )}
-
-                {screenStage >= 7 && (
-                  <p className="text-xl sm:text-2xl font-serif italic text-white animate-fade-in pt-1">
-                    {EXP05_CONTENT.screen05.closure3}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-05-cta"
-                onClick={() => advanceToScreen('screen_06_first_connection')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen05.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 06 — LA PRIMERA CONEXIÓN (PREGUNTA 1) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_06_first_connection' && (
-          <div
-            id="screen-06-first-connection"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen06.eyebrow}
-                </span>
-              </div>
-
-              {/* Lead-in */}
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-wider text-neutral-400 uppercase">
-                    {EXP05_CONTENT.screen06.lead1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-2xl sm:text-3xl font-serif italic text-white leading-relaxed">
-                    {EXP05_CONTENT.screen06.lead2}
+                <div className="mb-4">
+                  <span className="font-mono text-[11px] text-neutral-400 block mb-1">
+                    {EXP05_CONTENT.demonstration.actor}:
+                  </span>
+                  {/* EXACTAMENTE LA MISMA SEÑAL */}
+                  <p className="text-base sm:text-lg font-mono font-semibold text-white">
+                    {EXP05_CONTENT.demonstration.signal}
                   </p>
                 </div>
               </div>
 
-              {/* Question setup */}
-              <div
-                className={`pt-2 space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen06.questionIntro}
-                </p>
-                <p className="text-lg font-serif italic text-neutral-200">
-                  {EXP05_CONTENT.screen06.question}
-                </p>
-              </div>
-
-              {/* Options */}
-              {isOptionsRevealed && !cycleHypothesisCode && (
-                <div className="space-y-3 pt-2 animate-fade-in">
-                  {EXP05_CONTENT.screen06.options.map((opt) => (
-                    <ChoiceButton
-                      key={opt.id}
-                      id={`choice-${opt.id}`}
-                      code={opt.code}
-                      selected={selectedOption === opt.code}
-                      isAnySelected={selectedOption !== null}
-                      onClick={() => handleSelectCycleHypothesis(opt.code, opt.label)}
-                      disabled={isProcessing || selectedOption !== null}
-                    >
-                      <span className="font-body text-base sm:text-lg">{opt.label}</span>
-                    </ChoiceButton>
-                  ))}
+              {demoPacing >= 3 && (
+                <div className="pt-3 border-t border-[#25252c] transition-opacity duration-700">
+                  <span className="font-mono text-[10px] text-neutral-400 uppercase block mb-1">
+                    TU NUEVA PERSPECTIVA:
+                  </span>
+                  <p className="text-xs sm:text-sm text-neutral-200 font-medium">
+                    {EXP05_CONTENT.demonstration.after.perspective1}
+                  </p>
+                  <p className="text-xs sm:text-sm text-neutral-400 font-light mt-0.5">
+                    {EXP05_CONTENT.demonstration.after.perspective2}
+                  </p>
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* Adaptive Feedback & Convergence */}
-              {cycleHypothesisCode && (
-                <div className="space-y-4 pt-4 border-t border-[#181818] animate-fade-in">
-                  <div
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                      screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          {/* INSIGHT PRINCIPAL */}
+          {demoPacing >= 4 && (
+            <div
+              id="exp05-core-insight"
+              className="w-full max-w-lg p-6 bg-[#0f0f13] border border-[#26262e] rounded-xl space-y-5 animate-fade-in mb-8"
+            >
+              {/* Pasos */}
+              <div className="flex items-center justify-center gap-2 font-mono text-[11px] sm:text-xs text-neutral-400 uppercase tracking-wider">
+                <span>{EXP05_CONTENT.insight.steps[0]}</span>
+                <span className="text-neutral-600">→</span>
+                <span className="text-neutral-300">{EXP05_CONTENT.insight.steps[1]}</span>
+                <span className="text-neutral-600">→</span>
+                <span className="text-white font-semibold">
+                  {EXP05_CONTENT.insight.steps[2]}
+                </span>
+              </div>
+
+              {/* Gran Frase */}
+              <div className="space-y-1.5 pt-2 border-t border-[#202026]">
+                <p className="text-base sm:text-lg font-semibold text-neutral-200 uppercase tracking-wide">
+                  {EXP05_CONTENT.insight.quote1}
+                </p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-white uppercase tracking-wider">
+                  {EXP05_CONTENT.insight.quote2}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* CTA AVANZAR A MECANISMO */}
+          {demoPacing >= 5 && (
+            <div className="transition-all duration-700 animate-fade-in">
+              <PrimaryCTA
+                id="exp05-cta-to-mechanism"
+                onClick={() => navigateToScreen('screen_07_mechanism_contexto')}
+                variant="primary"
+                className="bg-[#141417] border-neutral-700 hover:border-neutral-400 text-neutral-100 text-xs sm:text-sm uppercase tracking-wider"
+              >
+                CONOCER EL MECANISMO
+              </PrimaryCTA>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PANTALLA 7: CONEXIÓN CON EL MECANISMO, CONTEXTO™ & CTA FINAL              */}
+      {/* SEÑAL -> CONTEXTO -> PREGUNTA -> DECISIÓN -> CONEXIÓN                      */}
+      {/* CTA: ENTENDER CONTEXTO™ -> TRANSICIÓN A EXP_06                             */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_07_mechanism_contexto' && !isCinematicActive && (
+        <main
+          id="exp05-screen-mechanism"
+          className="w-full max-w-xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          <div className="mb-6 font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-neutral-500">
+            ARQUITECTURA DE DECISIÓN
+          </div>
+
+          {/* CADENA DE VALOR */}
+          <div
+            id="exp05-mechanism-chain"
+            className="w-full bg-[#0d0d10] border border-[#202026] rounded-xl p-5 mb-8 flex flex-col items-center space-y-2"
+          >
+            <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-[11px] sm:text-xs tracking-widest text-neutral-300 uppercase">
+              {EXP05_CONTENT.mechanism.chain.map((item, idx) => (
+                <React.Fragment key={item}>
+                  <span
+                    className={`px-2.5 py-1 rounded bg-[#15151a] border border-[#262630] ${
+                      item === 'CONTEXTO' ? 'border-neutral-500 text-white font-semibold' : ''
                     }`}
                   >
-                    <p className="text-sm font-mono text-neutral-400 uppercase tracking-wider mb-1">
-                      TU REFLEXIÓN
-                    </p>
-                    <p className="text-base font-serif italic text-white">
-                      “{savedResponses['exp05.cycleContextHypothesis'] as string}”
-                    </p>
-                    <p className="text-sm text-neutral-300 font-body mt-2">
-                      {cycleHypothesisFeedback}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`pt-2 transition-all duration-1000 ${
-                      screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-xl sm:text-2xl font-serif italic text-orange-400">
-                      {EXP05_CONTENT.screen06.convergenceLead}
-                    </p>
-                  </div>
-                </div>
-              )}
+                    {item}
+                  </span>
+                  {idx < EXP05_CONTENT.mechanism.chain.length - 1 && (
+                    <span className="text-neutral-600 font-light">↓</span>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
 
-            {cycleHypothesisCode && (
-              <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-                <PrimaryCTA
-                  id="screen-06-cta"
-                  onClick={() => advanceToScreen('screen_07_comparison')}
-                  disabled={isProcessing}
-                >
-                  {EXP05_CONTENT.screen06.ctaLabel}
-                </PrimaryCTA>
-              </CTAReveal>
-            )}
+            <p className="text-xs sm:text-sm text-neutral-400 font-light pt-3">
+              {EXP05_CONTENT.mechanism.takeaway}
+            </p>
           </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 07 — COMPARACIÓN */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_07_comparison' && (
-          <div
-            id="screen-07-comparison"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen07.eyebrow}
-                </span>
-              </div>
-
-              {/* Three Moments Stack */}
-              <div className="space-y-3">
-                {EXP05_CONTENT.screen07.moments.map((mom, idx) => {
-                  const stageThreshold = idx + 1;
-                  const isVisible = screenStage >= stageThreshold;
-                  return (
-                    <div
-                      key={mom.number}
-                      className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-2 transition-all duration-700 ${
-                        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between border-b border-[#161616] pb-1">
-                        <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
-                          {mom.title}
-                        </span>
-                        <span className="text-[10px] font-mono text-neutral-600">CASO #{caseId}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-300 font-body">
-                        {mom.traits.map((t, i) => (
-                          <span key={i} className="flex items-center space-x-1.5">
-                            <span className="w-1 h-1 rounded-full bg-neutral-500" />
-                            <span>{t}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Critical Reflections */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                  {EXP05_CONTENT.screen07.reflection1}
-                </p>
-
-                {screenStage >= 5 && (
-                  <p className="text-xl sm:text-2xl font-serif italic text-white animate-fade-in">
-                    {EXP05_CONTENT.screen07.reflection2}
-                  </p>
-                )}
-              </div>
+          {/* INTRODUCCIÓN DE CONTEXTO™ */}
+          {contextoPacing >= 2 && (
+            <div
+              id="exp05-contexto-brand-reveal"
+              className="space-y-3 mb-10 transition-all duration-700 animate-fade-in"
+            >
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-[0.2em] uppercase text-neutral-100">
+                {EXP05_CONTENT.contexto.brand}
+              </h2>
+              <p className="text-sm sm:text-base text-neutral-400 font-light max-w-md mx-auto leading-relaxed">
+                {EXP05_CONTENT.contexto.description}
+              </p>
             </div>
+          )}
 
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
+          {/* CTA FINAL: ENTENDER CONTEXTO™ */}
+          {contextoPacing >= 3 && (
+            <div className="transition-all duration-700 animate-fade-in w-full max-w-xs">
               <PrimaryCTA
-                id="screen-07-cta"
-                onClick={() => advanceToScreen('screen_08_limits')}
-                disabled={isProcessing}
+                id="exp05-cta-understand-contexto"
+                onClick={handleCompleteExperience}
+                disabled={isCompletedGuard}
+                variant="primary"
+                className="w-full bg-neutral-100 text-neutral-950 hover:bg-white border-white hover:border-neutral-200 font-bold tracking-wider"
               >
-                {EXP05_CONTENT.screen07.ctaLabel}
+                {EXP05_CONTENT.finalCta.label}
               </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 08 — LO QUE ESTO NO SIGNIFICA (MARCO CIENTÍFICO) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_08_limits' && (
-          <div
-            id="screen-08-limits"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen08.eyebrow}
-                </span>
-              </div>
-
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-widest text-neutral-400 uppercase">
-                  {EXP05_CONTENT.screen08.warningLead}
-                </p>
-              </div>
-
-              {/* Scientific Non-Determinism Principles */}
-              <div className="p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-3">
-                <div
-                  className={`flex items-start space-x-3 text-sm sm:text-base text-neutral-300 font-body transition-all duration-700 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 mt-2 flex-shrink-0" />
-                  <span>{EXP05_CONTENT.screen08.point1}</span>
-                </div>
-
-                <div
-                  className={`flex items-start space-x-3 text-sm sm:text-base text-neutral-300 font-body transition-all duration-700 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 mt-2 flex-shrink-0" />
-                  <span>{EXP05_CONTENT.screen08.point2}</span>
-                </div>
-
-                <div
-                  className={`flex items-start space-x-3 text-sm sm:text-base text-neutral-300 font-body transition-all duration-700 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 mt-2 flex-shrink-0" />
-                  <span>{EXP05_CONTENT.screen08.point3}</span>
-                </div>
-              </div>
-
-              {/* Reality framing */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen08.transitionLead}
-                </p>
-
-                {screenStage >= 6 && (
-                  <p className="text-2xl sm:text-3xl font-serif italic text-white animate-fade-in">
-                    {EXP05_CONTENT.screen08.dominantReveal}
-                  </p>
-                )}
-              </div>
             </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-08-cta"
-                onClick={() => advanceToScreen('screen_09_hidden_variable')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen08.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 09 — LA VARIABLE OCULTA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_09_hidden_variable' && (
-          <div
-            id="screen-09-hidden-variable"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen09.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-wider text-neutral-500 uppercase">
-                    {EXP05_CONTENT.screen09.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg text-neutral-400 font-body">
-                    {EXP05_CONTENT.screen09.beat2}
-                  </p>
-                </div>
-              </div>
-
-              {/* Dominant Variable Reveal */}
-              <div
-                className={`pt-6 border-t border-[#181818] space-y-4 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen09.beat3}
-                </p>
-
-                {screenStage >= 4 && (
-                  <div className="p-6 rounded-xl bg-[#080808] border border-orange-500/30 border-l-4 border-l-orange-500 animate-fade-in">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400">
-                      {EXP05_CONTENT.screen09.dominantReveal}
-                    </h2>
-                  </div>
-                )}
-
-                {screenStage >= 5 && (
-                  <p className="text-base sm:text-lg font-serif italic text-neutral-300 animate-fade-in pt-2">
-                    {EXP05_CONTENT.screen09.closure}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-09-cta"
-                onClick={() => advanceToScreen('screen_10_calendar')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen09.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 10 — EL CALENDARIO (PREGUNTA 2) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_10_calendar' && (
-          <div
-            id="screen-10-calendar"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen10.eyebrow}
-                </span>
-              </div>
-
-              {/* Minimalist Editorial Horizontal Timeline */}
-              {screenStage >= 1 && (
-                <div className="p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-3 animate-fade-in">
-                  <div className="flex items-center justify-between border-b border-[#161616] pb-2">
-                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
-                      LÍNEA TEMPORAL ILUSTRATIVA
-                    </span>
-                    <span className="text-[10px] font-mono text-neutral-600">VARIABILIDAD INDIVIDUAL</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 pt-1">
-                    {EXP05_CONTENT.screen10.timelineDays.map((td) => (
-                      <div
-                        key={td.dayNumber}
-                        className="flex flex-col items-center p-2 rounded-lg bg-[#0C0C0C] border border-[#181818]"
-                      >
-                        <span className="text-xs font-mono text-white font-medium">{td.label}</span>
-                        <span className="text-[10px] text-neutral-400 font-serif italic mt-0.5 text-center">
-                          {td.phaseHint}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Timeline context leads */}
-              <div
-                className={`space-y-1 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen10.timelineLead1}
-                </p>
-                <p className="text-sm text-neutral-300 font-serif italic">
-                  {EXP05_CONTENT.screen10.timelineLead2} {EXP05_CONTENT.screen10.timelineLead3}
-                </p>
-              </div>
-
-              {/* Question */}
-              <div
-                className={`pt-2 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen10.questionIntro}
-                </p>
-                <p className="text-lg sm:text-xl font-serif italic text-white">
-                  {EXP05_CONTENT.screen10.question}
-                </p>
-              </div>
-
-              {/* Options */}
-              {isOptionsRevealed && !infoPrefCode && (
-                <div className="space-y-3 pt-2 animate-fade-in">
-                  {EXP05_CONTENT.screen10.options.map((opt) => (
-                    <ChoiceButton
-                      key={opt.id}
-                      id={`choice-${opt.id}`}
-                      code={opt.code}
-                      selected={selectedOption === opt.code}
-                      isAnySelected={selectedOption !== null}
-                      onClick={() => handleSelectInformationPreference(opt.code, opt.label)}
-                      disabled={isProcessing || selectedOption !== null}
-                    >
-                      <span className="font-body text-base sm:text-lg">{opt.label}</span>
-                    </ChoiceButton>
-                  ))}
-                </div>
-              )}
-
-              {/* Micro-revelation after choice */}
-              {infoPrefCode && (
-                <div className="space-y-4 pt-4 border-t border-[#181818] animate-fade-in">
-                  <div
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                      screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-sm font-mono text-neutral-400 uppercase tracking-wider mb-1">
-                      TU ELECCIÓN
-                    </p>
-                    <p className="text-base font-serif italic text-white">
-                      “{savedResponses['exp05.informationPreference'] as string}”
-                    </p>
-                    <p className="text-sm text-neutral-300 font-body mt-2">
-                      {infoPrefFeedback}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <p
-                      className={`text-sm font-mono tracking-wider text-neutral-400 uppercase transition-all duration-1000 ${
-                        screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      {EXP05_CONTENT.screen10.microRevelation1}
-                    </p>
-
-                    <p
-                      className={`text-base text-neutral-300 font-body transition-all duration-1000 ${
-                        screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      {EXP05_CONTENT.screen10.microRevelation2}
-                    </p>
-
-                    {screenStage >= 8 && (
-                      <p className="text-2xl sm:text-3xl font-serif italic text-orange-400 animate-fade-in pt-1">
-                        {EXP05_CONTENT.screen10.microRevelationDominant}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {infoPrefCode && (
-              <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-                <PrimaryCTA
-                  id="screen-10-cta"
-                  onClick={() => advanceToScreen('screen_11_new_question')}
-                  disabled={isProcessing}
-                >
-                  {EXP05_CONTENT.screen10.ctaLabel}
-                </PrimaryCTA>
-              </CTAReveal>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 11 — LA NUEVA PREGUNTA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_11_new_question' && (
-          <div
-            id="screen-11-new-question"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen11.eyebrow}
-                </span>
-              </div>
-
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP05_CONTENT.screen11.beat1}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-2">
-                <div
-                  className={`text-sm sm:text-base text-neutral-300 font-body transition-all duration-700 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  {EXP05_CONTENT.screen11.beat2} <span className="text-neutral-400 font-serif italic">— {EXP05_CONTENT.screen11.beat3}</span>
-                </div>
-
-                <div
-                  className={`text-sm sm:text-base text-neutral-300 font-body transition-all duration-700 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  {EXP05_CONTENT.screen11.beat4} <span className="text-orange-400 font-serif italic">— {EXP05_CONTENT.screen11.beat5}</span>
-                </div>
-              </div>
-
-              <div
-                className={`pt-6 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-widest text-neutral-500 uppercase">
-                  {EXP05_CONTENT.screen11.pauseLead}
-                </p>
-
-                {screenStage >= 5 && (
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white animate-fade-in leading-snug">
-                    {EXP05_CONTENT.screen11.dominantQuestion}
-                  </h3>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-11-cta"
-                onClick={() => advanceToScreen('screen_12_missing_piece')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen11.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 12 — LA PIEZA FALTANTE */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_12_missing_piece' && (
-          <div
-            id="screen-12-missing-piece"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen12.eyebrow}
-                </span>
-              </div>
-
-              <div
-                className={`space-y-2 transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-xl sm:text-2xl font-serif italic text-neutral-300">
-                  {EXP05_CONTENT.screen12.beat1}
-                </p>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen12.beat2} {EXP05_CONTENT.screen12.beat3} {EXP05_CONTENT.screen12.beat4}
-                </p>
-              </div>
-
-              {/* Dominant Revelation */}
-              {screenStage >= 2 && (
-                <div className="p-6 rounded-xl bg-[#080808] border border-orange-500/30 border-l-4 border-l-orange-500 animate-fade-in">
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400">
-                    {EXP05_CONTENT.screen12.dominantReveal}
-                  </h2>
-                </div>
-              )}
-
-              {/* Setup before actions */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="flex flex-col space-y-1 text-sm text-neutral-400 font-body">
-                  <span>{EXP05_CONTENT.screen12.beat5}</span>
-                  <span>{EXP05_CONTENT.screen12.beat6}</span>
-                  <span>{EXP05_CONTENT.screen12.beat7}</span>
-                </div>
-
-                {screenStage >= 4 && (
-                  <p className="text-xl sm:text-2xl font-serif italic text-white animate-fade-in pt-2">
-                    {EXP05_CONTENT.screen12.beat8}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-12-cta"
-                onClick={() => advanceToScreen('screen_13_transition_contexto')}
-                disabled={isProcessing}
-              >
-                {EXP05_CONTENT.screen12.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 13 — TRANSICIÓN A CONTEXTO™ */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_13_transition_contexto' && (
-          <div
-            id="screen-13-transition-contexto"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP05_CONTENT.screen13.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
-
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed">
-                  {EXP05_CONTENT.screen13.beat1}
-                </h1>
-              </div>
-
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-300 font-serif italic">
-                  {EXP05_CONTENT.screen13.beat2}
-                </p>
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP05_CONTENT.screen13.beat3}
-                </p>
-
-                {screenStage >= 3 && (
-                  <div className="pt-4 animate-fade-in">
-                    <p className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400">
-                      {EXP05_CONTENT.screen13.dominantReveal}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-13-cta-descubrir"
-                onClick={handleCompleteExp05}
-                disabled={isProcessing || isCompletedGuard}
-              >
-                {EXP05_CONTENT.screen13.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-      </main>
-
-      {/* Subtle Footer with Status & Pacing Details */}
-      <footer
-        id="exp05-footer"
-        className="w-full max-w-xl flex items-center justify-between pt-4 mt-auto border-t border-[#121212] text-[10px] font-mono text-neutral-600"
-      >
-        <span>INVESTIGACIÓN // EXP_05</span>
-        <span className="uppercase">{currentScreenId.replace('screen_', '').replace(/_/g, ' ')}</span>
-      </footer>
+          )}
+        </main>
+      )}
     </div>
   );
 };
