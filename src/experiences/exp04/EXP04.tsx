@@ -1,8 +1,8 @@
-// EXP_04 — LA INVESTIGACIÓN (Narrative Pacing System V1.0 Integration)
-import React, { useState, useEffect, useRef, useTransition, useMemo } from 'react';
+// EXP_04 — LA INVESTIGACIÓN (P0 #03 CTX_E04_V02_TIMELINE)
+// Contexto™ Narrative Experience
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { ExperienceComponentProps } from '../types';
 import { useFunnel } from '../../engine/state/FunnelContext';
-import { ExperienceId } from '../../engine/state/types';
 import { EXP04_CONTENT } from './exp04Content';
 import { EXP04_DEFINITION } from './exp04Definition';
 import { ExperienceMemoryManager } from '../../engine/experience/experienceMemory';
@@ -13,10 +13,8 @@ import {
 } from '../../engine/experience/experienceState';
 import { ExperienceRuntimeState } from '../../engine/experience/types';
 import { eventTracker } from '../../engine/events/eventTracker';
-import { ChoiceButton } from '../../components/ui/ChoiceButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
-import { Volume2, VolumeX } from 'lucide-react';
-import { useNarrativePacing, CTAReveal, NarrativeBeat, narrativePacingManager } from '../../engine/pacing';
+import { Volume2, VolumeX, CheckCircle2 } from 'lucide-react';
 
 export const EXP04: React.FC<ExperienceComponentProps> = ({
   caseId,
@@ -24,7 +22,7 @@ export const EXP04: React.FC<ExperienceComponentProps> = ({
 }) => {
   const { state, updateState } = useFunnel();
 
-  // Audio preference state (technical integration hook)
+  // Audio preference state
   const [isAudioActive, setIsAudioActive] = useState<boolean>(
     () => state.preferences.audioEnabled || false
   );
@@ -79,7 +77,7 @@ export const EXP04: React.FC<ExperienceComponentProps> = ({
     }
     return {
       experienceId: 'exp04',
-      currentScreen: 'screen_01_intro',
+      currentScreen: 'screen_01_opening',
       status: 'ACTIVE',
       localData: {},
       localMemory: {},
@@ -90,396 +88,366 @@ export const EXP04: React.FC<ExperienceComponentProps> = ({
   });
 
   const [, startTransition] = useTransition();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCompletedGuard, setIsCompletedGuard] = useState<boolean>(false);
   const completingRef = useRef<boolean>(false);
 
+  // Cinematic video state
+  const [isCinematicActive, setIsCinematicActive] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasEndedRef = useRef<boolean>(false);
+  const safetyTimeoutRef = useRef<number | null>(null);
+
+  // Pacing stages per phase
+  // Phase 1 (Apertura): stages 1 -> 4
+  const [openingPacing, setOpeningPacing] = useState<number>(1);
+  // Phase 3 (Timeline & Revelación): stages 1 -> 7
+  const [timelinePacing, setTimelinePacing] = useState<number>(1);
+  // Lines connection state
+  const [isLinesConnected, setIsLinesConnected] = useState<boolean>(false);
+  // Question & Andrés response
+  const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
+  const [systemResponsePacing, setSystemResponsePacing] = useState<number>(0);
+  // Gran Pregunta & Mystery phase
+  const [mysteryPacing, setMysteryPacing] = useState<number>(0);
+
   const currentScreenId = runtimeState.currentScreen;
-
-  // Narrative Beats Map for EXP_04
-  const currentBeats: NarrativeBeat[] = useMemo(() => {
-    switch (currentScreenId) {
-      case 'screen_01_intro':
-        return [
-          { id: 'caseId', stage: 1, pacing: 'SHORT', label: 'Caso ID Eyebrow' },
-          { id: 'leadStart', stage: 2, pacing: 'MEDIUM', label: 'Comencemos la investigación' },
-          { id: 'questionIntro', stage: 3, pacing: 'LONG', label: 'Tenemos una pregunta' },
-          { id: 'mainQuestion', stage: 4, pacing: 'REVELATION', label: '¿Qué información falta?' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Iniciar', isCTA: true },
-        ];
-      case 'screen_02_first_clue':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Un martes' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Todo está normal' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Hablan' },
-          { id: 'beat4', stage: 4, pacing: 'MEDIUM', label: 'Se ríen' },
-          { id: 'beat5', stage: 5, pacing: 'LONG', label: 'Planean verse el fin de semana' },
-          { id: 'pauseBeat', stage: 6, pacing: 'LONG', label: 'Dos días después...' },
-          { id: 'changeBeat', stage: 7, pacing: 'LONG', label: 'Algo cambia' },
-          { id: 'outcomeBeat', stage: 8, pacing: 'REVELATION', label: 'No quiere salir' },
-          { id: 'cta', stage: 9, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_03_second_clue':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Una semana después' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Vuelve a ocurrir' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Menos paciencia' },
-          { id: 'beat4', stage: 4, pacing: 'MEDIUM', label: 'Más cansancio' },
-          { id: 'beat5', stage: 5, pacing: 'LONG', label: 'Menos ganas de hablar' },
-          { id: 'beat6', stage: 6, pacing: 'REVELATION', label: 'No sabes exactamente por qué' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_04_comparison':
-        return [
-          { id: 'lead1', stage: 1, pacing: 'MEDIUM', label: 'Dos momentos' },
-          { id: 'lead2', stage: 2, pacing: 'MEDIUM', label: 'Una misma persona' },
-          { id: 'lead3', stage: 3, pacing: 'LONG', label: 'Comportamientos diferentes' },
-          { id: 'silenceQuestion', stage: 4, pacing: 'LONG', label: '¿Qué cambió?' },
-          { id: 'question', stage: 5, pacing: 'MEDIUM', label: '¿Qué crees que puede estar detrás?' },
-          { id: 'options', stage: 6, pacing: 'MANUAL', label: 'Opciones Pregunta 1', isOptions: true },
-          { id: 'feedback', stage: 7, pacing: 'MEDIUM', label: 'Feedback Adaptativo 1' },
-          { id: 'convergence1', stage: 8, pacing: 'MEDIUM', label: 'Pero todavía tenemos un problema' },
-          { id: 'convergence2', stage: 9, pacing: 'REVELATION', label: 'No sabemos qué cambió' },
-          { id: 'cta', stage: 10, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_05_anomaly':
-        return [
-          { id: 'recordA', stage: 1, pacing: 'LONG', label: 'Registro A Martes' },
-          { id: 'recordB', stage: 2, pacing: 'LONG', label: 'Registro B Viernes' },
-          { id: 'questionPerson', stage: 3, pacing: 'MEDIUM', label: '¿Es la misma persona?' },
-          { id: 'answerYes', stage: 4, pacing: 'MEDIUM', label: 'Sí.' },
-          { id: 'thenBeat', stage: 5, pacing: 'LONG', label: 'Entonces...' },
-          { id: 'anomalyQuestion', stage: 6, pacing: 'REVELATION', label: '¿Qué cambió?' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_06_observation':
-        return [
-          { id: 'lead', stage: 1, pacing: 'MEDIUM', label: 'Si solamente observas el viernes...' },
-          { id: 'question', stage: 2, pacing: 'MEDIUM', label: '¿Qué conclusión podrías sacar?' },
-          { id: 'options', stage: 3, pacing: 'MANUAL', label: 'Opciones Pregunta 2', isOptions: true },
-          { id: 'feedback', stage: 4, pacing: 'MEDIUM', label: 'Feedback Adaptativo 2' },
-          { id: 'convergence', stage: 5, pacing: 'REVELATION', label: 'Mirando solamente una fotografía' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_07_second_evidence':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Dos semanas después' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Vuelve a aparecer' },
-          { id: 'beat3', stage: 3, pacing: 'MEDIUM', label: 'Otro momento' },
-          { id: 'beat4', stage: 4, pacing: 'MEDIUM', label: 'Otro comportamiento' },
-          { id: 'beat5', stage: 5, pacing: 'LONG', label: 'Y después...' },
-          { id: 'beat6', stage: 6, pacing: 'REVELATION', label: 'Todo vuelve a cambiar' },
-          { id: 'cta', stage: 7, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_08_pattern':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Una vez puede ser casualidad' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Dos veces puede no significar nada' },
-          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'Pero cuando algo empieza a repetirse...' },
-          { id: 'revelation', stage: 4, pacing: 'REVELATION', label: '...merece ser investigado' },
-          { id: 'cta', stage: 5, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_09_hidden_process':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'El problema...' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: '...es que tú ves el comportamiento' },
-          { id: 'dominantLead', stage: 3, pacing: 'LONG', label: 'Pero no necesariamente ves todo lo de detrás' },
-          { id: 'beat3', stage: 4, pacing: 'MEDIUM', label: 'Hay procesos que ocurren...' },
-          { id: 'beat4', stage: 5, pacing: 'REVELATION', label: '...sin pedir permiso para aparecer' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_10_variable':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'En una investigación...' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'cuando algo cambia...' },
-          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'buscas qué variable también cambió' },
-          { id: 'variableVisual', stage: 4, pacing: 'LONG', label: 'Tarjeta de Variable y preguntas' },
-          { id: 'question', stage: 5, pacing: 'MEDIUM', label: '¿Qué observarías?' },
-          { id: 'options', stage: 6, pacing: 'MANUAL', label: 'Opciones Pregunta 3', isOptions: true },
-          { id: 'feedback', stage: 7, pacing: 'MEDIUM', label: 'Feedback Adaptativo 3' },
-          { id: 'convergenceLead', stage: 8, pacing: 'MEDIUM', label: 'Porque quizá...' },
-          { id: 'convergenceWhat', stage: 9, pacing: 'LONG', label: '...el patrón no está solamente en LO QUE ocurre' },
-          { id: 'convergenceWhen', stage: 10, pacing: 'REVELATION', label: 'Puede estar también en CUÁNDO ocurre' },
-          { id: 'cta', stage: 11, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_11_open_question':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Si existe un patrón...' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'y si ese patrón aparece en determinados momentos...' },
-          { id: 'beat3', stage: 3, pacing: 'LONG', label: 'entonces necesitamos descubrir algo' },
-          { id: 'dominantQuestion', stage: 4, pacing: 'REVELATION', label: '¿Qué está ocurriendo durante esos momentos?' },
-          { id: 'closure', stage: 5, pacing: 'MEDIUM', label: 'Eso es lo que vamos a investigar' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Continuar', isCTA: true },
-        ];
-      case 'screen_12_transition':
-        return [
-          { id: 'beat1', stage: 1, pacing: 'MEDIUM', label: 'Tenemos suficientes indicios' },
-          { id: 'beat2', stage: 2, pacing: 'MEDIUM', label: 'Pero todavía nos falta una pieza' },
-          { id: 'dominantPiece', stage: 3, pacing: 'LONG', label: 'Una pieza importante' },
-          { id: 'beat3', stage: 4, pacing: 'MEDIUM', label: 'En la siguiente parte del caso...' },
-          { id: 'beat4', stage: 5, pacing: 'REVELATION', label: '...vamos a buscarla' },
-          { id: 'cta', stage: 6, pacing: 'MANUAL', label: 'Botón Buscar la Pieza Faltante', isCTA: true },
-        ];
-      default:
-        return [];
-    }
-  }, [currentScreenId]);
-
-  // Hook into Narrative Pacing System
-  const { stage: screenStage, isCTARevealed, isOptionsRevealed, advanceStage } = useNarrativePacing({
-    experienceId: 'exp04',
-    screenId: currentScreenId,
-    beats: currentBeats,
-  });
 
   // Synchronize runtime persistence
   useEffect(() => {
     persistExperienceRuntimeState(runtimeState);
   }, [runtimeState]);
 
-  // Sync with funnel progress & track screen views
+  // Track initial screen view and EXP04_STARTED
   useEffect(() => {
-    updateState((prev) => ({
-      ...prev,
-      progress: {
-        ...prev.progress,
-        currentExperience: 'exp04',
-        currentScreen: currentScreenId,
-      },
-    }));
+    const screen = runtimeState.currentScreen;
+
+    if (screen === 'screen_01_opening') {
+      eventTracker.trackEvent('EXP04_STARTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp04',
+        payload: { screen: 'screen_01_opening' },
+      });
+    }
 
     eventTracker.trackEvent('SCREEN_VIEWED', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp04',
-      payload: { screenId: currentScreenId },
+      payload: { screenId: screen },
     });
+  }, [runtimeState.currentScreen, state.session.sessionId, state.session.caseId]);
 
-    if (
-      currentScreenId === 'screen_04_comparison' ||
-      currentScreenId === 'screen_06_observation' ||
-      currentScreenId === 'screen_10_variable'
-    ) {
-      eventTracker.trackEvent('QUESTION_SHOWN', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp04',
-        payload: { screenId: currentScreenId },
-      });
-    }
-  }, [currentScreenId, state.session.sessionId, state.session.caseId, updateState]);
-
-  // Initial event tracker on mount
-  useEffect(() => {
-    eventTracker.trackEvent('EXP04_STARTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-    });
-    memoryManagerRef.current.setMemory('exp04.started', true, 'global');
-  }, [state.session.sessionId, state.session.caseId]);
-
-  // Read saved responses from funnel state for adaptive display
-  const savedResponses = (state.responses.exp04 || {}) as Record<string, unknown>;
-  const hypothesisCode = (savedResponses['exp04.hypothesisCode'] ||
-    savedResponses['hypothesisCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-  const observationConclusionCode = (savedResponses['exp04.observationConclusionCode'] ||
-    savedResponses['observationConclusionCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-  const investigationFocusCode = (savedResponses['exp04.investigationFocusCode'] ||
-    savedResponses['investigationFocusCode']) as 'A' | 'B' | 'C' | 'D' | undefined;
-
-  // Selected feedback calculations
-  const hypothesisFeedback = useMemo(() => {
-    const opt = EXP04_CONTENT.screen04.options.find((o) => o.code === hypothesisCode);
-    return opt?.feedback || EXP04_CONTENT.screen04.options[3].feedback;
-  }, [hypothesisCode]);
-
-  const observationFeedback = useMemo(() => {
-    const opt = EXP04_CONTENT.screen06.options.find((o) => o.code === observationConclusionCode);
-    return opt?.feedback || EXP04_CONTENT.screen06.options[3].feedback;
-  }, [observationConclusionCode]);
-
-  const investigationFeedback = useMemo(() => {
-    const opt = EXP04_CONTENT.screen10.options.find((o) => o.code === investigationFocusCode);
-    return opt?.feedback || EXP04_CONTENT.screen10.options[3].feedback;
-  }, [investigationFocusCode]);
-
-  // Generic transition forward between screens
-  const advanceToScreen = (targetScreenId: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    const nextState = transitionScreenState(runtimeState, targetScreenId);
-    persistExperienceRuntimeState(nextState);
-
+  // Navigate screen handler
+  const navigateToScreen = (nextScreenId: string) => {
     startTransition(() => {
-      setRuntimeState(nextState);
-      setSelectedOption(null);
       setIsProcessing(false);
+      setRuntimeState((prev) => {
+        const next = transitionScreenState(prev, nextScreenId, 'ACTIVE');
+        persistExperienceRuntimeState(next);
+        return next;
+      });
     });
   };
 
-  // Handler for Question 1 (Screen 04: Hipótesis)
-  const handleSelectHypothesis = (code: 'A' | 'B' | 'C' | 'D', label: string) => {
-    if (hypothesisCode || isProcessing) return;
-    setIsProcessing(true);
-    setSelectedOption(code);
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q1_hypothesis', choiceCode: code, choiceLabel: label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp04.hypothesis', value: label, scope: 'global' },
-      { key: 'exp04.hypothesisCode', value: code, scope: 'global' },
-      { key: 'exp04.question01Answered', value: true, scope: 'global' },
-    ]);
-
-    eventTracker.trackEvent('QUESTION_ANSWERED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q1_hypothesis', answer: label, code },
-    });
-
-    eventTracker.trackEvent('MEMORY_UPDATED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { key: 'exp04.hypothesis', value: label },
-    });
-
-    advanceStage();
-    setIsProcessing(false);
+  const clearSafetyTimeout = () => {
+    if (safetyTimeoutRef.current !== null) {
+      window.clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
   };
 
-  // Handler for Question 2 (Screen 06: Observación Viernes)
-  const handleSelectObservation = (code: 'A' | 'B' | 'C' | 'D', label: string) => {
-    if (observationConclusionCode || isProcessing) return;
-    setIsProcessing(true);
-    setSelectedOption(code);
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q2_observation', choiceCode: code, choiceLabel: label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp04.observationConclusion', value: label, scope: 'global' },
-      { key: 'exp04.observationConclusionCode', value: code, scope: 'global' },
-      { key: 'exp04.question02Answered', value: true, scope: 'global' },
-    ]);
-
-    eventTracker.trackEvent('QUESTION_ANSWERED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q2_observation', answer: label, code },
-    });
-
-    eventTracker.trackEvent('MEMORY_UPDATED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { key: 'exp04.observationConclusion', value: label },
-    });
-
-    advanceStage();
-    setIsProcessing(false);
-  };
-
-  // Handler for Question 3 (Screen 10: Foco de Investigación)
-  const handleSelectInvestigationFocus = (code: 'A' | 'B' | 'C' | 'D', label: string) => {
-    if (investigationFocusCode || isProcessing) return;
-    setIsProcessing(true);
-    setSelectedOption(code);
-
-    eventTracker.trackEvent('CHOICE_SELECTED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q3_focus', choiceCode: code, choiceLabel: label },
-    });
-
-    memoryManagerRef.current.applyUpdates([
-      { key: 'exp04.investigationFocus', value: label, scope: 'global' },
-      { key: 'exp04.investigationFocusCode', value: code, scope: 'global' },
-      { key: 'exp04.question03Answered', value: true, scope: 'global' },
-    ]);
-
-    eventTracker.trackEvent('QUESTION_ANSWERED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { questionId: 'exp04_q3_focus', answer: label, code },
-    });
-
-    eventTracker.trackEvent('MEMORY_UPDATED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { key: 'exp04.investigationFocus', value: label },
-    });
-
-    advanceStage();
-    setIsProcessing(false);
-  };
-
-  // Record insights on screen progression
   useEffect(() => {
-    if (currentScreenId === 'screen_08_pattern' && screenStage >= 4) {
-      memoryManagerRef.current.setMemory('exp04.patternRecognized', true, 'global');
-      eventTracker.trackEvent('INSIGHT_REVEALED', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp04',
-        payload: { insight: 'pattern_recognized', screen: 'screen_08_pattern' },
-      });
-    }
-    if (currentScreenId === 'screen_09_hidden_process' && screenStage >= 5) {
-      memoryManagerRef.current.setMemory('exp04.hiddenProcessRecognized', true, 'global');
-      eventTracker.trackEvent('INSIGHT_REVEALED', {
-        sessionId: state.session.sessionId,
-        caseId: state.session.caseId,
-        experience: 'exp04',
-        payload: { insight: 'hidden_process_recognized', screen: 'screen_09_hidden_process' },
-      });
-    }
-  }, [currentScreenId, screenStage, state.session.sessionId, state.session.caseId]);
+    return () => {
+      clearSafetyTimeout();
+    };
+  }, []);
 
-  // Complete EXP_04 and transition to EXP_05
-  const handleCompleteExp04 = () => {
-    if (isCompletedGuard || completingRef.current) return;
+  // ---------------------------------------------------------------------------
+  // 1. APERTURA PACING
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_01_opening') return;
+
+    // Stage 1: "HAY UNA FORMA DISTINTA DE MIRAR UNA RELACIÓN."
+    // Stage 2: "No buscando respuestas primero…" (pause 1600ms)
+    // Stage 3: "Sino observando patrones." (pause 1600ms)
+    // Stage 4: CTA "COMENZAR INVESTIGACIÓN" (pause 1200ms)
+    const timer1 = window.setTimeout(() => setOpeningPacing(2), 1600);
+    const timer2 = window.setTimeout(() => setOpeningPacing(3), 3200);
+    const timer3 = window.setTimeout(() => setOpeningPacing(4), 4500);
+
+    return () => {
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
+      window.clearTimeout(timer3);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 2. CTA -> VIDEO PLAYBACK
+  // ---------------------------------------------------------------------------
+  const handleBeginInvestigation = async () => {
+    if (isProcessing || isCinematicActive) return;
+    setIsProcessing(true);
+
+    // Track user intention and cinematic start
+    eventTracker.trackEvent('CTA_CLICKED_BEGIN_INVESTIGATION', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp04',
+      payload: { label: EXP04_CONTENT.screen01.ctaLabel },
+    });
+
+    eventTracker.trackEvent('CINEMATIC_STARTED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp04',
+      payload: { asset: EXP04_CONTENT.cinematic.assetUrl },
+    });
+
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp04.started', value: true, scope: 'global' },
+      { key: 'exp04.cinematicStarted', value: true, scope: 'global' },
+    ]);
+
+    // Activate fullscreen cinematic layer
+    setIsCinematicActive(true);
+    hasEndedRef.current = false;
+
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = 0;
+      video.muted = false;
+      video.volume = 1;
+
+      // Arm safety timeout (video duration + 3s, or 20s fallback)
+      clearSafetyTimeout();
+      const durationMs =
+        video.duration && !isNaN(video.duration) && video.duration > 0
+          ? (video.duration + 3) * 1000
+          : 20000;
+
+      safetyTimeoutRef.current = window.setTimeout(() => {
+        if (!hasEndedRef.current) {
+          handleVideoEnded();
+        }
+      }, durationMs);
+
+      // Play video directly within user gesture
+      try {
+        await video.play();
+      } catch (err) {
+        console.warn('[EXP04 Audio Play Blocked - Retrying Muted]', err);
+        try {
+          video.muted = true;
+          await video.play();
+        } catch (mutedErr) {
+          console.warn('[EXP04 Fallback - Direct Timeline Display]', mutedErr);
+          clearSafetyTimeout();
+          setIsCinematicActive(false);
+          setIsProcessing(false);
+          // Fallback: mostrar directamente el timeline interactivo
+          navigateToScreen('screen_03_timeline');
+          eventTracker.trackEvent('TIMELINE_REVEALED', {
+            sessionId: state.session.sessionId,
+            caseId: state.session.caseId,
+            experience: 'exp04',
+            payload: { fallback: true },
+          });
+        }
+      }
+    } else {
+      setIsCinematicActive(false);
+      setIsProcessing(false);
+      navigateToScreen('screen_03_timeline');
+      eventTracker.trackEvent('TIMELINE_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp04',
+        payload: { fallback: true },
+      });
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 3. TRANSICIÓN MÁS IMPORTANTE (VIDEO ONENDED -> TIMELINE INVISIBLE MATCH)
+  // ---------------------------------------------------------------------------
+  const handleVideoEnded = () => {
+    if (hasEndedRef.current) return;
+    hasEndedRef.current = true;
+    clearSafetyTimeout();
+
+    const video = videoRef.current;
+    if (video) {
+      try {
+        video.pause();
+      } catch {}
+    }
+
+    eventTracker.trackEvent('CINEMATIC_COMPLETED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp04',
+      payload: { asset: EXP04_CONTENT.cinematic.assetUrl },
+    });
+
+    // NO cortar a negro.
+    // Congelar visualmente y abandonar elemento <video> mostrando inmediatamente la representación DIL/SVG.
+    setIsCinematicActive(false);
+    setIsProcessing(false);
+    navigateToScreen('screen_03_timeline');
+
+    eventTracker.trackEvent('TIMELINE_REVEALED', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp04',
+    });
+  };
+
+  // ---------------------------------------------------------------------------
+  // 4. REVELACIÓN PROGRESIVA & LÍNEAS CONECTADAS EN TIMELINE
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_03_timeline') return;
+
+    // Reset timeline pacing
+    setTimelinePacing(1);
+    setIsLinesConnected(false);
+
+    // Stage 1: "HAY ALGO QUE CAMBIA." (t=0ms)
+    // Stage 2: "TIENE UN RITMO." (t=1600ms)
+    const t2 = window.setTimeout(() => setTimelinePacing(2), 1600);
+
+    // Stage 3: "SE REPITE." (t=3200ms) -> Activar animación de líneas (900ms)
+    const t3 = window.setTimeout(() => {
+      setTimelinePacing(3);
+      setIsLinesConnected(true);
+      eventTracker.trackEvent('PATTERN_CONNECTED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp04',
+        payload: { durationMs: 900 },
+      });
+    }, 3200);
+
+    // Stage 4: Nuevo Insight - Beat 1: "No todos los días son iguales." (t=5000ms)
+    const t4 = window.setTimeout(() => setTimelinePacing(4), 5000);
+
+    // Stage 5: Beat 2: "Y no todo lo que cambia…" (t=6600ms)
+    const t5 = window.setTimeout(() => setTimelinePacing(5), 6600);
+
+    // Stage 6: Beat 3: "…se ve desde fuera." (t=8200ms)
+    const t6 = window.setTimeout(() => setTimelinePacing(6), 8200);
+
+    // Stage 7: Transition to Andrés interactive participation (t=10000ms)
+    const t7 = window.setTimeout(() => {
+      setTimelinePacing(7);
+      navigateToScreen('screen_04_question');
+    }, 10200);
+
+    return () => {
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+      window.clearTimeout(t5);
+      window.clearTimeout(t6);
+      window.clearTimeout(t7);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 5. PARTICIPACIÓN DE ANDRÉS (SELECCIÓN DE OPCIÓN)
+  // ---------------------------------------------------------------------------
+  const handleSelectOption = (optionLabel: string) => {
+    if (selectedResponse !== null) return;
+    setSelectedResponse(optionLabel);
+
+    // Guardar respuesta silenciosamente
+    memoryManagerRef.current.applyUpdates([
+      { key: 'exp04.patternConsideration', value: optionLabel, scope: 'global' },
+      { key: 'exp04.questionAnsweredAt', value: new Date().toISOString(), scope: 'global' },
+    ]);
+
+    eventTracker.trackEvent('USER_PATTERN_RESPONSE', {
+      sessionId: state.session.sessionId,
+      caseId: state.session.caseId,
+      experience: 'exp04',
+      payload: { response: optionLabel },
+    });
+
+    // Pacing de respuesta del sistema
+    setSystemResponsePacing(1); // "Eso es investigar el contexto."
+    const tSys2 = window.setTimeout(() => setSystemResponsePacing(2), 1600); // "No asumir que ya sabes..."
+    const tSys3 = window.setTimeout(() => setSystemResponsePacing(3), 3200); // "Buscar qué información..."
+    const tAdv = window.setTimeout(() => {
+      navigateToScreen('screen_05_investigation_mystery');
+    }, 5200);
+
+    return () => {
+      window.clearTimeout(tSys2);
+      window.clearTimeout(tSys3);
+      window.clearTimeout(tAdv);
+    };
+  };
+
+  // ---------------------------------------------------------------------------
+  // 6. GRAN PREGUNTA & PISTA ENCONTRADA
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (currentScreenId !== 'screen_05_investigation_mystery') return;
+
+    setMysteryPacing(1); // "Hay una variable que puede aportar contexto…"
+    const t1 = window.setTimeout(() => setMysteryPacing(2), 1600); // "…a determinados momentos."
+    const t2 = window.setTimeout(() => setMysteryPacing(3), 3200); // "Pero todavía no sabemos cuál es."
+    // Pausa larga
+    const t3 = window.setTimeout(() => setMysteryPacing(4), 5200); // "¿QUÉ ESTAMOS VIENDO?"
+
+    // Mantener ~2 segundos y mostrar PISTA ENCONTRADA + CTA FINAL
+    const t4 = window.setTimeout(() => {
+      setMysteryPacing(5);
+      eventTracker.trackEvent('PIECE_NOT_FOUND_REVEALED', {
+        sessionId: state.session.sessionId,
+        caseId: state.session.caseId,
+        experience: 'exp04',
+      });
+    }, 7200);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, [currentScreenId]);
+
+  // ---------------------------------------------------------------------------
+  // 7. CTA FINAL -> DESCUBRIR LA PIEZA FALTANTE (COMPLETION -> EXP_05)
+  // ---------------------------------------------------------------------------
+  const handleCompleteExperience = () => {
+    if (completingRef.current || isCompletedGuard) return;
     completingRef.current = true;
     setIsCompletedGuard(true);
 
-    eventTracker.trackEvent('CTA_CLICKED', {
+    eventTracker.trackEvent('CTA_CLICKED_DISCOVER', {
       sessionId: state.session.sessionId,
       caseId: state.session.caseId,
       experience: 'exp04',
-      payload: { action: 'complete_exp04', label: EXP04_CONTENT.screen12.ctaLabel },
+      payload: { label: EXP04_CONTENT.finalCta.label },
     });
 
-    const now = new Date().toISOString();
     const finalMemory = {
       ...memoryManagerRef.current.getExperienceMemory(),
       patternRecognized: true,
-      hiddenProcessRecognized: true,
-      completed: true,
-      completedAt: now,
+      recurrenceIdentified: true,
+      investigationMissingPieceFound: true,
+      completedAt: new Date().toISOString(),
     };
 
     memoryManagerRef.current.applyUpdates([
-      { key: 'exp04.patternRecognized', value: true, scope: 'global' },
-      { key: 'exp04.hiddenProcessRecognized', value: true, scope: 'global' },
       { key: 'exp04.completed', value: true, scope: 'global' },
-      { key: 'exp04.completedAt', value: now, scope: 'global' },
+      { key: 'exp04.completedAt', value: new Date().toISOString(), scope: 'global' },
     ]);
 
     setRuntimeState((prev) => {
@@ -487,7 +455,7 @@ export const EXP04: React.FC<ExperienceComponentProps> = ({
         ...prev,
         status: 'COMPLETED',
         completedScreens: Array.from(new Set([...prev.completedScreens, prev.currentScreen])),
-        lastActivityAt: now,
+        lastActivityAt: new Date().toISOString(),
       };
       persistExperienceRuntimeState(next);
       return next;
@@ -500,1252 +468,522 @@ export const EXP04: React.FC<ExperienceComponentProps> = ({
       payload: { memory: finalMemory },
     });
 
-    eventTracker.trackEvent('EXPERIENCE_COMPLETED', {
-      sessionId: state.session.sessionId,
-      caseId: state.session.caseId,
-      experience: 'exp04',
-      payload: { experienceId: 'exp04' },
-    });
-
-    // Update FunnelState completed experiences
-    updateState((prev) => {
-      const alreadyCompleted = prev.progress.completedExperiences.includes('exp04');
-      const updatedList: ExperienceId[] = alreadyCompleted
-        ? prev.progress.completedExperiences
-        : [...prev.progress.completedExperiences, 'exp04'];
-
-      return {
-        ...prev,
-        progress: {
-          ...prev.progress,
-          completedExperiences: updatedList,
-          completionPercentage: Math.max(prev.progress.completionPercentage, 50),
-        },
-      };
-    });
-
-    // Invoke parent completion handler to navigate to EXP_05
+    // Advance to EXP_05
     onComplete(finalMemory);
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER COMPONENT
+  // ---------------------------------------------------------------------------
   return (
     <div
-      id="exp04-root-container"
-      className="relative min-h-[90vh] flex flex-col justify-between items-center bg-[#050505] text-neutral-100 px-4 sm:px-6 py-6 sm:py-10 selection:bg-orange-500/20 selection:text-orange-200"
+      id="exp04-container"
+      className="relative min-h-[92vh] sm:min-h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 md:px-8 py-10 sm:py-16 bg-[#050505] text-neutral-100 font-sans selection:bg-neutral-800 selection:text-white"
     >
-      {/* Top Bar with Minimal Case Reference & Audio Control */}
-      <header
-        id="exp04-header"
-        className="w-full max-w-xl flex items-center justify-between py-2 mb-4 border-b border-[#141414]"
+      {/* ========================================================================= */}
+      {/* CAPA CINEMATOGRÁFICA FULLSCREEN (ASSET CTX_E04_V02_TIMELINE.mp4)           */}
+      {/* El elemento <video> está previamente montado en el DOM desde el inicio     */}
+      {/* Durante reproducción: fullscreen absoluto, object-fit: cover, sin textos  */}
+      {/* sin navegación, sin CTA, sin progreso, sin Case ID, sin overlays          */}
+      {/* ========================================================================= */}
+      <div
+        id="exp04-cinematic-layer"
+        aria-hidden={!isCinematicActive}
+        className={`fixed inset-0 z-50 bg-black flex items-center justify-center transition-opacity duration-300 ${
+          isCinematicActive
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
       >
-        <div className="flex items-center space-x-3">
-          <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
-            CASO #{caseId}
-          </span>
-          <span className="text-[10px] text-neutral-700 font-mono">/</span>
-          <span className="text-[10px] font-mono tracking-wider text-neutral-400 uppercase">
-            EXP_04
-          </span>
-        </div>
+        <video
+          ref={videoRef}
+          src={EXP04_CONTENT.cinematic.assetUrl}
+          preload="auto"
+          playsInline
+          controls={false}
+          loop={false}
+          onEnded={handleVideoEnded}
+          className={`w-full h-full object-cover object-center pointer-events-none select-none ${
+            isCinematicActive ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
 
-        <div className="flex items-center space-x-4">
+      {/* ========================================================================= */}
+      {/* HEADER AMBIENTAL: CASO & AUDIO (Oculto en modo cinematográfico)            */}
+      {/* ========================================================================= */}
+      {!isCinematicActive && (
+        <header
+          id="exp04-header"
+          className="absolute top-6 left-0 right-0 px-6 sm:px-10 flex items-center justify-between pointer-events-auto z-20"
+        >
+          <div className="flex items-center gap-2 font-mono text-[11px] sm:text-xs text-neutral-500 uppercase tracking-[0.25em]">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-400/80 animate-pulse" />
+            <span>INVESTIGACIÓN</span>
+            <span className="text-neutral-700">|</span>
+            <span className="text-neutral-400">EXPEDIENTE #{caseId}</span>
+          </div>
+
           <button
             id="exp04-audio-toggle"
+            type="button"
             onClick={toggleAudio}
-            className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-300 hover:bg-[#141414] transition-colors focus:outline-none focus:ring-1 focus:ring-neutral-600"
-            title={isAudioActive ? 'Silenciar ambiente' : 'Activar audio'}
-            aria-label={isAudioActive ? 'Silenciar audio ambiental' : 'Activar audio ambiental'}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-800 bg-[#0d0d0f] hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-200 transition-colors font-mono text-[10px] sm:text-[11px] uppercase tracking-widest cursor-pointer"
+            title={isAudioActive ? 'Silenciar audio' : 'Activar audio'}
+            aria-label="Control de audio"
           >
-            {isAudioActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            {isAudioActive ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-neutral-300" />
+                <span className="hidden sm:inline">AUDIO ON</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-neutral-500" />
+                <span className="hidden sm:inline">AUDIO OFF</span>
+              </>
+            )}
           </button>
-        </div>
-      </header>
+        </header>
+      )}
 
-      {/* Main Narrative Area */}
-      <main id="exp04-main-stage" className="w-full max-w-xl flex-1 flex flex-col justify-center my-auto">
-        {/* ========================================================================= */}
-        {/* SCREEN 01 — INICIO DE INVESTIGACIÓN */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_01_intro' && (
-          <div
-            id="screen-01-intro"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100 flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen01.eyebrow}
-                </span>
-                <span className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-                  CASO #{caseId}
-                </span>
-              </div>
-
-              <div
-                className={`transition-all duration-1000 ${
-                  screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white leading-relaxed">
-                  {EXP04_CONTENT.screen01.leadStart}
-                </h1>
-              </div>
-
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                  {EXP04_CONTENT.screen01.questionIntro}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-orange-400 leading-snug">
-                    {EXP04_CONTENT.screen01.mainQuestion}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-01-cta-iniciar"
-                onClick={() => advanceToScreen('screen_02_first_clue')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen01.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+      {/* ========================================================================= */}
+      {/* PANTALLA 1: APERTURA EN FONDO OSCURO (#050505)                            */}
+      {/* Revelación progresiva con pausas -> CTA "COMENZAR INVESTIGACIÓN"          */}
+      {/* ========================================================================= */}
+      {currentScreenId === 'screen_01_opening' && !isCinematicActive && (
+        <main
+          id="exp04-screen-opening"
+          className="w-full max-w-2xl mx-auto flex flex-col items-center text-center justify-center min-h-[70vh] z-10 animate-fade-in"
+        >
+          {/* Eyebrow */}
+          <div className="mb-6 font-mono text-xs sm:text-sm tracking-[0.3em] uppercase text-neutral-500">
+            {EXP04_CONTENT.screen01.eyebrow}
           </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 02 — PRIMER INDICIO */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_02_first_clue' && (
-          <div
-            id="screen-02-first-clue"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen02.eyebrow}
-                </span>
-              </div>
+          {/* Lead Title: "HAY UNA FORMA DISTINTA DE MIRAR UNA RELACIÓN." */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-neutral-100 uppercase leading-snug sm:leading-tight mb-8 whitespace-pre-line">
+            {EXP04_CONTENT.screen01.leadTitle}
+          </h1>
 
-              {/* Normal Situation Sequence */}
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen02.beat1}
-                  </p>
-                </div>
+          {/* Beat 1: "No buscando respuestas primero…" */}
+          <div className="min-h-[72px] flex flex-col items-center justify-center space-y-3 mb-10">
+            {openingPacing >= 2 && (
+              <p className="text-base sm:text-lg md:text-xl font-light text-neutral-400 tracking-wide transition-opacity duration-700 opacity-100">
+                {EXP04_CONTENT.screen01.leadBeat1}
+              </p>
+            )}
 
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen02.beat2}
-                  </p>
-                </div>
-
-                <div
-                  className={`flex items-center space-x-3 text-base text-neutral-300 font-body transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <span>{EXP04_CONTENT.screen02.beat3}</span>
-                  {screenStage >= 4 && (
-                    <span className="animate-fade-in text-neutral-400 font-serif italic">
-                      — {EXP04_CONTENT.screen02.beat4}
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen02.beat5}
-                  </p>
-                </div>
-              </div>
-
-              {/* The Shift */}
-              <div
-                className={`pt-6 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-widest text-neutral-500 uppercase">
-                  {EXP04_CONTENT.screen02.pauseBeat}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl font-serif italic text-neutral-200">
-                    {EXP04_CONTENT.screen02.changeBeat}
-                  </p>
-                </div>
-
-                <div
-                  className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                    screenStage >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl font-serif italic text-white">
-                    “{EXP04_CONTENT.screen02.outcomeBeat}”
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-02-cta"
-                onClick={() => advanceToScreen('screen_03_second_clue')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen02.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+            {/* Beat 2: "Sino observando patrones." */}
+            {openingPacing >= 3 && (
+              <p className="text-base sm:text-lg md:text-xl font-medium text-neutral-200 tracking-wide transition-opacity duration-700 opacity-100">
+                {EXP04_CONTENT.screen01.leadBeat2}
+              </p>
+            )}
           </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 03 — SEGUNDO INDICIO */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_03_second_clue' && (
+          {/* CTA: COMENZAR INVESTIGACIÓN */}
           <div
-            id="screen-03-second-clue"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
+            className={`transition-all duration-700 transform ${
+              openingPacing >= 4
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 translate-y-3 pointer-events-none'
+            }`}
           >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen03.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen03.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base font-serif italic text-neutral-400">
-                    {EXP04_CONTENT.screen03.beat2}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-2">
-                  <p className="text-base text-neutral-300 font-body flex items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-600 mr-3" />
-                    {EXP04_CONTENT.screen03.beat3}
-                  </p>
-                  {screenStage >= 4 && (
-                    <p className="text-base text-neutral-300 font-body flex items-center animate-fade-in">
-                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-600 mr-3" />
-                      {EXP04_CONTENT.screen03.beat4}
-                    </p>
-                  )}
-                  {screenStage >= 5 && (
-                    <p className="text-base text-neutral-300 font-body flex items-center animate-fade-in">
-                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-600 mr-3" />
-                      {EXP04_CONTENT.screen03.beat5}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div
-                className={`pt-4 transition-all duration-1000 ${
-                  screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base sm:text-lg font-serif italic text-neutral-400">
-                  {EXP04_CONTENT.screen03.beat6}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-03-cta"
-                onClick={() => advanceToScreen('screen_04_comparison')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen03.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
+            <PrimaryCTA
+              id="exp04-cta-begin"
+              onClick={handleBeginInvestigation}
+              disabled={isProcessing}
+              variant="primary"
+              className="bg-[#141417] border-neutral-700/80 hover:border-neutral-400 hover:bg-[#1c1c20] text-neutral-100"
+            >
+              {EXP04_CONTENT.screen01.ctaLabel}
+            </PrimaryCTA>
           </div>
-        )}
+        </main>
+      )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 04 — COMPARACIÓN (PREGUNTA 1) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_04_comparison' && (
-          <div
-            id="screen-04-comparison"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
+      {/* ========================================================================= */}
+      {/* PANTALLA 3 & 4 & 5: TIMELINE INTERACTIVO & CONTINUIDAD DEL ÚLTIMO FRAME  */}
+      {/* Tres períodos consecutivos: JULIO, AGOSTO, SEPTIEMBRE                     */}
+      {/* Dos marcas discretas: ● y ○                                               */}
+      {/* Estética: grafito, gris cálido, sin rojo, sin rosa, sin símbolos bio     */}
+      {/* ========================================================================= */}
+      {(currentScreenId === 'screen_03_timeline' ||
+        currentScreenId === 'screen_04_question' ||
+        currentScreenId === 'screen_05_investigation_mystery') &&
+        !isCinematicActive && (
+          <main
+            id="exp04-interactive-stage"
+            className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center z-10 animate-fade-in transition-all duration-700"
           >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen04.eyebrow}
-                </span>
+            {/* ------------------------------------------------------------------- */}
+            {/* TIMELINE VISUAL INSPIRADO EN EL ÚLTIMO FRAME                       */}
+            {/* ------------------------------------------------------------------- */}
+            <section
+              id="exp04-calendar-timeline"
+              aria-label="Timeline de observación en tres períodos"
+              className="w-full mb-10 relative bg-[#0c0c0e] border border-[#222226] rounded-xl p-5 sm:p-8 shadow-2xl transition-all duration-700"
+            >
+              {/* Agenda Header Label */}
+              <div className="flex items-center justify-between border-b border-[#1f1f23] pb-3 mb-6 font-mono text-[10px] sm:text-xs tracking-[0.25em] text-neutral-500 uppercase">
+                <span>AGENDA DE OBSERVACIÓN</span>
+                <span>FRACTURA TEMPORAL — 3 PERIODOS</span>
               </div>
 
-              {/* Leading comparison statements */}
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
+              {/* 3 Period Columns */}
+              <div className="relative grid grid-cols-3 gap-2 sm:gap-6">
+                {/* SVG Overlay for connecting lines between equivalent marks */}
+                {/* Connecting Line 1 (Upper ●) and Line 2 (Lower ○) */}
+                {/* ViewBox: 600 wide, 190 high. Centers: Col1=100, Col2=300, Col3=500 */}
+                {/* Upper dots Y = 68, Lower dots Y = 138 */}
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
+                  viewBox="0 0 600 190"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
                 >
-                  <p className="text-xl sm:text-2xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen04.lead1}
-                  </p>
-                </div>
+                  {/* Upper line: connects ● from Julio (x=100) to Septiembre (x=500) */}
+                  <path
+                    d="M 100 68 L 500 68"
+                    fill="none"
+                    stroke="#a1a1aa"
+                    strokeWidth="1.5"
+                    strokeDasharray="400"
+                    strokeDashoffset={isLinesConnected ? '0' : '400'}
+                    style={{
+                      transition: 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                  />
 
+                  {/* Lower line: connects ○ from Julio (x=100) to Septiembre (x=500) */}
+                  <path
+                    d="M 100 138 L 500 138"
+                    fill="none"
+                    stroke="#a1a1aa"
+                    strokeWidth="1.5"
+                    strokeDasharray="400"
+                    strokeDashoffset={isLinesConnected ? '0' : '400'}
+                    style={{
+                      transition: 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                  />
+                </svg>
+
+                {/* Column 1: JULIO */}
                 <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
+                  id="period-julio"
+                  className="flex flex-col items-center bg-[#131316] border border-[#232328] rounded-lg p-3 sm:p-4 text-center relative z-0"
                 >
-                  <p className="text-base text-neutral-400 font-body">
-                    {EXP04_CONTENT.screen04.lead2}
-                  </p>
-                </div>
+                  <span className="font-mono text-[11px] sm:text-xs tracking-[0.25em] text-neutral-300 font-semibold uppercase mb-4">
+                    JULIO
+                  </span>
 
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen04.lead3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Silence & Dominant Question */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-2xl sm:text-3xl font-serif italic text-orange-400">
-                  {EXP04_CONTENT.screen04.silenceQuestion}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-wider text-neutral-400 uppercase">
-                    {EXP04_CONTENT.screen04.question}
-                  </p>
-                </div>
-              </div>
-
-              {/* Options */}
-              {isOptionsRevealed && !hypothesisCode && (
-                <div className="space-y-3 pt-2 animate-fade-in">
-                  {EXP04_CONTENT.screen04.options.map((opt) => (
-                    <ChoiceButton
-                      key={opt.id}
-                      id={`choice-${opt.id}`}
-                      code={opt.code}
-                      selected={selectedOption === opt.code}
-                      isAnySelected={selectedOption !== null}
-                      onClick={() => handleSelectHypothesis(opt.code, opt.label)}
-                      disabled={isProcessing || selectedOption !== null}
-                    >
-                      <span className="font-body text-base sm:text-lg">{opt.label}</span>
-                    </ChoiceButton>
-                  ))}
-                </div>
-              )}
-
-              {/* Adaptive Feedback & Convergence */}
-              {hypothesisCode && (
-                <div className="space-y-4 pt-4 border-t border-[#181818] animate-fade-in">
-                  <div
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                      screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-sm font-mono text-neutral-400 uppercase tracking-wider mb-1">
-                      TU RESPUESTA
-                    </p>
-                    <p className="text-base font-serif italic text-white">
-                      “{savedResponses['exp04.hypothesis'] as string}”
-                    </p>
-                    <p className="text-sm text-neutral-400 font-body mt-2">
-                      {hypothesisFeedback}
-                    </p>
+                  {/* Calendar rows & Upper Mark */}
+                  <div className="w-full flex items-center justify-between border-b border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">09</span>
+                    {/* Marca Superior ● */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-neutral-200 shadow-sm border border-neutral-400/50 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca superior — Registro A"
+                    />
+                    <span className="opacity-0">--</span>
                   </div>
 
-                  <div
-                    className={`space-y-2 pt-2 transition-all duration-1000 ${
-                      screenStage >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-base text-neutral-400 font-body">
-                      {EXP04_CONTENT.screen04.convergence1}
+                  <div className="w-full py-2 px-1 flex items-center justify-center text-[10px] font-mono text-neutral-700">
+                    <span className="tracking-widest">···</span>
+                  </div>
+
+                  {/* Calendar rows & Lower Mark */}
+                  <div className="w-full flex items-center justify-between border-t border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">23</span>
+                    {/* Marca Inferior ○ */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#131316] border-2 border-neutral-400 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca inferior — Registro B"
+                    />
+                    <span className="opacity-0">--</span>
+                  </div>
+                </div>
+
+                {/* Column 2: AGOSTO */}
+                <div
+                  id="period-agosto"
+                  className="flex flex-col items-center bg-[#131316] border border-[#232328] rounded-lg p-3 sm:p-4 text-center relative z-0"
+                >
+                  <span className="font-mono text-[11px] sm:text-xs tracking-[0.25em] text-neutral-300 font-semibold uppercase mb-4">
+                    AGOSTO
+                  </span>
+
+                  {/* Calendar rows & Upper Mark */}
+                  <div className="w-full flex items-center justify-between border-b border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">06</span>
+                    {/* Marca Superior ● */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-neutral-200 shadow-sm border border-neutral-400/50 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca superior — Registro A"
+                    />
+                    <span className="opacity-0">--</span>
+                  </div>
+
+                  <div className="w-full py-2 px-1 flex items-center justify-center text-[10px] font-mono text-neutral-700">
+                    <span className="tracking-widest">···</span>
+                  </div>
+
+                  {/* Calendar rows & Lower Mark */}
+                  <div className="w-full flex items-center justify-between border-t border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">20</span>
+                    {/* Marca Inferior ○ */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#131316] border-2 border-neutral-400 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca inferior — Registro B"
+                    />
+                    <span className="opacity-0">--</span>
+                  </div>
+                </div>
+
+                {/* Column 3: SEPTIEMBRE */}
+                <div
+                  id="period-septiembre"
+                  className="flex flex-col items-center bg-[#131316] border border-[#232328] rounded-lg p-3 sm:p-4 text-center relative z-0"
+                >
+                  <span className="font-mono text-[11px] sm:text-xs tracking-[0.25em] text-neutral-300 font-semibold uppercase mb-4">
+                    SEPTIEMBRE
+                  </span>
+
+                  {/* Calendar rows & Upper Mark */}
+                  <div className="w-full flex items-center justify-between border-b border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">03</span>
+                    {/* Marca Superior ● */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-neutral-200 shadow-sm border border-neutral-400/50 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca superior — Registro A"
+                    />
+                    <span className="opacity-0">--</span>
+                  </div>
+
+                  <div className="w-full py-2 px-1 flex items-center justify-center text-[10px] font-mono text-neutral-700">
+                    <span className="tracking-widest">···</span>
+                  </div>
+
+                  {/* Calendar rows & Lower Mark */}
+                  <div className="w-full flex items-center justify-between border-t border-[#1f1f24] py-2 px-1 text-[10px] font-mono text-neutral-500">
+                    <span className="opacity-40">17</span>
+                    {/* Marca Inferior ○ */}
+                    <span
+                      className={`inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#131316] border-2 border-neutral-400 transition-transform duration-300 ${
+                        isLinesConnected ? 'scale-110 ring-2 ring-neutral-500/40' : ''
+                      }`}
+                      title="Marca inferior — Registro B"
+                    />
+                    <span className="opacity-0">--</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ------------------------------------------------------------------- */}
+            {/* SECCIÓN 7 & 8: REVELACIÓN PROGRESIVA Y NUEVO INSIGHT               */}
+            {/* ------------------------------------------------------------------- */}
+            {currentScreenId === 'screen_03_timeline' && (
+              <div
+                id="exp04-timeline-beats"
+                className="w-full flex flex-col items-center text-center space-y-5 min-h-[140px]"
+              >
+                {/* Bloque 1: Revelación de patrón */}
+                <div
+                  className={`transition-opacity duration-700 space-y-2 ${
+                    timelinePacing >= 4 ? 'opacity-30' : 'opacity-100'
+                  }`}
+                >
+                  <p className="font-mono text-sm sm:text-base tracking-[0.2em] text-neutral-400 uppercase font-semibold">
+                    {EXP04_CONTENT.revelation.beat1}
+                  </p>
+
+                  {timelinePacing >= 2 && (
+                    <p className="font-mono text-sm sm:text-base tracking-[0.2em] text-neutral-300 uppercase font-semibold transition-opacity duration-700">
+                      {EXP04_CONTENT.revelation.beat2}
                     </p>
-                    {screenStage >= 9 && (
-                      <p className="text-xl sm:text-2xl font-serif italic text-white animate-fade-in">
-                        {EXP04_CONTENT.screen04.convergence2}
+                  )}
+
+                  {timelinePacing >= 3 && (
+                    <p className="font-mono text-base sm:text-lg tracking-[0.25em] text-neutral-100 uppercase font-bold transition-opacity duration-700">
+                      {EXP04_CONTENT.revelation.beat3}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bloque 2: Nuevo Insight */}
+                {timelinePacing >= 4 && (
+                  <div className="space-y-2 pt-2 transition-opacity duration-700 opacity-100">
+                    <p className="text-base sm:text-lg font-light text-neutral-300 tracking-wide">
+                      {EXP04_CONTENT.insight.beat1}
+                    </p>
+
+                    {timelinePacing >= 5 && (
+                      <p className="text-base sm:text-lg font-light text-neutral-300 tracking-wide transition-opacity duration-700">
+                        {EXP04_CONTENT.insight.beat2}
+                      </p>
+                    )}
+
+                    {timelinePacing >= 6 && (
+                      <p className="text-lg sm:text-xl font-medium text-neutral-100 tracking-wide transition-opacity duration-700">
+                        {EXP04_CONTENT.insight.beat3}
                       </p>
                     )}
                   </div>
-                </div>
-              )}
-            </div>
-
-            {hypothesisCode && (
-              <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-                <PrimaryCTA
-                  id="screen-04-cta"
-                  onClick={() => advanceToScreen('screen_05_anomaly')}
-                  disabled={isProcessing}
-                >
-                  {EXP04_CONTENT.screen04.ctaLabel}
-                </PrimaryCTA>
-              </CTAReveal>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 05 — LA ANOMALÍA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_05_anomaly' && (
-          <div
-            id="screen-05-anomaly"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen05.eyebrow}
-                </span>
-              </div>
-
-              {/* Editorial Side-by-side / Stacked Evidence Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* REGISTRO A */}
-                <div
-                  className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-3 transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <div className="flex items-center justify-between border-b border-[#181818] pb-2">
-                    <span className="text-[11px] font-mono tracking-wider text-neutral-400 uppercase">
-                      {EXP04_CONTENT.screen05.recordA.tag}
-                    </span>
-                    <span className="text-[10px] font-mono text-neutral-500">
-                      {EXP04_CONTENT.screen05.recordA.time}
-                    </span>
-                  </div>
-                  <p className="text-lg font-serif italic text-white">
-                    {EXP04_CONTENT.screen05.recordA.day}
-                  </p>
-                  <ul className="space-y-1 text-sm text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen05.recordA.items.map((item, i) => (
-                      <li key={i} className="flex items-center space-x-2">
-                        <span className="w-1 h-1 rounded-full bg-neutral-500" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* REGISTRO B */}
-                <div
-                  className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-3 transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <div className="flex items-center justify-between border-b border-[#181818] pb-2">
-                    <span className="text-[11px] font-mono tracking-wider text-orange-400 uppercase">
-                      {EXP04_CONTENT.screen05.recordB.tag}
-                    </span>
-                    <span className="text-[10px] font-mono text-neutral-500">
-                      {EXP04_CONTENT.screen05.recordB.time}
-                    </span>
-                  </div>
-                  <p className="text-lg font-serif italic text-white">
-                    {EXP04_CONTENT.screen05.recordB.day}
-                  </p>
-                  <ul className="space-y-1 text-sm text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen05.recordB.items.map((item, i) => (
-                      <li key={i} className="flex items-center space-x-2">
-                        <span className="w-1 h-1 rounded-full bg-orange-400" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Reflection */}
+            {/* ------------------------------------------------------------------- */}
+            {/* SECCIÓN 9 & 10: PARTICIPACIÓN DE ANDRÉS Y RESPUESTA DEL SISTEMA   */}
+            {/* ------------------------------------------------------------------- */}
+            {currentScreenId === 'screen_04_question' && (
               <div
-                className={`pt-4 border-t border-[#181818] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
+                id="exp04-question-container"
+                className="w-full flex flex-col items-center text-center space-y-6 animate-fade-in"
               >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP04_CONTENT.screen05.questionPerson}
-                </p>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg font-serif italic text-white">
-                    {EXP04_CONTENT.screen05.answerYes}
+                {/* Pregunta interactiva */}
+                <div className="space-y-2 max-w-xl">
+                  <p className="text-neutral-400 text-sm sm:text-base font-light">
+                    {EXP04_CONTENT.question.lead}
                   </p>
-                </div>
-
-                <div
-                  className={`pt-2 transition-all duration-1000 ${
-                    screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-widest text-neutral-500 uppercase">
-                    {EXP04_CONTENT.screen05.thenBeat}
-                  </p>
-                </div>
-
-                <div
-                  className={`pt-2 transition-all duration-1000 ${
-                    screenStage >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-2xl sm:text-3xl font-serif italic text-orange-400">
-                    {EXP04_CONTENT.screen05.anomalyQuestion}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-05-cta"
-                onClick={() => advanceToScreen('screen_06_observation')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen05.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 06 — TU HIPÓTESIS (PREGUNTA 2) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_06_observation' && (
-          <div
-            id="screen-06-observation"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen06.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen06.lead}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen06.question}
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-neutral-100 leading-snug">
+                    {EXP04_CONTENT.question.mainQuestion}
                   </h2>
                 </div>
+
+                {/* Opciones interactivas */}
+                <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {EXP04_CONTENT.question.options.map((option) => {
+                    const isSelected = selectedResponse === option.label;
+                    return (
+                      <button
+                        key={option.id}
+                        id={`opt-${option.id}`}
+                        type="button"
+                        onClick={() => handleSelectOption(option.label)}
+                        disabled={selectedResponse !== null}
+                        className={`py-3.5 px-4 rounded-lg font-mono text-xs sm:text-sm tracking-widest uppercase transition-all duration-200 border cursor-pointer ${
+                          isSelected
+                            ? 'bg-neutral-100 text-neutral-900 border-white font-bold shadow-lg scale-102'
+                            : selectedResponse !== null
+                            ? 'opacity-30 border-neutral-800 bg-[#0f0f12] text-neutral-500 cursor-not-allowed'
+                            : 'bg-[#121215] border-neutral-800 hover:border-neutral-500 text-neutral-200 hover:bg-[#18181d]'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Respuesta del sistema */}
+                {selectedResponse !== null && systemResponsePacing >= 1 && (
+                  <div
+                    id="exp04-system-response"
+                    className="w-full max-w-lg mt-4 p-5 bg-[#0e0e11] border border-[#232328] rounded-xl space-y-3 animate-fade-in text-center"
+                  >
+                    <div className="flex items-center justify-center gap-2 text-neutral-400 font-mono text-xs tracking-wider uppercase mb-1">
+                      <CheckCircle2 className="w-4 h-4 text-neutral-300" />
+                      <span>INVESTIGACIÓN DE CONTEXTO</span>
+                    </div>
+
+                    <p className="text-sm sm:text-base font-medium text-neutral-200">
+                      {EXP04_CONTENT.systemResponse.beat1}
+                    </p>
+
+                    {systemResponsePacing >= 2 && (
+                      <p className="text-xs sm:text-sm text-neutral-400 font-light transition-opacity duration-700">
+                        {EXP04_CONTENT.systemResponse.beat2}
+                      </p>
+                    )}
+
+                    {systemResponsePacing >= 3 && (
+                      <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide transition-opacity duration-700">
+                        {EXP04_CONTENT.systemResponse.beat3}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Options */}
-              {isOptionsRevealed && !observationConclusionCode && (
-                <div className="space-y-3 pt-2 animate-fade-in">
-                  {EXP04_CONTENT.screen06.options.map((opt) => (
-                    <ChoiceButton
-                      key={opt.id}
-                      id={`choice-obs-${opt.id}`}
-                      code={opt.code}
-                      selected={selectedOption === opt.code}
-                      isAnySelected={selectedOption !== null}
-                      onClick={() => handleSelectObservation(opt.code, opt.label)}
-                      disabled={isProcessing || selectedOption !== null}
-                    >
-                      <span className="font-body text-base sm:text-lg">{opt.label}</span>
-                    </ChoiceButton>
-                  ))}
-                </div>
-              )}
-
-              {/* Microfeedback & Convergence */}
-              {observationConclusionCode && (
-                <div className="space-y-4 pt-4 border-t border-[#181818] animate-fade-in">
-                  <div
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                      screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-sm font-mono text-neutral-400 uppercase tracking-wider mb-1">
-                      CONCLUSIÓN OBSERVADA
-                    </p>
-                    <p className="text-base font-serif italic text-white">
-                      “{savedResponses['exp04.observationConclusion'] as string}”
-                    </p>
-                    <p className="text-sm text-neutral-400 font-body mt-2">
-                      {observationFeedback}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`pt-2 transition-all duration-1000 ${
-                      screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-lg sm:text-xl font-serif italic text-orange-400 leading-relaxed">
-                      {EXP04_CONTENT.screen06.convergence}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {observationConclusionCode && (
-              <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-                <PrimaryCTA
-                  id="screen-06-cta"
-                  onClick={() => advanceToScreen('screen_07_second_evidence')}
-                  disabled={isProcessing}
-                >
-                  {EXP04_CONTENT.screen06.ctaLabel}
-                </PrimaryCTA>
-              </CTAReveal>
             )}
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* SCREEN 07 — SEGUNDA EVIDENCIA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_07_second_evidence' && (
-          <div
-            id="screen-07-second-evidence"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen07.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-xl sm:text-2xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen07.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen07.beat2}
-                  </p>
-                </div>
-              </div>
-
+            {/* ------------------------------------------------------------------- */}
+            {/* SECCIÓN 11 & 12: GRAN PREGUNTA, PISTA ENCONTRADA & CTA FINAL       */}
+            {/* ------------------------------------------------------------------- */}
+            {currentScreenId === 'screen_05_investigation_mystery' && (
               <div
-                className={`pt-4 border-t border-[#181818] space-y-2 transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
+                id="exp04-mystery-container"
+                className="w-full flex flex-col items-center text-center space-y-6 animate-fade-in"
               >
-                <p className="text-base text-neutral-300 font-body">
-                  {EXP04_CONTENT.screen07.beat3}
-                </p>
-                {screenStage >= 4 && (
-                  <p className="text-base text-neutral-300 font-body animate-fade-in">
-                    {EXP04_CONTENT.screen07.beat4}
-                  </p>
+                {/* Textos progresivos */}
+                <div className="min-h-[90px] flex flex-col items-center justify-center space-y-2">
+                  {mysteryPacing >= 1 && (
+                    <p className="text-sm sm:text-base md:text-lg font-light text-neutral-300 transition-opacity duration-700">
+                      {EXP04_CONTENT.bigQuestion.beat1}
+                    </p>
+                  )}
+
+                  {mysteryPacing >= 2 && (
+                    <p className="text-sm sm:text-base md:text-lg font-light text-neutral-300 transition-opacity duration-700">
+                      {EXP04_CONTENT.bigQuestion.beat2}
+                    </p>
+                  )}
+
+                  {mysteryPacing >= 3 && (
+                    <p className="text-base sm:text-lg font-medium text-neutral-100 transition-opacity duration-700">
+                      {EXP04_CONTENT.bigQuestion.beat3}
+                    </p>
+                  )}
+                </div>
+
+                {/* Dominant Title: ¿QUÉ ESTAMOS VIENDO? */}
+                {mysteryPacing >= 4 && (
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-[0.15em] text-neutral-100 transition-all duration-700 my-2">
+                    {EXP04_CONTENT.bigQuestion.dominantTitle}
+                  </h2>
                 )}
-              </div>
 
-              <div
-                className={`pt-4 space-y-2 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-widest text-neutral-500 uppercase">
-                  {EXP04_CONTENT.screen07.beat5}
-                </p>
+                {/* Pista encontrada & CTA Final */}
+                {mysteryPacing >= 5 && (
+                  <div className="w-full max-w-md p-6 bg-[#0f0f13] border border-[#26262d] rounded-xl flex flex-col items-center text-center space-y-6 shadow-2xl animate-fade-in">
+                    <div className="space-y-2">
+                      <span className="inline-block px-3 py-1 bg-neutral-800/80 border border-neutral-700 text-neutral-300 font-mono text-[10px] sm:text-xs tracking-[0.25em] uppercase rounded-full">
+                        {EXP04_CONTENT.bigQuestion.clueEyebrow}
+                      </span>
+                      <p className="text-sm sm:text-base text-neutral-300 font-light leading-relaxed">
+                        {EXP04_CONTENT.bigQuestion.clueText}
+                      </p>
+                    </div>
 
-                {screenStage >= 6 && (
-                  <p className="text-xl sm:text-2xl font-serif italic text-orange-400 animate-fade-in">
-                    {EXP04_CONTENT.screen07.beat6}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-07-cta"
-                onClick={() => advanceToScreen('screen_08_pattern')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen07.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 08 — EL PATRÓN */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_08_pattern' && (
-          <div
-            id="screen-08-pattern"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen08.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen08.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen08.beat2}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl text-neutral-200 font-serif italic">
-                    {EXP04_CONTENT.screen08.beat3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Revelation Highlight */}
-              <div
-                className={`pt-6 border-t border-[#181818] transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white border-l-2 border-orange-500 pl-4 py-2">
-                  {EXP04_CONTENT.screen08.revelation}
-                </h2>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-08-cta"
-                onClick={() => advanceToScreen('screen_09_hidden_process')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen08.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 09 — LO QUE NO PUEDES VER */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_09_hidden_process' && (
-          <div
-            id="screen-09-hidden-process"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen09.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-widest text-neutral-500 uppercase">
-                    {EXP04_CONTENT.screen09.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen09.beat2}
-                  </p>
-                </div>
-              </div>
-
-              {/* Dominant statement */}
-              <div
-                className={`pt-6 border-t border-[#181818] transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-serif italic text-white leading-relaxed">
-                  {EXP04_CONTENT.screen09.dominantLead}
-                </h2>
-              </div>
-
-              {/* Subtle process beat */}
-              <div
-                className={`space-y-2 pt-4 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP04_CONTENT.screen09.beat3}
-                </p>
-
-                {screenStage >= 5 && (
-                  <p className="text-lg sm:text-xl font-serif italic text-orange-400 animate-fade-in">
-                    {EXP04_CONTENT.screen09.beat4}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-09-cta"
-                onClick={() => advanceToScreen('screen_10_variable')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen09.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 10 — LA VARIABLE (PREGUNTA 3) */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_10_variable' && (
-          <div
-            id="screen-10-variable"
-            className="w-full flex flex-col items-center text-center space-y-10 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-6 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen10.eyebrow}
-                </span>
-              </div>
-
-              {/* Conceptual Intro */}
-              <div className="space-y-2">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-widest text-neutral-400 uppercase">
-                    {EXP04_CONTENT.screen10.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base text-neutral-300 font-body">
-                    {EXP04_CONTENT.screen10.beat2}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl font-serif italic text-white">
-                    {EXP04_CONTENT.screen10.beat3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Variable Card */}
-              <div
-                className={`p-5 rounded-xl bg-[#080808] border border-[#1C1C1C] space-y-3 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <div className="flex items-center justify-between border-b border-[#181818] pb-2">
-                  <span className="text-xs font-mono uppercase tracking-[0.25em] text-orange-400">
-                    {EXP04_CONTENT.screen10.variableLabel}
-                  </span>
-                  <span className="text-[10px] font-mono text-neutral-500">
-                    PARÁMETROS
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm text-neutral-300 font-serif italic">
-                  <p>• {EXP04_CONTENT.screen10.q1}</p>
-                  <p>• {EXP04_CONTENT.screen10.q2}</p>
-                  <p>• {EXP04_CONTENT.screen10.q3}</p>
-                  <p>• {EXP04_CONTENT.screen10.q4}</p>
-                </div>
-              </div>
-
-              {/* Question */}
-              <div
-                className={`pt-4 border-t border-[#181818] space-y-1 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-sm font-mono tracking-wider text-neutral-400 uppercase">
-                  {EXP04_CONTENT.screen10.question}
-                </p>
-                <h3 className="text-xl sm:text-2xl font-serif italic text-white">
-                  {EXP04_CONTENT.screen10.subQuestion}
-                </h3>
-              </div>
-
-              {/* Options */}
-              {isOptionsRevealed && !investigationFocusCode && (
-                <div className="space-y-3 pt-2 animate-fade-in">
-                  {EXP04_CONTENT.screen10.options.map((opt) => (
-                    <ChoiceButton
-                      key={opt.id}
-                      id={`choice-var-${opt.id}`}
-                      code={opt.code}
-                      selected={selectedOption === opt.code}
-                      isAnySelected={selectedOption !== null}
-                      onClick={() => handleSelectInvestigationFocus(opt.code, opt.label)}
-                      disabled={isProcessing || selectedOption !== null}
+                    {/* CTA FINAL: DESCUBRIR LA PIEZA FALTANTE */}
+                    <PrimaryCTA
+                      id="exp04-cta-discover"
+                      onClick={handleCompleteExperience}
+                      disabled={isCompletedGuard}
+                      variant="primary"
+                      className="bg-neutral-100 text-neutral-950 hover:bg-white border-white hover:border-neutral-200 font-bold"
                     >
-                      <span className="font-body text-base sm:text-lg">{opt.label}</span>
-                    </ChoiceButton>
-                  ))}
-                </div>
-              )}
-
-              {/* Adaptive Feedback & Convergence */}
-              {investigationFocusCode && (
-                <div className="space-y-4 pt-4 border-t border-[#181818] animate-fade-in">
-                  <div
-                    className={`p-4 rounded-xl bg-[#080808] border border-[#1C1C1C] border-l-2 border-l-orange-500 transition-all duration-1000 ${
-                      screenStage >= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
-                  >
-                    <p className="text-sm font-mono text-neutral-400 uppercase tracking-wider mb-1">
-                      TU FOCO
-                    </p>
-                    <p className="text-base font-serif italic text-white">
-                      “{savedResponses['exp04.investigationFocus'] as string}”
-                    </p>
-                    <p className="text-sm text-neutral-400 font-body mt-2">
-                      {investigationFeedback}
-                    </p>
+                      {EXP04_CONTENT.finalCta.label}
+                    </PrimaryCTA>
                   </div>
-
-                  <div className="space-y-3 pt-2">
-                    <div
-                      className={`transition-all duration-1000 ${
-                        screenStage >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      <p className="text-sm font-mono tracking-widest text-neutral-400 uppercase">
-                        {EXP04_CONTENT.screen10.convergenceLead}
-                      </p>
-                    </div>
-
-                    <div
-                      className={`transition-all duration-1000 ${
-                        screenStage >= 9 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      <p className="text-base sm:text-lg text-neutral-300 font-body">
-                        {EXP04_CONTENT.screen10.convergenceWhat}
-                      </p>
-                    </div>
-
-                    <div
-                      className={`pt-2 transition-all duration-1000 ${
-                        screenStage >= 10 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                    >
-                      <p className="text-xl sm:text-2xl font-serif italic text-orange-400">
-                        {EXP04_CONTENT.screen10.convergenceWhen}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {investigationFocusCode && (
-              <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-                <PrimaryCTA
-                  id="screen-10-cta"
-                  onClick={() => advanceToScreen('screen_11_open_question')}
-                  disabled={isProcessing}
-                >
-                  {EXP04_CONTENT.screen10.ctaLabel}
-                </PrimaryCTA>
-              </CTAReveal>
+                )}
+              </div>
             )}
-          </div>
+          </main>
         )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 11 — LA PREGUNTA ABIERTA */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_11_open_question' && (
-          <div
-            id="screen-11-open-question"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen11.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen11.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-300 font-serif italic">
-                    {EXP04_CONTENT.screen11.beat2}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-sm font-mono tracking-widest text-neutral-400 uppercase pt-2">
-                    {EXP04_CONTENT.screen11.beat3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Revelation Highlight */}
-              <div
-                className={`pt-6 border-t border-[#181818] transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-white border-l-2 border-orange-500 pl-4 py-2 leading-relaxed">
-                  {EXP04_CONTENT.screen11.dominantQuestion}
-                </h2>
-              </div>
-
-              <div
-                className={`pt-4 transition-all duration-1000 ${
-                  screenStage >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base font-serif italic text-neutral-400">
-                  {EXP04_CONTENT.screen11.closure}
-                </p>
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-11-cta"
-                onClick={() => advanceToScreen('screen_12_transition')}
-                disabled={isProcessing}
-              >
-                {EXP04_CONTENT.screen11.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 12 — TRANSICIÓN A EXP_05 */}
-        {/* ========================================================================= */}
-        {currentScreenId === 'screen_12_transition' && (
-          <div
-            id="screen-12-transition"
-            className="w-full flex flex-col items-center text-center space-y-12 animate-fade-in max-w-xl mx-auto py-8"
-          >
-            <div className="space-y-8 text-left w-full">
-              <div className="transition-all duration-1000 opacity-100">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
-                  {EXP04_CONTENT.screen12.eyebrow}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-base sm:text-lg text-neutral-400 font-serif italic">
-                    {EXP04_CONTENT.screen12.beat1}
-                  </p>
-                </div>
-
-                <div
-                  className={`transition-all duration-1000 ${
-                    screenStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl text-neutral-200 font-serif italic">
-                    {EXP04_CONTENT.screen12.beat2}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`pt-6 border-t border-[#181818] transition-all duration-1000 ${
-                  screenStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic text-orange-400 border-l-2 border-orange-500 pl-4 py-2">
-                  {EXP04_CONTENT.screen12.dominantPiece}
-                </h2>
-              </div>
-
-              <div
-                className={`space-y-2 pt-4 transition-all duration-1000 ${
-                  screenStage >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                }`}
-              >
-                <p className="text-base text-neutral-400 font-body">
-                  {EXP04_CONTENT.screen12.beat3}
-                </p>
-
-                {screenStage >= 5 && (
-                  <p className="text-lg font-serif italic text-white animate-fade-in">
-                    {EXP04_CONTENT.screen12.beat4}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <CTAReveal isRevealed={isCTARevealed} className="w-full pt-4">
-              <PrimaryCTA
-                id="screen-12-cta-buscar"
-                onClick={handleCompleteExp04}
-                disabled={isProcessing || isCompletedGuard}
-              >
-                {EXP04_CONTENT.screen12.ctaLabel}
-              </PrimaryCTA>
-            </CTAReveal>
-          </div>
-        )}
-      </main>
-
-      {/* Footer System Indicator */}
-      <footer id="exp04-footer" className="w-full max-w-xl text-center py-4 border-t border-[#101010]">
-        <p className="text-[10px] font-mono tracking-widest text-neutral-600 uppercase">
-          EVIDENCIA DE CASO • CONTEXTO™
-        </p>
-      </footer>
     </div>
   );
 };
